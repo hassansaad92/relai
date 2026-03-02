@@ -35,6 +35,12 @@ async def get_projects():
     return read_csv("projects.csv")
 
 
+@app.get("/skills")
+async def get_skills():
+    """Get all skills"""
+    return read_csv("skills.csv")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

@@ -17,7 +17,62 @@
         body {
             font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #041e42;
+            min-height: 100vh;
+            padding: 20px 0;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .sidebar-title {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            padding: 0 20px 20px 20px;
+            border-bottom: 2px solid #f65275;
+            margin-bottom: 20px;
+        }
+
+        .nav-item {
+            color: #ffffff;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-weight: 500;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(246, 82, 117, 0.1);
+            border-left-color: #f65275;
+        }
+
+        .nav-item.active {
+            background: rgba(246, 82, 117, 0.2);
+            border-left-color: #f65275;
+            font-weight: 600;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
             padding: 20px;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
         }
 
         .header {
@@ -172,23 +227,356 @@
             color: #041e42;
             font-weight: 600;
         }
+
+        .add-button {
+            width: 100%;
+            background: #041e42;
+            color: #ffffff;
+            border: none;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            font-family: 'Montserrat', sans-serif;
+            margin-top: 16px;
+        }
+
+        .add-button:hover {
+            background: #f65275;
+            transform: translateY(-1px);
+        }
+
+        .add-button:active {
+            transform: translateY(0);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(4, 30, 66, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #f65275;
+        }
+
+        .modal-header h3 {
+            color: #041e42;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 32px;
+            color: #041e42;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .close-button:hover {
+            color: #f65275;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #041e42;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Montserrat', sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .form-group select[multiple] {
+            min-height: 120px;
+        }
+
+        .form-group select[multiple] option {
+            padding: 8px;
+        }
+
+        .form-group select[multiple] option:checked {
+            background: #041e42;
+            color: #ffffff;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f65275;
+        }
+
+        .skill-tiles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .skill-tile {
+            display: inline-block;
+        }
+
+        .skill-tile input[type="checkbox"] {
+            display: none;
+        }
+
+        .skill-tile label {
+            display: block;
+            background: #f0f0f0;
+            color: #333;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .skill-tile input[type="checkbox"]:checked + label {
+            background: #041e42;
+            color: #ffffff;
+            border-color: #041e42;
+        }
+
+        .skill-tile label:hover {
+            border-color: #f65275;
+        }
+
+        .submit-button {
+            width: 100%;
+            background: #041e42;
+            color: #ffffff;
+            border: none;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-family: 'Montserrat', sans-serif;
+            margin-top: 8px;
+        }
+
+        .submit-button:hover {
+            background: #f65275;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Scheduling Assistant</h1>
-        <div class="current-date" id="currentDate"></div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-title">Scheduling</div>
+        <div class="nav-item active" onclick="showView('overview')">Overview</div>
+        <div class="nav-item" onclick="showView('mechanics')">Mechanics</div>
+        <div class="nav-item" onclick="showView('projects')">Projects</div>
+        <div class="nav-item" onclick="showView('skills')">Skills</div>
     </div>
 
-    <div class="container">
-        <div class="section">
-            <h2>Mechanics</h2>
-            <div id="mechanicsContainer"></div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1 id="pageTitle">Overview</h1>
+            <div class="current-date" id="currentDate"></div>
         </div>
 
-        <div class="section">
-            <h2>Projects</h2>
-            <div id="projectsContainer"></div>
+        <!-- Overview View -->
+        <div id="overview" class="view active">
+            <div class="container">
+                <div class="section">
+                    <h2>Mechanics</h2>
+                    <div id="mechanicsContainer"></div>
+                </div>
+
+                <div class="section">
+                    <h2>Projects</h2>
+                    <div id="projectsContainer"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mechanics View -->
+        <div id="mechanics" class="view">
+            <div class="section">
+                <h2>All Mechanics</h2>
+                <div id="mechanicsListContainer"></div>
+                <button class="add-button" onclick="openMechanicModal()">+ Add Mechanic</button>
+            </div>
+        </div>
+
+        <!-- Projects View -->
+        <div id="projects" class="view">
+            <div class="section">
+                <h2>All Projects</h2>
+                <div id="projectsListContainer"></div>
+                <button class="add-button" onclick="openProjectModal()">+ Add Project</button>
+            </div>
+        </div>
+
+        <!-- Skills View -->
+        <div id="skills" class="view">
+            <div class="section">
+                <h2>Skills Management</h2>
+                <div id="skillsListContainer"></div>
+                <button class="add-button" onclick="openSkillModal()">+ Add Skill</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mechanic Modal -->
+    <div id="mechanicModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add Mechanic</h3>
+                <button class="close-button" onclick="closeMechanicModal()">&times;</button>
+            </div>
+            <form id="mechanicForm" onsubmit="submitMechanic(event)">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Skills *</label>
+                    <div class="skill-tiles">
+                        <div class="skill-tile">
+                            <input type="checkbox" id="mech-gen2" name="skills" value="Gen2">
+                            <label for="mech-gen2">Gen2</label>
+                        </div>
+                        <div class="skill-tile">
+                            <input type="checkbox" id="mech-geared" name="skills" value="Geared">
+                            <label for="mech-geared">Geared</label>
+                        </div>
+                        <div class="skill-tile">
+                            <input type="checkbox" id="mech-gearless" name="skills" value="Gearless">
+                            <label for="mech-gearless">Gearless</label>
+                        </div>
+                        <div class="skill-tile">
+                            <input type="checkbox" id="mech-compass" name="skills" value="Compass">
+                            <label for="mech-compass">Compass</label>
+                        </div>
+                        <div class="skill-tile">
+                            <input type="checkbox" id="mech-machine-replacement" name="skills" value="Machine Replacement">
+                            <label for="mech-machine-replacement">Machine Replacement</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Availability Status *</label>
+                    <select name="availability_status" required>
+                        <option value="assigned">Assigned</option>
+                        <option value="available">Available</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Available Date *</label>
+                    <input type="date" name="available_date" required>
+                </div>
+
+                <button type="submit" class="submit-button">Add Mechanic</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Project Modal -->
+    <div id="projectModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add Project</h3>
+                <button class="close-button" onclick="closeProjectModal()">&times;</button>
+            </div>
+            <form id="projectForm" onsubmit="submitProject(event)">
+                <div class="form-group">
+                    <label>Building Name *</label>
+                    <input type="text" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Required Skills *</label>
+                    <select name="required_skills" id="projectSkillsSelect" multiple size="5" required>
+                    </select>
+                    <small style="color: #666; font-size: 12px;">Hold Ctrl/Cmd to select multiple skills</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Number of Elevators *</label>
+                    <input type="number" name="num_elevators" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Start Date *</label>
+                    <input type="date" name="start_date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Duration (weeks) *</label>
+                    <input type="number" name="duration_weeks" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Status *</label>
+                    <select name="status" required>
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-button">Add Project</button>
+            </form>
         </div>
     </div>
 
@@ -246,9 +634,76 @@
             }
         }
 
-        // Render mechanics
+        // Render mechanics (overview - simplified)
         function renderMechanics(mechanics) {
             const container = document.getElementById('mechanicsContainer');
+            container.innerHTML = mechanics.map(mechanic => `
+                <div class="card ${mechanic.availability_status}">
+                    <div class="card-header">
+                        <div class="card-title">${mechanic.name}</div>
+                        <div class="card-status ${mechanic.availability_status}">${mechanic.availability_status}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render projects (overview - simplified)
+        function renderProjects(projects) {
+            const container = document.getElementById('projectsContainer');
+            container.innerHTML = projects.map(project => `
+                <div class="card ${project.status}">
+                    <div class="card-header">
+                        <div class="card-title">${project.name}</div>
+                        <div class="card-status ${project.status}">${project.status.replace('-', ' ')}</div>
+                    </div>
+                    <div class="card-detail">
+                        <strong>Start Date:</strong> ${new Date(project.start_date).toLocaleDateString('en-US')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load data
+        let allMechanics = [];
+        let allProjects = [];
+        let allSkills = [];
+
+        async function loadData() {
+            try {
+                const [mechanicsResponse, projectsResponse, skillsResponse] = await Promise.all([
+                    fetch('/mechanics'),
+                    fetch('/projects'),
+                    fetch('/skills')
+                ]);
+
+                allMechanics = await mechanicsResponse.json();
+                allProjects = await projectsResponse.json();
+                allSkills = await skillsResponse.json();
+
+                renderMechanics(allMechanics);
+                renderProjects(allProjects);
+                renderMechanicsList(allMechanics);
+                renderProjectsList(allProjects);
+                renderSkillsList(allSkills);
+                populateSkillsDropdown();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('mechanicsContainer').innerHTML =
+                    '<p style="color: red;">Error loading data. Make sure the FastAPI server is running (uvicorn main:app --reload)</p>';
+            }
+        }
+
+        // Populate skills dropdown
+        function populateSkillsDropdown() {
+            const select = document.getElementById('projectSkillsSelect');
+            select.innerHTML = allSkills.map(skill =>
+                `<option value="${skill.skill}">${skill.skill}</option>`
+            ).join('');
+        }
+
+        // Render mechanics list (full page)
+        function renderMechanicsList(mechanics) {
+            const container = document.getElementById('mechanicsListContainer');
             container.innerHTML = mechanics.map(mechanic => `
                 <div class="card ${mechanic.availability_status}">
                     <div class="card-header">
@@ -271,9 +726,9 @@
             `).join('');
         }
 
-        // Render projects
-        function renderProjects(projects) {
-            const container = document.getElementById('projectsContainer');
+        // Render projects list (full page)
+        function renderProjectsList(projects) {
+            const container = document.getElementById('projectsListContainer');
             container.innerHTML = projects.map(project => `
                 <div class="card ${project.status}">
                     <div class="card-header">
@@ -302,27 +757,122 @@
             `).join('');
         }
 
-        // Load data
-        async function loadData() {
-            try {
-                const [mechanicsResponse, projectsResponse] = await Promise.all([
-                    fetch('/mechanics'),
-                    fetch('/projects')
-                ]);
+        // Render skills list
+        function renderSkillsList(skills) {
+            const container = document.getElementById('skillsListContainer');
+            container.innerHTML = skills.map(skill => `
+                <div class="card">
+                    <div class="card-title">${skill.skill}</div>
+                </div>
+            `).join('');
+        }
 
-                const mechanics = await mechanicsResponse.json();
-                const projects = await projectsResponse.json();
+        // View navigation
+        function showView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
 
-                renderMechanics(mechanics);
-                renderProjects(projects);
-            } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('mechanicsContainer').innerHTML =
-                    '<p style="color: red;">Error loading data. Make sure the FastAPI server is running (uvicorn main:app --reload)</p>';
-            }
+            // Remove active from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Show selected view
+            document.getElementById(viewName).classList.add('active');
+
+            // Set active nav item
+            event.target.classList.add('active');
+
+            // Update page title
+            const titles = {
+                'overview': 'Overview',
+                'mechanics': 'Mechanics',
+                'projects': 'Projects',
+                'skills': 'Skills'
+            };
+            document.getElementById('pageTitle').textContent = titles[viewName];
+        }
+
+        // Skill modal functions
+        function openSkillModal() {
+            alert('Add Skill functionality - to be implemented');
         }
 
         loadData();
+
+        // Modal functions
+        function openMechanicModal() {
+            document.getElementById('mechanicModal').classList.add('active');
+        }
+
+        function closeMechanicModal() {
+            document.getElementById('mechanicModal').classList.remove('active');
+            document.getElementById('mechanicForm').reset();
+        }
+
+        function openProjectModal() {
+            document.getElementById('projectModal').classList.add('active');
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.remove('active');
+            document.getElementById('projectForm').reset();
+        }
+
+        // Close modals on outside click
+        document.getElementById('mechanicModal').addEventListener('click', function(e) {
+            if (e.target === this) closeMechanicModal();
+        });
+
+        document.getElementById('projectModal').addEventListener('click', function(e) {
+            if (e.target === this) closeProjectModal();
+        });
+
+        // Submit mechanic form
+        function submitMechanic(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+
+            const skills = [];
+            formData.getAll('skills').forEach(skill => skills.push(skill));
+
+            const mechanic = {
+                name: formData.get('name'),
+                skills: skills.join(','),
+                availability_status: formData.get('availability_status'),
+                available_date: formData.get('available_date')
+            };
+
+            console.log('New mechanic:', mechanic);
+            // TODO: Send to backend API
+            alert('Mechanic added! (Currently logged to console - backend integration pending)');
+            closeMechanicModal();
+        }
+
+        // Submit project form
+        function submitProject(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+
+            const select = document.getElementById('projectSkillsSelect');
+            const skills = Array.from(select.selectedOptions).map(option => option.value);
+
+            const project = {
+                name: formData.get('name'),
+                required_skills: skills.join(','),
+                num_elevators: formData.get('num_elevators'),
+                start_date: formData.get('start_date'),
+                duration_weeks: formData.get('duration_weeks'),
+                status: formData.get('status')
+            };
+
+            console.log('New project:', project);
+            // TODO: Send to backend API
+            alert('Project added! (Currently logged to console - backend integration pending)');
+            closeProjectModal();
+        }
     </script>
 </body>
 </html>

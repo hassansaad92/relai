@@ -1,7 +1,7 @@
 id,name,start_date,duration_weeks,num_elevators,required_skills,status
-1,Pyramid Building,2026-03-15,60,6,"Gen2,Compass",pending
-2,Metropolitan Medical Center,2026-03-10,20,2,"Geared",in_progress
-3,Gateway Shopping Plaza,2026-04-01,20,2,"Gearless,Compass",pending
-4,Lincoln High School,2026-03-20,40,4,"Gen2",pending
-5,Grand Plaza Hotel,2026-04-15,20,2,"Geared,Compass",pending
-6,Riverside Office Tower,2026-03-25,4,2,"Compass",pending
+1,Pyramid Building,2026-05-18,60,6,"Gen2,Compass",Booked
+2,Metropolitan Medical Center,2026-03-08,20,2,"Geared",Booked
+3,Gateway Shopping Plaza,2026-06-22,20,2,"Gearless,Compass",Booked
+4,Lincoln High School,2026-04-14,40,4,"Gen2",Booked
+5,Grand Plaza Hotel,2026-05-04,20,2,"Geared,Compass",Booked
+6,Riverside Office Tower,2026-06-01,4,2,"Compass",Booked

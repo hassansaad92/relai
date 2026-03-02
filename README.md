@@ -89,6 +89,38 @@ The FastAPI application provides endpoints for:
 
 - Python 3.8 or higher
 - pip (Python package manager)
+- Anthropic API key (for AI-powered scheduling optimization)
+
+### Getting an Anthropic API Key
+
+1. Go to https://console.anthropic.com/
+2. Sign up or log in to your account
+3. Navigate to **Settings** → **API Keys**
+4. Click **Create Key**
+5. Copy your API key (starts with `sk-ant-api03-...`)
+
+### Setting Up Your API Key
+
+Add your API key to your shell configuration file:
+
+**For macOS/Linux (zsh):**
+```bash
+echo "export ANTHROPIC_API_KEY='your-api-key-here'" >> ~/.zshrc
+source ~/.zshrc
+```
+
+**For macOS/Linux (bash):**
+```bash
+echo "export ANTHROPIC_API_KEY='your-api-key-here'" >> ~/.bashrc
+source ~/.bashrc
+```
+
+**To verify it's set:**
+```bash
+echo $ANTHROPIC_API_KEY
+```
+
+**⚠️ Security Note:** Never commit your API key to version control or share it publicly.
 
 ### Installation
 
