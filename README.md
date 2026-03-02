@@ -150,8 +150,9 @@ echo $ANTHROPIC_API_KEY
 The application will be running with:
 - **Frontend UI**: http://localhost:8000
 - **API Endpoints**:
-  - `GET /mechanics` - Retrieve all mechanics
-  - `GET /projects` - Retrieve all projects
+  - `GET /api/mechanics` - Retrieve all mechanics
+  - `GET /api/projects` - Retrieve all projects
+  - `GET /api/skills` - Retrieve all skills
 
 ### Development
 

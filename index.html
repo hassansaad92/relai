@@ -413,23 +413,73 @@
         .submit-button:hover {
             background: #f65275;
         }
+
+        .refresh-button {
+            background: #f65275;
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            font-size: 20px;
+            font-weight: 600;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+
+        .refresh-button:hover {
+            background: #041e42;
+            transform: scale(1.05);
+        }
+
+        .refresh-button:active {
+            transform: scale(0.95);
+        }
+
+        .refresh-button.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .refresh-icon {
+            display: inline-block;
+        }
+
+        .refresh-button.loading .refresh-icon {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-title">Scheduling</div>
-        <div class="nav-item active" onclick="showView('overview')">Overview</div>
-        <div class="nav-item" onclick="showView('mechanics')">Mechanics</div>
-        <div class="nav-item" onclick="showView('projects')">Projects</div>
-        <div class="nav-item" onclick="showView('skills')">Skills</div>
+        <div class="nav-item" data-view="overview">Overview</div>
+        <div class="nav-item" data-view="mechanics">Mechanics</div>
+        <div class="nav-item" data-view="projects">Projects</div>
+        <div class="nav-item" data-view="skills">Skills</div>
     </div>
 
     <!-- Main Content -->
     <div class="main-content">
         <div class="header">
             <h1 id="pageTitle">Overview</h1>
-            <div class="current-date" id="currentDate"></div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="refresh-button" id="refreshButton" onclick="refreshData()" title="Refresh data">
+                    <span class="refresh-icon">↻</span>
+                </button>
+                <div class="current-date" id="currentDate"></div>
+            </div>
         </div>
 
         <!-- Overview View -->
@@ -643,6 +693,10 @@
                         <div class="card-title">${mechanic.name}</div>
                         <div class="card-status ${mechanic.availability_status}">${mechanic.availability_status}</div>
                     </div>
+                    <div class="card-detail">
+                        <strong>Available:</strong>
+                        <span class="available-date">${new Date(mechanic.available_date).toLocaleDateString('en-US')}</span>
+                    </div>
                 </div>
             `).join('');
         }
@@ -671,9 +725,9 @@
         async function loadData() {
             try {
                 const [mechanicsResponse, projectsResponse, skillsResponse] = await Promise.all([
-                    fetch('/mechanics'),
-                    fetch('/projects'),
-                    fetch('/skills')
+                    fetch('/api/mechanics'),
+                    fetch('/api/projects'),
+                    fetch('/api/skills')
                 ]);
 
                 allMechanics = await mechanicsResponse.json();
@@ -690,6 +744,24 @@
                 console.error('Error loading data:', error);
                 document.getElementById('mechanicsContainer').innerHTML =
                     '<p style="color: red;">Error loading data. Make sure the FastAPI server is running (uvicorn main:app --reload)</p>';
+            }
+        }
+
+        // Refresh data
+        async function refreshData() {
+            const button = document.getElementById('refreshButton');
+            button.classList.add('loading');
+            button.disabled = true;
+
+            try {
+                await loadData();
+                console.log('Data refreshed successfully');
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                alert('Failed to refresh data. Please check your connection.');
+            } finally {
+                button.classList.remove('loading');
+                button.disabled = false;
             }
         }
 
@@ -768,7 +840,7 @@
         }
 
         // View navigation
-        function showView(viewName) {
+        function showView(viewName, updateHistory = true) {
             // Hide all views
             document.querySelectorAll('.view').forEach(view => {
                 view.classList.remove('active');
@@ -783,7 +855,7 @@
             document.getElementById(viewName).classList.add('active');
 
             // Set active nav item
-            event.target.classList.add('active');
+            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
 
             // Update page title
             const titles = {
@@ -793,6 +865,49 @@
                 'skills': 'Skills'
             };
             document.getElementById('pageTitle').textContent = titles[viewName];
+
+            // Update URL without page reload
+            if (updateHistory) {
+                const url = viewName === 'overview' ? '/' : `/${viewName}`;
+                history.pushState({ view: viewName }, '', url);
+            }
+        }
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.view) {
+                showView(event.state.view, false);
+            } else {
+                showView(getViewFromURL(), false);
+            }
+        });
+
+        // Get view name from current URL
+        function getViewFromURL() {
+            const path = window.location.pathname;
+            if (path === '/' || path === '/overview') return 'overview';
+            if (path === '/mechanics') return 'mechanics';
+            if (path === '/projects') return 'projects';
+            if (path === '/skills') return 'skills';
+            return 'overview'; // default
+        }
+
+        // Initialize navigation
+        function initNavigation() {
+            // Add click handlers to nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const viewName = item.getAttribute('data-view');
+                    showView(viewName);
+                });
+            });
+
+            // Show correct view based on URL on page load
+            const initialView = getViewFromURL();
+            showView(initialView, false);
+
+            // Set initial history state
+            history.replaceState({ view: initialView }, '', window.location.pathname);
         }
 
         // Skill modal functions
@@ -800,7 +915,9 @@
             alert('Add Skill functionality - to be implemented');
         }
 
+        // Initialize app
         loadData();
+        initNavigation();
 
         // Modal functions
         function openMechanicModal() {
