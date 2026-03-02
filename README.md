@@ -1,0 +1,92 @@
+# Scheduling Assistant
+
+An AI-powered crew scheduling system that optimizes work crew assignments for construction and maintenance projects.
+
+## Overview
+
+This application helps coordinate and optimize the assignment of mechanics and work crews to projects based on their skills, equipment expertise, and project requirements. Rather than generating schedules on-demand, the system maintains a persistent database of current assignments and intelligently determines the optimal next job for each crew as they complete their work.
+
+## How It Works
+
+The scheduling assistant maintains state about:
+- **Mechanics/Crews**: Individual workers or teams, including their skillsets, equipment proficiencies, and current assignments
+- **Projects**: Work to be done, including building types, start dates, durations, and requirements
+- **Current Assignments**: Active crew-to-project mappings with projected completion dates
+
+When optimization is triggered, the system uses Claude AI to analyze constraints and available resources, then determines the best next assignment for crews approaching completion of their current work.
+
+## Key Features
+
+- **Constraint-based optimization**: Matches crew capabilities with project requirements
+- **Skill and equipment tracking**: Ensures the right expertise is assigned to each job
+- **Projected timeline management**: Tracks when crews will be available for reassignment
+- **AI-powered decision making**: Leverages Claude API to make intelligent scheduling decisions
+- **Persistent state**: Database-driven approach for reliable tracking across sessions
+
+## Use Cases
+
+- Construction project crew scheduling
+- Maintenance team coordination
+- Multi-site service crew optimization
+- Any scenario requiring skilled worker allocation across time-bound projects
+
+## Technical Implementation
+
+### Stack
+
+- **Backend**: FastAPI (Python)
+- **Database**: Supabase (PostgreSQL)
+- **AI**: Anthropic Claude API
+
+### API Structure
+
+The FastAPI application provides endpoints for:
+- Managing mechanics and crews (CRUD operations)
+- Managing projects (CRUD operations)
+- Triggering optimization runs
+- Viewing current and upcoming assignments
+- Querying crew availability and project status
+
+### Database Schema (Supabase)
+
+**mechanics**
+- `id`: UUID (primary key)
+- `name`: Text
+- `skills`: JSONB (array of skill tags)
+- `equipment_expertise`: JSONB (array of equipment types)
+- `availability_status`: Text (available, assigned, unavailable)
+- `created_at`: Timestamp
+
+**projects**
+- `id`: UUID (primary key)
+- `name`: Text
+- `building_type`: Text
+- `start_date`: Date
+- `duration_days`: Integer
+- `requirements`: JSONB (required skills, equipment, crew size)
+- `status`: Text (pending, in_progress, completed)
+- `created_at`: Timestamp
+
+**assignments**
+- `id`: UUID (primary key)
+- `mechanic_id`: UUID (foreign key → mechanics)
+- `project_id`: UUID (foreign key → projects)
+- `assigned_at`: Timestamp
+- `projected_completion`: Date
+- `actual_completion`: Date (nullable)
+- `status`: Text (active, completed)
+
+**optimization_runs**
+- `id`: UUID (primary key)
+- `run_at`: Timestamp
+- `assignments_created`: Integer
+- `parameters`: JSONB (snapshot of constraints/inputs)
+- `result_summary`: Text
+
+## Getting Started
+
+_(Installation and setup instructions to be added)_
+
+## License
+
+_(License information to be added)_
