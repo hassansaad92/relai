@@ -85,7 +85,52 @@ The FastAPI application provides endpoints for:
 
 ## Getting Started
 
-_(Installation and setup instructions to be added)_
+### Prerequisites
+
+- Python 3.8 or higher
+- pip (Python package manager)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd scheduling_assistant
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Running the Application
+
+1. Start the FastAPI server (choose one method):
+
+   **Option A - Simple:**
+   ```bash
+   python main.py
+   ```
+
+   **Option B - Using uvicorn directly:**
+   ```bash
+   uvicorn main:app --reload
+   ```
+
+2. Open your browser and navigate to:
+   ```
+   http://localhost:8000
+   ```
+
+The application will be running with:
+- **Frontend UI**: http://localhost:8000
+- **API Endpoints**:
+  - `GET /mechanics` - Retrieve all mechanics
+  - `GET /projects` - Retrieve all projects
+
+### Development
+
+The server runs with `--reload` flag, which means it will automatically restart when you make changes to the code.
 
 ## License
 
