@@ -137,14 +137,7 @@ echo $ANTHROPIC_API_KEY
 
 ### Running the Application
 
-1. Start the FastAPI server (choose one method):
-
-   **Option A - Simple:**
-   ```bash
-   python main.py
-   ```
-
-   **Option B - Using uvicorn directly:**
+1. Start the FastAPI server:
    ```bash
    uvicorn main:app --reload
    ```
