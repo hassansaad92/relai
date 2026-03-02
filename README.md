@@ -1,4 +1,5 @@
 # Scheduling Assistant
+<!-- This is a dummy comment added for PR demonstration purposes -->
 
 An AI-powered crew scheduling system that optimizes work crew assignments for construction and maintenance projects.
 
