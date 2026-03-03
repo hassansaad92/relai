@@ -4,8 +4,8 @@
 
 ## Workspace Identification
 
-- **RelAI Workspace**: gid `1213504674878708`
-- **Personal Workspace**: gid `1213422506689021` (DO NOT USE for this project)
+- **RelAI Workspace**: named "RelAI"
+- **Personal Workspace**: named "Personal Workspace" (DO NOT USE for this project)
 
 ## Rules
 
@@ -27,7 +27,7 @@ This rule applies to ALL Asana operations including:
 
 Before any Asana operation:
 
-1. **Identify the workspace**: Ensure you're using RelAI workspace gid `1213504674878708`
+1. **Identify the workspace**: Ensure you're using the RelAI workspace (named "RelAI")
 2. **Double-check parameters**: Verify workspace parameter in API calls
 3. **Filter results**: When searching or listing items, filter to RelAI workspace only
 
@@ -35,11 +35,11 @@ Before any Asana operation:
 
 **Correct** - Creating task in RelAI workspace:
 ```
-workspace: 1213504674878708
+workspace: <gid of "RelAI" workspace>
 project_id: <project-in-relai-workspace>
 ```
 
 **Incorrect** - Using Personal Workspace:
 ```
-workspace: 1213422506689021  ❌ WRONG
+workspace: <gid of "Personal Workspace"> ❌ WRONG
 ```
