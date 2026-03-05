@@ -468,7 +468,6 @@
         <div class="nav-item" data-view="mechanics">Mechanics</div>
         <div class="nav-item" data-view="projects">Projects</div>
         <div class="nav-item" data-view="skills">Skills</div>
-        <div class="nav-item" data-view="gantt">Gantt</div>
     </div>
 
     <!-- Main Content -->
@@ -483,18 +482,11 @@
             </div>
         </div>
 
-        <!-- Overview View -->
+        <!-- Overview View (Gantt) -->
         <div id="overview" class="view active">
-            <div class="container">
-                <div class="section">
-                    <h2>Mechanics</h2>
-                    <div id="mechanicsContainer"></div>
-                </div>
-
-                <div class="section">
-                    <h2>Projects</h2>
-                    <div id="projectsContainer"></div>
-                </div>
+            <div class="section">
+                <h2>Assignment Timeline</h2>
+                <div id="ganttChart" style="width: 100%; min-height: 400px;"></div>
             </div>
         </div>
 
@@ -525,13 +517,6 @@
             </div>
         </div>
 
-        <!-- Gantt View -->
-        <div id="gantt" class="view">
-            <div class="section">
-                <h2>Assignment Timeline</h2>
-                <div id="ganttChart" style="width: 100%; min-height: 400px;"></div>
-            </div>
-        </div>
     </div>
 
     <!-- Mechanic Modal -->
@@ -694,39 +679,6 @@
             }
         }
 
-        // Render mechanics (overview - simplified)
-        function renderMechanics(mechanics) {
-            const container = document.getElementById('mechanicsContainer');
-            container.innerHTML = mechanics.map(mechanic => `
-                <div class="card ${mechanic.availability_status}">
-                    <div class="card-header">
-                        <div class="card-title">${mechanic.name}</div>
-                        <div class="card-status ${mechanic.availability_status}">${mechanic.availability_status}</div>
-                    </div>
-                    <div class="card-detail">
-                        <strong>Available:</strong>
-                        <span class="available-date">${new Date(mechanic.available_date).toLocaleDateString('en-US')}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Render projects (overview - simplified)
-        function renderProjects(projects) {
-            const container = document.getElementById('projectsContainer');
-            container.innerHTML = projects.map(project => `
-                <div class="card ${project.status}">
-                    <div class="card-header">
-                        <div class="card-title">${project.name}</div>
-                        <div class="card-status ${project.status}">${project.status.replace('-', ' ')}</div>
-                    </div>
-                    <div class="card-detail">
-                        <strong>Start Date:</strong> ${new Date(project.start_date).toLocaleDateString('en-US')}
-                    </div>
-                </div>
-            `).join('');
-        }
-
         // Load data
         let allMechanics = [];
         let allProjects = [];
@@ -747,8 +699,6 @@
                 allSkills = await skillsResponse.json();
                 allAssignments = await assignmentsResponse.json();
 
-                renderMechanics(allMechanics);
-                renderProjects(allProjects);
                 renderMechanicsList(allMechanics);
                 renderProjectsList(allProjects);
                 renderSkillsList(allSkills);
@@ -962,12 +912,11 @@
                 'mechanics': 'Mechanics',
                 'projects': 'Projects',
                 'skills': 'Skills',
-                'gantt': 'Gantt'
             };
             document.getElementById('pageTitle').textContent = titles[viewName];
 
-            // Plotly needs a resize when the gantt container becomes visible
-            if (viewName === 'gantt') {
+            // Plotly needs a resize when the overview becomes visible
+            if (viewName === 'overview') {
                 Plotly.Plots.resize('ganttChart');
             }
 
@@ -994,7 +943,6 @@
             if (path === '/mechanics') return 'mechanics';
             if (path === '/projects') return 'projects';
             if (path === '/skills') return 'skills';
-            if (path === '/gantt') return 'gantt';
             return 'overview'; // default
         }
 

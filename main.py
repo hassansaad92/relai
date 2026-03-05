@@ -47,12 +47,6 @@ async def skills_page():
     return FileResponse("index.html")
 
 
-@app.get("/gantt")
-async def gantt_page():
-    """Serve the main HTML page for gantt route"""
-    return FileResponse("index.html")
-
-
 @app.get("/api/mechanics")
 async def get_mechanics():
     """Get all mechanics"""
