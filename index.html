@@ -564,19 +564,6 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Availability Status *</label>
-                    <select name="availability_status" required>
-                        <option value="assigned">Assigned</option>
-                        <option value="available">Available</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Available Date *</label>
-                    <input type="date" name="available_date" required>
-                </div>
-
                 <button type="submit" class="submit-button">Add Mechanic</button>
             </form>
         </div>
@@ -671,7 +658,7 @@
 
         // Calculate days until project starts
         function calculateTMinus(startDate) {
-            const start = new Date(startDate);
+            const start = new Date(startDate + 'T00:00:00');
             const diffTime = start - currentDate;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -684,60 +671,99 @@
             }
         }
 
+        // Build lookup tables from assignments
+        function buildAssignmentLookups(assignments, mechanics, projects) {
+            const mechanicsById = Object.fromEntries(mechanics.map(m => [m.id, m]));
+            const projectsById = Object.fromEntries(projects.map(p => [p.id, p]));
+
+            const byMechanic = {};
+            const byProject = {};
+
+            for (const a of assignments) {
+                if (!byMechanic[a.mechanic_id]) byMechanic[a.mechanic_id] = {};
+                byMechanic[a.mechanic_id][a.sequence] = a;
+
+                if (!byProject[a.project_id]) byProject[a.project_id] = [];
+                byProject[a.project_id].push(a);
+            }
+
+            return { byMechanic, byProject, mechanicsById, projectsById };
+        }
+
         // Render mechanics (overview - simplified)
-        function renderMechanics(mechanics) {
+        function renderMechanics(mechanics, byMechanic, projectsById) {
             const container = document.getElementById('mechanicsContainer');
-            container.innerHTML = mechanics.map(mechanic => `
-                <div class="card ${mechanic.availability_status}">
+            container.innerHTML = mechanics.map(mechanic => {
+                const current = byMechanic[mechanic.id]?.[1];
+                const status = current ? 'assigned' : 'available';
+                const currentProject = current ? projectsById[current.project_id] : null;
+                const freeDate = current ? new Date(current.end_date + 'T00:00:00').toLocaleDateString('en-US') : 'Now';
+                return `
+                <div class="card ${status}">
                     <div class="card-header">
                         <div class="card-title">${mechanic.name}</div>
-                        <div class="card-status ${mechanic.availability_status}">${mechanic.availability_status}</div>
+                        <div class="card-status ${status}">${status}</div>
                     </div>
                     <div class="card-detail">
-                        <strong>Available:</strong>
-                        <span class="available-date">${new Date(mechanic.available_date).toLocaleDateString('en-US')}</span>
+                        <strong>Current:</strong> ${currentProject ? currentProject.name : 'Unassigned'}
+                    </div>
+                    <div class="card-detail">
+                        <strong>Free:</strong>
+                        <span class="available-date">${freeDate}</span>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Render projects (overview - simplified)
-        function renderProjects(projects) {
+        function renderProjects(projects, byProject, mechanicsById) {
             const container = document.getElementById('projectsContainer');
-            container.innerHTML = projects.map(project => `
+            container.innerHTML = projects.map(project => {
+                const assignments = byProject[project.id] || [];
+                const current = assignments.find(a => a.sequence === '1');
+                const mechanic = current ? mechanicsById[current.mechanic_id] : null;
+                return `
                 <div class="card ${project.status}">
                     <div class="card-header">
                         <div class="card-title">${project.name}</div>
                         <div class="card-status ${project.status}">${project.status.replace('-', ' ')}</div>
                     </div>
                     <div class="card-detail">
-                        <strong>Start Date:</strong> ${new Date(project.start_date).toLocaleDateString('en-US')}
+                        <strong>Start Date:</strong> ${new Date(project.start_date + 'T00:00:00').toLocaleDateString('en-US')}
+                    </div>
+                    <div class="card-detail">
+                        <strong>Mechanic:</strong> ${mechanic ? mechanic.name : 'Unassigned'}
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Load data
         let allMechanics = [];
         let allProjects = [];
         let allSkills = [];
+        let allAssignments = [];
 
         async function loadData() {
             try {
-                const [mechanicsResponse, projectsResponse, skillsResponse] = await Promise.all([
+                const [mechanicsResponse, projectsResponse, skillsResponse, assignmentsResponse] = await Promise.all([
                     fetch('/api/mechanics'),
                     fetch('/api/projects'),
-                    fetch('/api/skills')
+                    fetch('/api/skills'),
+                    fetch('/api/assignments')
                 ]);
 
                 allMechanics = await mechanicsResponse.json();
                 allProjects = await projectsResponse.json();
                 allSkills = await skillsResponse.json();
+                allAssignments = await assignmentsResponse.json();
 
-                renderMechanics(allMechanics);
-                renderProjects(allProjects);
-                renderMechanicsList(allMechanics);
-                renderProjectsList(allProjects);
+                const lookups = buildAssignmentLookups(allAssignments, allMechanics, allProjects);
+
+                renderMechanics(allMechanics, lookups.byMechanic, lookups.projectsById);
+                renderProjects(allProjects, lookups.byProject, lookups.mechanicsById);
+                renderMechanicsList(allMechanics, lookups.byMechanic, lookups.projectsById);
+                renderProjectsList(allProjects, lookups.byProject, lookups.mechanicsById);
                 renderSkillsList(allSkills);
                 populateSkillsDropdown();
             } catch (error) {
@@ -774,13 +800,19 @@
         }
 
         // Render mechanics list (full page)
-        function renderMechanicsList(mechanics) {
+        function renderMechanicsList(mechanics, byMechanic, projectsById) {
             const container = document.getElementById('mechanicsListContainer');
-            container.innerHTML = mechanics.map(mechanic => `
-                <div class="card ${mechanic.availability_status}">
+            container.innerHTML = mechanics.map(mechanic => {
+                const current = byMechanic[mechanic.id]?.[1];
+                const next = byMechanic[mechanic.id]?.[2];
+                const status = current ? 'assigned' : 'available';
+                const currentProject = current ? projectsById[current.project_id] : null;
+                const nextProject = next ? projectsById[next.project_id] : null;
+                return `
+                <div class="card ${status}">
                     <div class="card-header">
                         <div class="card-title">${mechanic.name}</div>
-                        <div class="card-status ${mechanic.availability_status}">${mechanic.availability_status}</div>
+                        <div class="card-status ${status}">${status}</div>
                     </div>
                     <div class="card-detail">
                         <strong>Skills:</strong>
@@ -791,17 +823,26 @@
                         </div>
                     </div>
                     <div class="card-detail">
-                        <strong>Available:</strong>
-                        <span class="available-date">${new Date(mechanic.available_date).toLocaleDateString('en-US')}</span>
+                        <strong>Current Project:</strong> ${currentProject ? currentProject.name : 'Unassigned'}
+                        ${current ? `<span style="color:#666; font-size:12px;"> &mdash; free <span class="available-date">${new Date(current.end_date + 'T00:00:00').toLocaleDateString('en-US')}</span></span>` : ''}
                     </div>
+                    ${nextProject ? `
+                    <div class="card-detail">
+                        <strong>Next Project:</strong> ${nextProject.name}
+                        <span style="color:#666; font-size:12px;"> &mdash; starts ${new Date(next.start_date + 'T00:00:00').toLocaleDateString('en-US')}</span>
+                    </div>` : ''}
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Render projects list (full page)
-        function renderProjectsList(projects) {
+        function renderProjectsList(projects, byProject, mechanicsById) {
             const container = document.getElementById('projectsListContainer');
-            container.innerHTML = projects.map(project => `
+            container.innerHTML = projects.map(project => {
+                const assignments = byProject[project.id] || [];
+                const current = assignments.find(a => a.sequence === '1');
+                const mechanic = current ? mechanicsById[current.mechanic_id] : null;
+                return `
                 <div class="card ${project.status}">
                     <div class="card-header">
                         <div class="card-title">${project.name}</div>
@@ -819,14 +860,17 @@
                         <strong>Elevators:</strong> <span class="duration">${project.num_elevators}</span>
                     </div>
                     <div class="card-detail">
-                        <strong>Start Date:</strong> ${new Date(project.start_date).toLocaleDateString('en-US')}
+                        <strong>Start Date:</strong> ${new Date(project.start_date + 'T00:00:00').toLocaleDateString('en-US')}
                     </div>
                     <div class="card-detail">
                         <strong>Duration:</strong> <span class="duration">${project.duration_weeks} weeks</span>
                     </div>
+                    <div class="card-detail">
+                        <strong>Mechanic:</strong> ${mechanic ? mechanic.name : 'Unassigned'}
+                    </div>
                     <div class="t-minus">${calculateTMinus(project.start_date)}</div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Render skills list
@@ -957,9 +1001,7 @@
 
             const mechanic = {
                 name: formData.get('name'),
-                skills: skills.join(','),
-                availability_status: formData.get('availability_status'),
-                available_date: formData.get('available_date')
+                skills: skills.join(',')
             };
 
             console.log('New mechanic:', mechanic);

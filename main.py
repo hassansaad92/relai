@@ -7,6 +7,7 @@ from pathlib import Path
 app = FastAPI(title="Scheduling Assistant API")
 
 DATA_DIR = Path("data")
+FRONTEND_DIST = Path("frontend/dist")
 
 
 def read_csv(filename: str) -> list[dict]:
@@ -17,36 +18,7 @@ def read_csv(filename: str) -> list[dict]:
         return list(reader)
 
 
-@app.get("/")
-async def root():
-    """Serve the main HTML page"""
-    return FileResponse("index.html")
-
-
-@app.get("/overview")
-async def overview():
-    """Serve the main HTML page for overview route"""
-    return FileResponse("index.html")
-
-
-@app.get("/mechanics")
-async def mechanics_page():
-    """Serve the main HTML page for mechanics route"""
-    return FileResponse("index.html")
-
-
-@app.get("/projects")
-async def projects_page():
-    """Serve the main HTML page for projects route"""
-    return FileResponse("index.html")
-
-
-@app.get("/skills")
-async def skills_page():
-    """Serve the main HTML page for skills route"""
-    return FileResponse("index.html")
-
-
+# API routes
 @app.get("/api/mechanics")
 async def get_mechanics():
     """Get all mechanics"""
@@ -63,6 +35,32 @@ async def get_projects():
 async def get_skills():
     """Get all skills"""
     return read_csv("skills.csv")
+
+
+@app.get("/api/assignments")
+async def get_assignments():
+    """Get all current assignments"""
+    return read_csv("assignments.csv")
+
+
+@app.get("/api/assignment-history")
+async def get_assignment_history():
+    """Get full SCD2 assignment history"""
+    return read_csv("assignment_history.csv")
+
+
+# Serve frontend static files in production
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+
+    @app.get("/{path:path}")
+    async def serve_frontend(path: str):
+        """Serve React app for all non-API routes"""
+        return FileResponse(FRONTEND_DIST / "index.html")
+else:
+    @app.get("/")
+    async def root():
+        return {"message": "Frontend not built. Run: cd frontend && npm run build"}
 
 
 if __name__ == "__main__":
