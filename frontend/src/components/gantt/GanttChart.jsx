@@ -27,12 +27,10 @@ export default function GanttChart({ assignments, mechanicsById, projectsById, v
   useEffect(() => {
     if (!containerRef.current || tasks.length === 0) return;
 
-    // Serialize to check if data actually changed
     const dataKey = JSON.stringify(tasks);
     if (dataKey === prevDataRef.current && ganttRef.current) return;
     prevDataRef.current = dataKey;
 
-    // Clear previous instance
     containerRef.current.innerHTML = '';
 
     // Inject custom bar colors once
@@ -51,6 +49,8 @@ export default function GanttChart({ assignments, mechanicsById, projectsById, v
       view_mode: viewMode,
       date_format: 'YYYY-MM-DD',
       language: 'en',
+      infinite_padding: false,
+      scroll_to: 'start',
     });
   });
 

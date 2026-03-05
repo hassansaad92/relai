@@ -491,4 +491,13 @@ body {
 .gantt-wrapper {
   border: 1px solid var(--gray-light);
   border-radius: 8px;
+  position: relative;
+}
+
+.gantt-wrapper .gantt-container {
+  min-height: 300px;
+}
+
+.gantt-wrapper .gantt-container .gantt {
+  position: relative;
 }
