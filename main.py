@@ -47,6 +47,12 @@ async def skills_page():
     return FileResponse("index.html")
 
 
+@app.get("/gantt")
+async def gantt_page():
+    """Serve the main HTML page for gantt route"""
+    return FileResponse("index.html")
+
+
 @app.get("/api/mechanics")
 async def get_mechanics():
     """Get all mechanics"""
@@ -63,6 +69,12 @@ async def get_projects():
 async def get_skills():
     """Get all skills"""
     return read_csv("skills.csv")
+
+
+@app.get("/api/assignments")
+async def get_assignments():
+    """Get all current assignments"""
+    return read_csv("assignments.csv")
 
 
 if __name__ == "__main__":

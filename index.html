@@ -468,6 +468,7 @@
         <div class="nav-item" data-view="mechanics">Mechanics</div>
         <div class="nav-item" data-view="projects">Projects</div>
         <div class="nav-item" data-view="skills">Skills</div>
+        <div class="nav-item" data-view="gantt">Gantt</div>
     </div>
 
     <!-- Main Content -->
@@ -521,6 +522,14 @@
                 <h2>Skills Management</h2>
                 <div id="skillsListContainer"></div>
                 <button class="add-button" onclick="openSkillModal()">+ Add Skill</button>
+            </div>
+        </div>
+
+        <!-- Gantt View -->
+        <div id="gantt" class="view">
+            <div class="section">
+                <h2>Assignment Timeline</h2>
+                <div id="ganttChart" style="width: 100%; min-height: 400px;"></div>
             </div>
         </div>
     </div>
@@ -630,6 +639,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
     <script>
         // Set current date
         const currentDate = new Date('2026-03-01');
@@ -721,18 +731,21 @@
         let allMechanics = [];
         let allProjects = [];
         let allSkills = [];
+        let allAssignments = [];
 
         async function loadData() {
             try {
-                const [mechanicsResponse, projectsResponse, skillsResponse] = await Promise.all([
+                const [mechanicsResponse, projectsResponse, skillsResponse, assignmentsResponse] = await Promise.all([
                     fetch('/api/mechanics'),
                     fetch('/api/projects'),
-                    fetch('/api/skills')
+                    fetch('/api/skills'),
+                    fetch('/api/assignments')
                 ]);
 
                 allMechanics = await mechanicsResponse.json();
                 allProjects = await projectsResponse.json();
                 allSkills = await skillsResponse.json();
+                allAssignments = await assignmentsResponse.json();
 
                 renderMechanics(allMechanics);
                 renderProjects(allProjects);
@@ -740,6 +753,7 @@
                 renderProjectsList(allProjects);
                 renderSkillsList(allSkills);
                 populateSkillsDropdown();
+                renderGantt(allAssignments, allMechanics, allProjects);
             } catch (error) {
                 console.error('Error loading data:', error);
                 document.getElementById('mechanicsContainer').innerHTML =
@@ -839,6 +853,91 @@
             `).join('');
         }
 
+        // Render Gantt chart with Plotly
+        function renderGantt(assignments, mechanics, projects) {
+            const mechanicsById = Object.fromEntries(mechanics.map(m => [m.id, m]));
+            const projectsById = Object.fromEntries(projects.map(p => [p.id, p]));
+
+            const traces = assignments.map((a) => {
+                const mechanic = mechanicsById[a.mechanic_id];
+                const project = projectsById[a.project_id];
+                const label = mechanic ? mechanic.name : 'Unknown';
+                const projectName = project ? project.name : 'Unknown';
+                const isCurrent = a.sequence === '1';
+                const barColor = isCurrent ? '#041e42' : '#6b9fd4';
+
+                return {
+                    type: 'bar',
+                    orientation: 'h',
+                    y: [label],
+                    x: [new Date(a.end_date) - new Date(a.start_date)],
+                    base: [a.start_date],
+                    width: [0.4],
+                    name: projectName,
+                    text: [projectName],
+                    textposition: 'inside',
+                    insidetextanchor: 'middle',
+                    textfont: { color: '#ffffff', size: 13, family: 'Montserrat, sans-serif' },
+                    hovertemplate: '<b>%{text}</b><br>%{y}<br>%{base|%b %d, %Y} \u2192 ' +
+                        new Date(a.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+                        '<extra></extra>',
+                    marker: {
+                        color: barColor,
+                        line: { width: 1, color: '#ffffff' }
+                    },
+                    showlegend: true,
+                };
+            });
+
+            const layout = {
+                barmode: 'overlay',
+                xaxis: {
+                    type: 'date',
+                    title: '',
+                    gridcolor: '#f0f0f0',
+                    dtick: 'M1',
+                    tickformat: '%b %Y',
+                    tickfont: { family: 'Montserrat, sans-serif', size: 12 },
+                },
+                yaxis: {
+                    autorange: 'reversed',
+                    tickfont: { family: 'Montserrat, sans-serif', size: 14, color: '#041e42' },
+                    fixedrange: true,
+                },
+                bargap: 0.4,
+                height: Math.max(300, assignments.length * 60 + 120),
+                margin: { l: 140, r: 40, t: 20, b: 60 },
+                font: { family: 'Montserrat, sans-serif' },
+                legend: {
+                    orientation: 'h',
+                    y: -0.15,
+                    x: 0.5,
+                    xanchor: 'center',
+                    font: { size: 12 },
+                },
+                plot_bgcolor: '#ffffff',
+                paper_bgcolor: '#ffffff',
+                shapes: [{
+                    type: 'line',
+                    x0: currentDate.toISOString().split('T')[0],
+                    x1: currentDate.toISOString().split('T')[0],
+                    y0: -0.5,
+                    y1: mechanics.length - 0.5,
+                    line: { color: '#000000', width: 1, dash: 'dash' },
+                }],
+            };
+
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['select2d', 'lasso2d', 'autoScale2d'],
+                scrollZoom: true,
+                displaylogo: false,
+            };
+
+            Plotly.newPlot('ganttChart', traces, layout, config);
+        }
+
         // View navigation
         function showView(viewName, updateHistory = true) {
             // Hide all views
@@ -862,9 +961,15 @@
                 'overview': 'Overview',
                 'mechanics': 'Mechanics',
                 'projects': 'Projects',
-                'skills': 'Skills'
+                'skills': 'Skills',
+                'gantt': 'Gantt'
             };
             document.getElementById('pageTitle').textContent = titles[viewName];
+
+            // Plotly needs a resize when the gantt container becomes visible
+            if (viewName === 'gantt') {
+                Plotly.Plots.resize('ganttChart');
+            }
 
             // Update URL without page reload
             if (updateHistory) {
@@ -889,6 +994,7 @@
             if (path === '/mechanics') return 'mechanics';
             if (path === '/projects') return 'projects';
             if (path === '/skills') return 'skills';
+            if (path === '/gantt') return 'gantt';
             return 'overview'; // default
         }
 
