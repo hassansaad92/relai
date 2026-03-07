@@ -14,6 +14,6 @@ Key rules:
 **MANDATORY**: When working in the RelAI directory, follow the `/asana-workspace` skill.
 
 Key rules:
-- Only manipulate items in the RelAI workspace (gid: `1213504674878708`)
+- Only manipulate items in the RelAI workspace
 - Do NOT create, update, or delete items in the Personal Workspace
 - See `.claude/skills/asana-workspace/SKILL.md` for complete details

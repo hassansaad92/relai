@@ -65,6 +65,12 @@ async def get_skills():
     return read_csv("skills.csv")
 
 
+@app.get("/api/assignments")
+async def get_assignments():
+    """Get all current assignments"""
+    return read_csv("assignments.csv")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
