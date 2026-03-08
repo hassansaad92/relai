@@ -122,6 +122,33 @@
             font-size: 24px;
             padding: 16px 24px;
             border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-add-button {
+            background: #f65275;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            font-family: 'Montserrat', sans-serif;
+            white-space: nowrap;
+        }
+
+        .header-add-button:hover {
+            background: #ffffff;
+            color: #f65275;
+            transform: translateY(-1px);
+        }
+
+        .header-add-button:active {
+            transform: translateY(0);
         }
 
         .card {
@@ -493,27 +520,24 @@
         <!-- Mechanics View -->
         <div id="mechanics" class="view">
             <div class="section">
-                <h2>All Mechanics</h2>
+                <h2>All Mechanics <button class="header-add-button" onclick="openMechanicModal()">+ Add Mechanic</button></h2>
                 <div id="mechanicsListContainer"></div>
-                <button class="add-button" onclick="openMechanicModal()">+ Add Mechanic</button>
             </div>
         </div>
 
         <!-- Projects View -->
         <div id="projects" class="view">
             <div class="section">
-                <h2>All Projects</h2>
+                <h2>All Projects <button class="header-add-button" onclick="openProjectModal()">+ Add Project</button></h2>
                 <div id="projectsListContainer"></div>
-                <button class="add-button" onclick="openProjectModal()">+ Add Project</button>
             </div>
         </div>
 
         <!-- Skills View -->
         <div id="skills" class="view">
             <div class="section">
-                <h2>Skills Management</h2>
+                <h2>All Skills <button class="header-add-button" onclick="openSkillModal()">+ Add Skill</button></h2>
                 <div id="skillsListContainer"></div>
-                <button class="add-button" onclick="openSkillModal()">+ Add Skill</button>
             </div>
         </div>
 
@@ -534,28 +558,7 @@
 
                 <div class="form-group">
                     <label>Skills *</label>
-                    <div class="skill-tiles">
-                        <div class="skill-tile">
-                            <input type="checkbox" id="mech-gen2" name="skills" value="Gen2">
-                            <label for="mech-gen2">Gen2</label>
-                        </div>
-                        <div class="skill-tile">
-                            <input type="checkbox" id="mech-geared" name="skills" value="Geared">
-                            <label for="mech-geared">Geared</label>
-                        </div>
-                        <div class="skill-tile">
-                            <input type="checkbox" id="mech-gearless" name="skills" value="Gearless">
-                            <label for="mech-gearless">Gearless</label>
-                        </div>
-                        <div class="skill-tile">
-                            <input type="checkbox" id="mech-compass" name="skills" value="Compass">
-                            <label for="mech-compass">Compass</label>
-                        </div>
-                        <div class="skill-tile">
-                            <input type="checkbox" id="mech-machine-replacement" name="skills" value="Machine Replacement">
-                            <label for="mech-machine-replacement">Machine Replacement</label>
-                        </div>
-                    </div>
+                    <div class="skill-tiles"></div>
                 </div>
 
                 <div class="form-group">
@@ -624,6 +627,23 @@
         </div>
     </div>
 
+    <!-- Skill Modal -->
+    <div id="skillModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add Skill</h3>
+                <button class="close-button" onclick="closeSkillModal()">&times;</button>
+            </div>
+            <form id="skillForm" onsubmit="submitSkill(event)">
+                <div class="form-group">
+                    <label>Skill Name *</label>
+                    <input type="text" name="skill" required>
+                </div>
+                <button type="submit" class="submit-button">Add Skill</button>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
     <script>
         // Set current date
@@ -666,7 +686,7 @@
 
         // Calculate days until project starts
         function calculateTMinus(startDate) {
-            const start = new Date(startDate);
+            const start = new Date(startDate + 'T00:00:00');
             const diffTime = start - currentDate;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -703,6 +723,7 @@
                 renderProjectsList(allProjects);
                 renderSkillsList(allSkills);
                 populateSkillsDropdown();
+                populateMechanicSkillTiles();
                 renderGantt(allAssignments, allMechanics, allProjects);
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -740,7 +761,8 @@
         // Render mechanics list (full page)
         function renderMechanicsList(mechanics) {
             const container = document.getElementById('mechanicsListContainer');
-            container.innerHTML = mechanics.map(mechanic => `
+            const sorted = [...mechanics].sort((a, b) => a.name.localeCompare(b.name));
+            container.innerHTML = sorted.map(mechanic => `
                 <div class="card ${mechanic.availability_status}">
                     <div class="card-header">
                         <div class="card-title">${mechanic.name}</div>
@@ -756,7 +778,7 @@
                     </div>
                     <div class="card-detail">
                         <strong>Available:</strong>
-                        <span class="available-date">${new Date(mechanic.available_date).toLocaleDateString('en-US')}</span>
+                        <span class="available-date">${new Date(mechanic.available_date + 'T00:00:00').toLocaleDateString('en-US')}</span>
                     </div>
                 </div>
             `).join('');
@@ -765,7 +787,8 @@
         // Render projects list (full page)
         function renderProjectsList(projects) {
             const container = document.getElementById('projectsListContainer');
-            container.innerHTML = projects.map(project => `
+            const sorted = [...projects].sort((a, b) => a.name.localeCompare(b.name));
+            container.innerHTML = sorted.map(project => `
                 <div class="card ${project.status}">
                     <div class="card-header">
                         <div class="card-title">${project.name}</div>
@@ -783,7 +806,7 @@
                         <strong>Elevators:</strong> <span class="duration">${project.num_elevators}</span>
                     </div>
                     <div class="card-detail">
-                        <strong>Start Date:</strong> ${new Date(project.start_date).toLocaleDateString('en-US')}
+                        <strong>Start Date:</strong> ${new Date(project.start_date + 'T00:00:00').toLocaleDateString('en-US')}
                     </div>
                     <div class="card-detail">
                         <strong>Duration:</strong> <span class="duration">${project.duration_weeks} weeks</span>
@@ -796,11 +819,26 @@
         // Render skills list
         function renderSkillsList(skills) {
             const container = document.getElementById('skillsListContainer');
-            container.innerHTML = skills.map(skill => `
+            const sorted = [...skills].sort((a, b) => a.skill.localeCompare(b.skill));
+            container.innerHTML = sorted.map(skill => `
                 <div class="card">
                     <div class="card-title">${skill.skill}</div>
                 </div>
             `).join('');
+        }
+
+        // Populate mechanic skill tiles dynamically from allSkills
+        function populateMechanicSkillTiles() {
+            const container = document.querySelector('#mechanicModal .skill-tiles');
+            const sorted = [...allSkills].sort((a, b) => a.skill.localeCompare(b.skill));
+            container.innerHTML = sorted.map(s => {
+                const id = 'mech-' + s.skill.toLowerCase().replace(/\s+/g, '-');
+                return `
+                    <div class="skill-tile">
+                        <input type="checkbox" id="${id}" name="skills" value="${s.skill}">
+                        <label for="${id}">${s.skill}</label>
+                    </div>`;
+            }).join('');
         }
 
         // Render Gantt chart with Plotly
@@ -829,7 +867,7 @@
                     insidetextanchor: 'middle',
                     textfont: { color: '#ffffff', size: 13, family: 'Montserrat, sans-serif' },
                     hovertemplate: '<b>%{text}</b><br>%{y}<br>%{base|%b %d, %Y} \u2192 ' +
-                        new Date(a.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+                        new Date(a.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
                         '<extra></extra>',
                     marker: {
                         color: barColor,
@@ -966,7 +1004,35 @@
 
         // Skill modal functions
         function openSkillModal() {
-            alert('Add Skill functionality - to be implemented');
+            document.getElementById('skillModal').classList.add('active');
+        }
+
+        function closeSkillModal() {
+            document.getElementById('skillModal').classList.remove('active');
+            document.getElementById('skillForm').reset();
+        }
+
+        document.getElementById('skillModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSkillModal();
+        });
+
+        async function submitSkill(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const skill = { skill: formData.get('skill') };
+
+            try {
+                const response = await fetch('/api/skills', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(skill)
+                });
+                if (!response.ok) throw new Error(await response.text());
+                closeSkillModal();
+                await loadData();
+            } catch (err) {
+                alert('Failed to add skill: ' + err.message);
+            }
         }
 
         // Initialize app
@@ -1002,47 +1068,58 @@
         });
 
         // Submit mechanic form
-        function submitMechanic(event) {
+        async function submitMechanic(event) {
             event.preventDefault();
             const formData = new FormData(event.target);
 
-            const skills = [];
-            formData.getAll('skills').forEach(skill => skills.push(skill));
-
             const mechanic = {
                 name: formData.get('name'),
-                skills: skills.join(','),
+                skills: formData.getAll('skills').join(','),
                 availability_status: formData.get('availability_status'),
                 available_date: formData.get('available_date')
             };
 
-            console.log('New mechanic:', mechanic);
-            // TODO: Send to backend API
-            alert('Mechanic added! (Currently logged to console - backend integration pending)');
-            closeMechanicModal();
+            try {
+                const response = await fetch('/api/mechanics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mechanic)
+                });
+                if (!response.ok) throw new Error(await response.text());
+                closeMechanicModal();
+                await loadData();
+            } catch (err) {
+                alert('Failed to add mechanic: ' + err.message);
+            }
         }
 
         // Submit project form
-        function submitProject(event) {
+        async function submitProject(event) {
             event.preventDefault();
             const formData = new FormData(event.target);
 
             const select = document.getElementById('projectSkillsSelect');
-            const skills = Array.from(select.selectedOptions).map(option => option.value);
-
             const project = {
                 name: formData.get('name'),
-                required_skills: skills.join(','),
-                num_elevators: formData.get('num_elevators'),
+                required_skills: Array.from(select.selectedOptions).map(o => o.value).join(','),
+                num_elevators: parseInt(formData.get('num_elevators')),
                 start_date: formData.get('start_date'),
-                duration_weeks: formData.get('duration_weeks'),
+                duration_weeks: parseInt(formData.get('duration_weeks')),
                 status: formData.get('status')
             };
 
-            console.log('New project:', project);
-            // TODO: Send to backend API
-            alert('Project added! (Currently logged to console - backend integration pending)');
-            closeProjectModal();
+            try {
+                const response = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(project)
+                });
+                if (!response.ok) throw new Error(await response.text());
+                closeProjectModal();
+                await loadData();
+            } catch (err) {
+                alert('Failed to add project: ' + err.message);
+            }
         }
     </script>
 </body>
