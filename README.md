@@ -1,162 +1,157 @@
 # Scheduling Assistant
 
-An AI-powered crew scheduling system that optimizes work crew assignments for construction and maintenance projects.
+An AI-powered crew scheduling system for coordinating elevator installation teams across multiple projects.
 
 ## Overview
 
-This application helps coordinate and optimize the assignment of mechanics and work crews to projects based on their skills, equipment expertise, and project requirements. Rather than generating schedules on-demand, the system maintains a persistent database of current assignments and intelligently determines the optimal next job for each crew as they complete their work.
-
-## How It Works
-
-The scheduling assistant maintains state about:
-- **Mechanics/Crews**: Individual workers or teams, including their skillsets, equipment proficiencies, and current assignments
-- **Projects**: Work to be done, including building types, start dates, durations, and requirements
-- **Current Assignments**: Active crew-to-project mappings with projected completion dates
-
-When optimization is triggered, the system uses Claude AI to analyze constraints and available resources, then determines the best next assignment for crews approaching completion of their current work.
+This application helps coordinate the assignment of mechanics and work crews to projects based on their skills and availability. The system maintains a persistent database of mechanics, projects, and assignments, and uses an AI chatbot to answer scheduling questions in plain language.
 
 ## Key Features
 
-- **Constraint-based optimization**: Matches crew capabilities with project requirements
-- **Skill and equipment tracking**: Ensures the right expertise is assigned to each job
-- **Projected timeline management**: Tracks when crews will be available for reassignment
-- **AI-powered decision making**: Leverages Claude API to make intelligent scheduling decisions
-- **Persistent state**: Database-driven approach for reliable tracking across sessions
+- **Gantt chart overview**: Visual timeline of all mechanic assignments across projects
+- **AI scheduling assistant**: Ask questions like "Who is available next week?" or "What is John's next project?" and get answers from live data
+- **Mechanic management**: Track skills, availability status, and upcoming availability dates
+- **Project management**: Track required skills, elevator counts, start dates, and durations
+- **Assignment tracking**: Confirmed mechanic-to-project assignments with sequence and date ranges
 
-## Use Cases
-
-- Construction project crew scheduling
-- Maintenance team coordination
-- Multi-site service crew optimization
-- Any scenario requiring skilled worker allocation across time-bound projects
-
-## Technical Implementation
-
-### Stack
+## Tech Stack
 
 - **Backend**: FastAPI (Python)
 - **Database**: Supabase (PostgreSQL)
 - **AI**: Anthropic Claude API
+- **Frontend**: Vanilla JS + Plotly (Gantt chart)
 
-### API Structure
-
-The FastAPI application provides endpoints for:
-- Managing mechanics and crews (CRUD operations)
-- Managing projects (CRUD operations)
-- Triggering optimization runs
-- Viewing current and upcoming assignments
-- Querying crew availability and project status
-
-### Database Schema (Supabase)
-
-**mechanics**
-- `id`: UUID (primary key)
-- `name`: Text
-- `skills`: JSONB (array of skill tags)
-- `equipment_expertise`: JSONB (array of equipment types)
-- `availability_status`: Text (available, assigned, unavailable)
-- `created_at`: Timestamp
-
-**projects**
-- `id`: UUID (primary key)
-- `name`: Text
-- `building_type`: Text
-- `start_date`: Date
-- `duration_days`: Integer
-- `requirements`: JSONB (required skills, equipment, crew size)
-- `status`: Text (pending, in_progress, completed)
-- `created_at`: Timestamp
-
-**assignments**
-- `id`: UUID (primary key)
-- `mechanic_id`: UUID (foreign key → mechanics)
-- `project_id`: UUID (foreign key → projects)
-- `assigned_at`: Timestamp
-- `projected_completion`: Date
-- `actual_completion`: Date (nullable)
-- `status`: Text (active, completed)
-
-**optimization_runs**
-- `id`: UUID (primary key)
-- `run_at`: Timestamp
-- `assignments_created`: Integer
-- `parameters`: JSONB (snapshot of constraints/inputs)
-- `result_summary`: Text
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- Python 3.8 or higher
-- pip (Python package manager)
-- Anthropic API key (for AI-powered scheduling optimization)
+- Python 3.8+
+- A [Supabase](https://supabase.com) project with the schema below
+- An [Anthropic API key](https://console.anthropic.com) for the AI chatbot
 
-### Getting an Anthropic API Key
+### 1. Clone the repo
 
-1. Go to https://console.anthropic.com/
-2. Sign up or log in to your account
-3. Navigate to **Settings** → **API Keys**
-4. Click **Create Key**
-5. Copy your API key (starts with `sk-ant-api03-...`)
-
-### Setting Up Your API Key
-
-Add your API key to your shell configuration file:
-
-**For macOS/Linux (zsh):**
 ```bash
-echo "export ANTHROPIC_API_KEY='your-api-key-here'" >> ~/.zshrc
+git clone <repository-url>
+cd relai
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Set up environment variables
+
+The app requires three environment variables. Add them to your shell config or a `.env` file:
+
+**Supabase credentials** (found in your Supabase project under Settings → API):
+
+```bash
+export SUPABASE_RELAI_URL="https://your-project-id.supabase.co"
+export SUPABASE_RELAI_SECRET_KEY="your-supabase-service-role-key"
+```
+
+**Anthropic API key** (for the AI chatbot):
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-api03-..."
+```
+
+To make these permanent, add the exports to `~/.zshrc` (macOS default) or `~/.bashrc`:
+
+```bash
+echo 'export SUPABASE_RELAI_URL="https://your-project-id.supabase.co"' >> ~/.zshrc
+echo 'export SUPABASE_RELAI_SECRET_KEY="your-supabase-service-role-key"' >> ~/.zshrc
+echo 'export ANTHROPIC_API_KEY="sk-ant-api03-..."' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-**For macOS/Linux (bash):**
-```bash
-echo "export ANTHROPIC_API_KEY='your-api-key-here'" >> ~/.bashrc
-source ~/.bashrc
-```
+Verify they are set:
 
-**To verify it's set:**
 ```bash
+echo $SUPABASE_RELAI_URL
+echo $SUPABASE_RELAI_SECRET_KEY
 echo $ANTHROPIC_API_KEY
 ```
 
-**⚠️ Security Note:** Never commit your API key to version control or share it publicly.
+> **Getting an Anthropic API key:**
+> 1. Go to https://console.anthropic.com
+> 2. Sign up or log in
+> 3. Navigate to **Settings** → **API Keys** → **Create Key**
+> 4. Copy the key (starts with `sk-ant-api03-...`)
 
-### Installation
+> **Security:** Never commit API keys to version control.
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd scheduling_assistant
-   ```
+### 4. Run the app
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+uvicorn main:app --reload
+```
 
-### Running the Application
+Open http://localhost:8000 in your browser.
 
-1. Start the FastAPI server:
-   ```bash
-   uvicorn main:app --reload
-   ```
+---
 
-2. Open your browser and navigate to:
-   ```
-   http://localhost:8000
-   ```
+## Database Schema (Supabase)
 
-The application will be running with:
-- **Frontend UI**: http://localhost:8000
-- **API Endpoints**:
-  - `GET /api/mechanics` - Retrieve all mechanics
-  - `GET /api/projects` - Retrieve all projects
-  - `GET /api/skills` - Retrieve all skills
+Create these tables in your Supabase project:
 
-### Development
+**mechanics**
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | Primary key, default `gen_random_uuid()` |
+| `name` | Text | |
+| `skills` | Text | Comma-separated skill tags |
+| `availability_status` | Text | e.g. `available`, `assigned` |
+| `available_date` | Date | When they next become free |
 
-The server runs with `--reload` flag, which means it will automatically restart when you make changes to the code.
+**projects**
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | Primary key, default `gen_random_uuid()` |
+| `name` | Text | |
+| `required_skills` | Text | Comma-separated skill tags |
+| `num_elevators` | Integer | |
+| `start_date` | Date | |
+| `duration_weeks` | Integer | |
+| `status` | Text | e.g. `upcoming`, `in_progress`, `completed` |
+
+**assignments**
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | Primary key, default `gen_random_uuid()` |
+| `mechanic_id` | UUID | Foreign key → mechanics |
+| `project_id` | UUID | Foreign key → projects |
+| `sequence` | Integer | Order of assignment for this mechanic |
+| `start_date` | Date | |
+| `end_date` | Date | |
+
+**skills**
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | Primary key, default `gen_random_uuid()` |
+| `skill` | Text | Skill name |
+
+---
+
+## API Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/mechanics` | List all mechanics |
+| `POST` | `/api/mechanics` | Add a mechanic |
+| `GET` | `/api/projects` | List all projects |
+| `POST` | `/api/projects` | Add a project |
+| `GET` | `/api/assignments` | List all assignments |
+| `GET` | `/api/skills` | List all skills |
+| `POST` | `/api/skills` | Add a skill |
+| `POST` | `/api/chat` | Send a message to the AI assistant |
+
+---
 
 ## License
 
