@@ -28,6 +28,11 @@ async def projects_page():
     return FileResponse("index.html")
 
 
+@app.get("/schedule")
+async def schedule_page():
+    return FileResponse("index.html")
+
+
 @app.get("/skills")
 async def skills_page():
     return FileResponse("index.html")

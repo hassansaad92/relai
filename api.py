@@ -17,6 +17,7 @@ from database import (
     insert_project,
     insert_skill,
     insert_assignment,
+    delete_assignment,
     insert_scenario,
     update_scenario,
     copy_assignments_to_scenario,
@@ -131,6 +132,12 @@ async def get_assignments(scenario_id: Optional[str] = None):
     if master:
         return fetch_assignments_by_scenario(master["id"])
     return []
+
+
+@router.delete("/api/assignments/{assignment_id}")
+async def remove_assignment(assignment_id: str):
+    delete_assignment(assignment_id)
+    return {"success": True}
 
 
 @router.post("/api/assignments")

@@ -797,6 +797,256 @@
         .scenario-new-btn:hover { text-decoration: underline; }
 
         .scenario-draft-count { font-size: 11px; color: #aaa; }
+
+        /* Assignment modal */
+        .assign-section-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 10px;
+        }
+
+        .current-assignments-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .current-assignments-table th {
+            text-align: left;
+            padding: 5px 8px;
+            color: #999;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .current-assignments-table td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #f8f8f8;
+            color: #333;
+        }
+
+        .no-assignments-msg {
+            font-size: 13px;
+            color: #bbb;
+            padding: 4px 0 12px;
+        }
+
+        .remove-assignment-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.15s;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .remove-assignment-btn:hover { color: #e53935; }
+
+        .assign-divider {
+            border: none;
+            border-top: 1px solid #f0f0f0;
+            margin: 16px 0;
+        }
+
+        .date-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* Overview assignments table */
+        .assignments-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .assignments-table th {
+            text-align: left;
+            padding: 8px 12px;
+            color: #999;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .assignments-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f8f8f8;
+            color: #333;
+        }
+
+        .assignments-table tr:hover td { background: #f8f9ff; }
+
+        .assign-btn {
+            background: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 2px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #2b69ac;
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .assign-btn:hover {
+            background: #2b69ac;
+            border-color: #2b69ac;
+            color: #fff;
+        }
+
+        /* Schedule tab */
+        .schedule-layout {
+            display: flex;
+            gap: 24px;
+            height: calc(100vh - 130px);
+            overflow: hidden;
+        }
+
+        .schedule-projects-panel {
+            width: 280px;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        .schedule-assign-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding-left: 4px;
+        }
+
+        .schedule-project-card {
+            padding: 10px 14px;
+            border: 1px solid #f0f0f0;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .schedule-project-card:hover { border-color: #041e42; }
+
+        .schedule-project-card.selected {
+            border-color: #041e42;
+            background: #f5f7fa;
+        }
+
+        .schedule-project-dates {
+            font-size: 12px;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .schedule-project-assigned {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 2px;
+        }
+
+        .schedule-placeholder {
+            color: #bbb;
+            font-size: 14px;
+            padding: 60px 0;
+        }
+
+        .schedule-project-header { margin-bottom: 20px; }
+
+        .schedule-project-header h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #041e42;
+            margin: 0 0 4px 0;
+        }
+
+        .schedule-project-meta { font-size: 13px; color: #666; }
+
+        .schedule-section-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+            margin: 20px 0 10px;
+        }
+
+        .schedule-person-row {
+            display: flex;
+            align-items: center;
+            padding: 9px 0;
+            border-bottom: 1px solid #f8f8f8;
+            gap: 12px;
+        }
+
+        .schedule-person-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            width: 140px;
+            flex-shrink: 0;
+        }
+
+        .schedule-person-info {
+            font-size: 12px;
+            color: #999;
+            flex: 1;
+        }
+
+        .schedule-action-btn {
+            background: #041e42;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            white-space: nowrap;
+            transition: opacity 0.15s;
+        }
+
+        .schedule-action-btn:hover { opacity: 0.8; }
+
+        .schedule-action-btn.outline {
+            background: none;
+            border: 1px solid #e0e0e0;
+            color: #666;
+        }
+
+        .schedule-action-btn.outline:hover {
+            border-color: #041e42;
+            color: #041e42;
+            opacity: 1;
+        }
+
+        .schedule-remove-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.15s;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .schedule-remove-btn:hover { color: #e53935; }
     </style>
 </head>
 <body>
@@ -804,6 +1054,7 @@
     <div class="sidebar">
         <div class="sidebar-title">Scheduling</div>
         <div class="nav-item" data-view="overview">Overview</div>
+        <div class="nav-item" data-view="schedule">Schedule</div>
         <div class="nav-item" data-view="personnel">Personnel</div>
         <div class="nav-item" data-view="projects">Projects</div>
         <div class="nav-item" data-view="skills">Skills</div>
@@ -862,6 +1113,10 @@
                     </div>
                 </div>
             </div>
+            <div class="section" style="margin-top: 24px;">
+                <h2>Assignments</h2>
+                <div id="assignmentsTableContainer"></div>
+            </div>
         </div>
 
         <!-- Personnel View -->
@@ -877,6 +1132,18 @@
             <div class="section">
                 <h2>All Projects <button class="header-add-button" onclick="openProjectModal()">+ Add Project</button></h2>
                 <div id="projectsListContainer"></div>
+            </div>
+        </div>
+
+        <!-- Schedule View -->
+        <div id="schedule" class="view">
+            <div class="schedule-layout">
+                <div class="schedule-projects-panel">
+                    <div id="scheduleProjectsList"></div>
+                </div>
+                <div class="schedule-assign-panel" id="scheduleAssignPanel">
+                    <p class="schedule-placeholder">← Select a project to manage assignments</p>
+                </div>
             </div>
         </div>
 
@@ -1068,6 +1335,7 @@
             allPersonnel = await personnelRes.json();
             allProjects = await projectsRes.json();
             renderGantt(allAssignments, allPersonnel, allProjects);
+            renderAssignmentsList();
         }
 
         async function loadPersonnelData() {
@@ -1092,6 +1360,19 @@
             populateSkillsDropdown();
         }
 
+        async function loadScheduleData() {
+            const [projectsRes, personnelRes, assignmentsRes] = await Promise.all([
+                fetch('/api/projects'),
+                fetch('/api/personnel'),
+                fetch('/api/assignments?scenario_id=' + currentScenarioId)
+            ]);
+            allProjects = await projectsRes.json();
+            allPersonnel = await personnelRes.json();
+            allAssignments = await assignmentsRes.json();
+            renderScheduleProjects();
+            if (selectedScheduleProjectId) renderScheduleAssignPanel(selectedScheduleProjectId);
+        }
+
         async function loadSkillsData() {
             const res = await fetch('/api/skills');
             allSkills = await res.json();
@@ -1100,6 +1381,7 @@
 
         const viewLoaders = {
             overview: loadOverviewData,
+            schedule: loadScheduleData,
             personnel: loadPersonnelData,
             projects: loadProjectsData,
             skills: loadSkillsData,
@@ -1303,6 +1585,7 @@
             // Update page title
             const titles = {
                 'overview': 'Overview',
+                'schedule': 'Schedule',
                 'personnel': 'Personnel',
                 'projects': 'Projects',
                 'skills': 'Skills',
@@ -1340,6 +1623,7 @@
             if (path === '/' || path === '/overview') return 'overview';
             if (path === '/personnel') return 'personnel';
             if (path === '/projects') return 'projects';
+            if (path === '/schedule') return 'schedule';
             if (path === '/skills') return 'skills';
             return 'overview'; // default
         }
@@ -1631,6 +1915,201 @@
                 }
             });
         });
+
+        // ── Assignment management ──────────────────────────────────────────────
+
+        function renderAssignmentsList() {
+            const container = document.getElementById('assignmentsTableContainer');
+            if (!container) return;
+            if (!allAssignments.length) {
+                container.innerHTML = '<p class="no-assignments-msg">No assignments yet.</p>';
+                return;
+            }
+            const personnelById = Object.fromEntries(allPersonnel.map(p => [p.id, p]));
+            const projectsById = Object.fromEntries(allProjects.map(p => [p.id, p]));
+            const sorted = [...allAssignments].sort((a, b) => {
+                const pa = personnelById[a.personnel_id]?.name || '';
+                const pb = personnelById[b.personnel_id]?.name || '';
+                return pa.localeCompare(pb) || a.sequence - b.sequence;
+            });
+            container.innerHTML = `
+                <table class="assignments-table">
+                    <thead>
+                        <tr>
+                            <th>Personnel</th>
+                            <th>Project</th>
+                            <th>Seq</th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sorted.map(a => `
+                            <tr>
+                                <td>${personnelById[a.personnel_id]?.name || a.personnel_id}</td>
+                                <td>${projectsById[a.project_id]?.name || a.project_id}</td>
+                                <td>${a.sequence}</td>
+                                <td>${new Date(a.start_date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</td>
+                                <td>${new Date(a.end_date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // ── Schedule tab ───────────────────────────────────────────────────────
+
+        let selectedScheduleProjectId = null;
+
+        function renderScheduleProjects() {
+            const container = document.getElementById('scheduleProjectsList');
+            const sorted = [...allProjects].sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+            container.innerHTML = sorted.map(p => {
+                const start = new Date(p.start_date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+                const endDate = new Date(p.start_date + 'T00:00:00');
+                endDate.setDate(endDate.getDate() + p.duration_weeks * 7);
+                const end = endDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+                const count = allAssignments.filter(a => a.project_id === p.id).length;
+                return `
+                    <div class="schedule-project-card ${p.id === selectedScheduleProjectId ? 'selected' : ''}"
+                         onclick="selectScheduleProject('${p.id}')">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                            <div class="card-title" style="font-size:14px;">${p.name}</div>
+                            <div class="card-status ${p.status.toLowerCase()}">${p.status.replace('-', ' ')}</div>
+                        </div>
+                        <div class="schedule-project-dates">${start} – ${end}</div>
+                        <div class="schedule-project-assigned">${count} assigned</div>
+                    </div>`;
+            }).join('');
+        }
+
+        function selectScheduleProject(projectId) {
+            selectedScheduleProjectId = projectId;
+            renderScheduleProjects();
+            renderScheduleAssignPanel(projectId);
+        }
+
+        function renderScheduleAssignPanel(projectId) {
+            const panel = document.getElementById('scheduleAssignPanel');
+            const project = allProjects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const projectStart = new Date(project.start_date + 'T00:00:00');
+            const projectEnd = new Date(project.start_date + 'T00:00:00');
+            projectEnd.setDate(projectEnd.getDate() + project.duration_weeks * 7);
+            const endDateStr = projectEnd.toISOString().split('T')[0];
+
+            const startFmt = projectStart.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+            const endFmt = projectEnd.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+
+            const projectAssignments = allAssignments.filter(a => a.project_id === projectId);
+            const assignedIds = new Set(projectAssignments.map(a => a.personnel_id));
+            const personnelById = Object.fromEntries(allPersonnel.map(p => [p.id, p]));
+            const projectsById = Object.fromEntries(allProjects.map(p => [p.id, p]));
+
+            const free = [], busy = [];
+            allPersonnel.forEach(person => {
+                if (assignedIds.has(person.id)) return;
+                const conflicts = allAssignments.filter(a =>
+                    a.personnel_id === person.id &&
+                    new Date(a.start_date) < projectEnd &&
+                    new Date(a.end_date) > projectStart
+                );
+                if (conflicts.length === 0) free.push(person);
+                else busy.push({ person, conflicts });
+            });
+            free.sort((a, b) => a.name.localeCompare(b.name));
+            busy.sort((a, b) => a.person.name.localeCompare(b.person.name));
+
+            const fmtShort = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+
+            const assignedHTML = projectAssignments.length === 0
+                ? '<p class="no-assignments-msg">No one assigned yet.</p>'
+                : projectAssignments.map(a => {
+                    const p = personnelById[a.personnel_id];
+                    return `<div class="schedule-person-row">
+                        <div class="schedule-person-name">${p?.name || a.personnel_id}</div>
+                        <div class="schedule-person-info">${fmtShort(a.start_date)} – ${fmtShort(a.end_date)}</div>
+                        <button class="schedule-remove-btn" onclick="scheduleRemove('${a.id}')">×</button>
+                    </div>`;
+                }).join('');
+
+            const freeHTML = free.length === 0
+                ? '<p class="no-assignments-msg">Everyone is busy during this period.</p>'
+                : free.map(p => `<div class="schedule-person-row">
+                    <div class="schedule-person-name">${p.name}</div>
+                    <div class="schedule-person-info">free</div>
+                    <button class="schedule-action-btn" onclick="scheduleAssign('${p.id}', '${project.start_date}', '${endDateStr}')">+ Assign</button>
+                </div>`).join('');
+
+            const busyHTML = busy.length === 0 ? '' : `
+                <div class="schedule-section-label">Busy during this period</div>
+                ${busy.map(({person, conflicts}) => {
+                    const desc = conflicts.map(c => (projectsById[c.project_id]?.name || 'Unknown') + ' (' + fmtShort(c.start_date) + '–' + fmtShort(c.end_date) + ')').join(', ');
+                    return `<div class="schedule-person-row">
+                        <div class="schedule-person-name">${person.name}</div>
+                        <div class="schedule-person-info">${desc}</div>
+                        <button class="schedule-action-btn outline" onclick="scheduleAssign('${person.id}', '${project.start_date}', '${endDateStr}')">+ Assign</button>
+                    </div>`;
+                }).join('')}`;
+
+            panel.innerHTML = `
+                <div class="schedule-project-header">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+                        <h3>${project.name}</h3>
+                        <div class="card-status ${project.status.toLowerCase()}">${project.status.replace('-', ' ')}</div>
+                    </div>
+                    <div class="schedule-project-meta">${startFmt} – ${endFmt} · ${project.duration_weeks}w · ${project.num_elevators} elev${project.num_elevators > 1 ? 's' : ''}</div>
+                </div>
+                <div class="schedule-section-label">Assigned</div>
+                ${assignedHTML}
+                <div class="schedule-section-label">Available</div>
+                ${freeHTML}
+                ${busyHTML}`;
+        }
+
+        async function scheduleAssign(personnelId, startDate, endDate) {
+            const existing = allAssignments
+                .filter(a => a.personnel_id === personnelId)
+                .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+            let sequence = 1;
+            for (const a of existing) {
+                if (new Date(a.start_date) <= new Date(startDate)) sequence++;
+            }
+            try {
+                const res = await fetch('/api/assignments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        personnel_id: personnelId,
+                        project_id: selectedScheduleProjectId,
+                        scenario_id: currentScenarioId,
+                        sequence,
+                        start_date: startDate,
+                        end_date: endDate,
+                    })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                allAssignments = await fetch('/api/assignments?scenario_id=' + currentScenarioId).then(r => r.json());
+                renderScheduleProjects();
+                renderScheduleAssignPanel(selectedScheduleProjectId);
+            } catch (err) {
+                alert('Failed to assign: ' + err.message);
+            }
+        }
+
+        async function scheduleRemove(assignmentId) {
+            try {
+                const res = await fetch('/api/assignments/' + assignmentId, { method: 'DELETE' });
+                if (!res.ok) throw new Error(await res.text());
+                allAssignments = await fetch('/api/assignments?scenario_id=' + currentScenarioId).then(r => r.json());
+                renderScheduleProjects();
+                renderScheduleAssignPanel(selectedScheduleProjectId);
+            } catch (err) {
+                alert('Failed to remove: ' + err.message);
+            }
+        }
 
         // Submit project form
         async function submitProject(event) {
