@@ -83,11 +83,7 @@ async def get_personnel():
 
 @router.post("/api/personnel")
 async def create_personnel(personnel: PersonnelCreate):
-    response = insert_personnel(personnel.model_dump())
-    print("INSERT personnel response:", response)
-    if not response.data:
-        raise HTTPException(status_code=500, detail="Failed to create personnel")
-    return response.data[0]
+    return insert_personnel(personnel.model_dump())
 
 
 # ── Projects ───────────────────────────────────────────────────────────────────
@@ -99,11 +95,7 @@ async def get_projects():
 
 @router.post("/api/projects")
 async def create_project(project: ProjectCreate):
-    response = insert_project(project.model_dump())
-    print("INSERT projects response:", response)
-    if not response.data:
-        raise HTTPException(status_code=500, detail="Failed to create project")
-    return response.data[0]
+    return insert_project(project.model_dump())
 
 
 # ── Skills ─────────────────────────────────────────────────────────────────────
@@ -115,11 +107,7 @@ async def get_skills():
 
 @router.post("/api/skills")
 async def create_skill(skill: SkillCreate):
-    response = insert_skill(skill.model_dump())
-    print("INSERT skills response:", response)
-    if not response.data:
-        raise HTTPException(status_code=500, detail="Failed to create skill")
-    return response.data[0]
+    return insert_skill(skill.model_dump())
 
 
 # ── Assignments ────────────────────────────────────────────────────────────────
@@ -142,11 +130,7 @@ async def remove_assignment(assignment_id: str):
 
 @router.post("/api/assignments")
 async def create_assignment(assignment: AssignmentCreate):
-    response = insert_assignment(assignment.model_dump())
-    print("INSERT assignments response:", response)
-    if not response.data:
-        raise HTTPException(status_code=500, detail="Failed to create assignment")
-    return response.data[0]
+    return insert_assignment(assignment.model_dump())
 
 
 # ── Scenarios ──────────────────────────────────────────────────────────────────
@@ -169,18 +153,13 @@ async def create_draft(scenario: ScenarioCreate):
     if not master:
         raise HTTPException(status_code=404, detail="No master scenario found.")
 
-    result = insert_scenario({
+    new_scenario = insert_scenario({
         "name": scenario.name,
         "status": "draft",
         "created_from": master["id"],
     })
-    if not result.data:
-        raise HTTPException(status_code=500, detail="Failed to create scenario.")
-
-    new_id = result.data[0]["id"]
-    copy_assignments_to_scenario(master["id"], new_id)
-
-    return result.data[0]
+    copy_assignments_to_scenario(master["id"], new_scenario["id"])
+    return new_scenario
 
 
 @router.post("/api/scenarios/{scenario_id}/promote")
