@@ -3,7 +3,7 @@ Reset and re-seed Supabase from CSVs (skills, personnel, projects, scenarios, as
 Deletes all existing data first, then reloads from CSV files.
 
 Run from repo root:
-    python data/migrate_to_supabase.py
+    python data/reset_supabase_data.py
 """
 import os
 import csv

@@ -13,7 +13,7 @@ This project originally used CSV files as its data store:
 
 The CSVs used simple integer IDs. We migrated to **Supabase** (Postgres) with UUID primary keys and SCD2 history tables for auditing. The CSVs are kept here as a reference.
 
-The migration was performed via `migrate_to_supabase.py` (in this directory), which:
+The migration was performed via `reset_supabase_data.py` (in this directory), which:
 1. Inserted projects from CSV, capturing old integer ID → new UUID mappings
 2. Fetched personnel already in Supabase, mapping them by name
 3. Inserted assignments using the resolved UUIDs
@@ -274,7 +274,7 @@ WHERE scenario_id IS NULL;
 After creating the tables, re-seed from the CSVs using the migration script in this directory:
 
 ```bash
-python data/migrate_to_supabase.py
+python data/reset_supabase_data.py
 ```
 
 Note: the script expects personnel and skills to already be in Supabase (insert those manually or extend the script), then handles projects and assignments automatically.
