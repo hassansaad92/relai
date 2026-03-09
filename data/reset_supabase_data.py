@@ -1,0 +1,160 @@
+"""
+Reset and re-seed Supabase from CSVs (skills, personnel, projects, scenarios, assignments).
+Deletes all existing data first, then reloads from CSV files.
+
+Run from repo root:
+    python data/reset_supabase_data.py
+"""
+import os
+import csv
+from pathlib import Path
+from supabase import create_client, Client
+
+SUPABASE_URL = os.environ.get("SUPABASE_RELAI_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_RELAI_SECRET_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError("Missing SUPABASE_RELAI_URL or SUPABASE_RELAI_SECRET_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+DATA_DIR = Path(__file__).parent
+
+NULL_UUID = "00000000-0000-0000-0000-000000000000"
+
+
+def read_csv(filename):
+    with open(DATA_DIR / filename) as f:
+        return list(csv.DictReader(f))
+
+
+def delete_all(table, pk="id"):
+    """Delete all rows from a table."""
+    result = supabase.table(table).delete().neq(pk, NULL_UUID if pk == "id" else 0).execute()
+    print(f"  Cleared {table} ({len(result.data)} rows deleted)")
+
+
+# ── 1. Delete all data (reverse FK order) ─────────────────────────────────────
+print("Clearing existing data...")
+delete_all("assignments")
+delete_all("scenarios")
+delete_all("projects")
+delete_all("personnel")
+delete_all("skills")
+
+# Clear history tables
+for history_table in ("projects_history", "personnel_history", "skills_history"):
+    delete_all(history_table, pk="hid")
+
+print()
+
+# ── 2. Insert skills ───────────────────────────────────────────────────────────
+print("Inserting skills...")
+skills_csv = read_csv("skills.csv")
+inserted_skills = 0
+
+for row in skills_csv:
+    response = supabase.table("skills").insert({"skill": row["skill"]}).execute()
+    if not response.data:
+        print(f"  ERROR inserting skill: {row['skill']}")
+    else:
+        print(f"  {row['skill']} -> {response.data[0]['id']}")
+        inserted_skills += 1
+
+print(f"Inserted {inserted_skills} skills.\n")
+
+# ── 3. Insert personnel ────────────────────────────────────────────────────────
+print("Inserting personnel...")
+personnel_csv = read_csv("personnel.csv")
+old_personnel_id_to_uuid = {}
+
+for row in personnel_csv:
+    payload = {
+        "name": row["name"],
+        "skills": row["skills"],
+        "availability_status": row["availability_status"],
+        "available_date": row["available_date"],
+    }
+    response = supabase.table("personnel").insert(payload).execute()
+    if not response.data:
+        print(f"  ERROR inserting personnel: {row['name']}")
+        continue
+    new_uuid = response.data[0]["id"]
+    old_personnel_id_to_uuid[row["id"]] = new_uuid
+    print(f"  {row['name']} -> {new_uuid}")
+
+print(f"Inserted {len(old_personnel_id_to_uuid)} personnel.\n")
+
+# ── 4. Insert projects ─────────────────────────────────────────────────────────
+print("Inserting projects...")
+projects_csv = read_csv("projects.csv")
+old_project_id_to_uuid = {}
+
+for row in projects_csv:
+    payload = {
+        "name": row["name"],
+        "start_date": row["start_date"],
+        "duration_weeks": int(row["duration_weeks"]),
+        "num_elevators": int(row["num_elevators"]),
+        "required_skills": row["required_skills"],
+        "status": row["status"],
+    }
+    response = supabase.table("projects").insert(payload).execute()
+    if not response.data:
+        print(f"  ERROR inserting project: {row['name']}")
+        continue
+    new_uuid = response.data[0]["id"]
+    old_project_id_to_uuid[row["id"]] = new_uuid
+    print(f"  {row['name']} -> {new_uuid}")
+
+print(f"Inserted {len(old_project_id_to_uuid)} projects.\n")
+
+# ── 5. Seed master scenario ────────────────────────────────────────────────────
+print("Seeding master scenario...")
+from datetime import datetime, timezone
+
+scenario_response = supabase.table("scenarios").insert({
+    "name": "Master Schedule",
+    "status": "master",
+    "promoted_to_master_at": datetime.now(timezone.utc).isoformat(),
+}).execute()
+
+if not scenario_response.data:
+    raise RuntimeError("ERROR: failed to create master scenario")
+
+master_scenario_id = scenario_response.data[0]["id"]
+print(f"  Master Schedule -> {master_scenario_id}\n")
+
+# ── 6. Insert assignments ──────────────────────────────────────────────────────
+print("Inserting assignments...")
+assignments_csv = read_csv("assignments.csv")
+inserted_assignments = 0
+
+for row in assignments_csv:
+    personnel_uuid = old_personnel_id_to_uuid.get(row["personnel_id"])
+    project_uuid = old_project_id_to_uuid.get(row["project_id"])
+
+    if not personnel_uuid:
+        print(f"  SKIP assignment {row['id']}: personnel_id {row['personnel_id']} not resolved")
+        continue
+    if not project_uuid:
+        print(f"  SKIP assignment {row['id']}: project_id {row['project_id']} not resolved")
+        continue
+
+    payload = {
+        "personnel_id": personnel_uuid,
+        "project_id": project_uuid,
+        "scenario_id": master_scenario_id,
+        "sequence": int(row["sequence"]),
+        "start_date": row["start_date"],
+        "end_date": row["end_date"],
+    }
+    response = supabase.table("assignments").insert(payload).execute()
+    if not response.data:
+        print(f"  ERROR inserting assignment {row['id']}")
+    else:
+        print(f"  Assignment {row['id']} -> {response.data[0]['id']}")
+        inserted_assignments += 1
+
+print(f"\nInserted {inserted_assignments} assignments.")
+print("\nMigration complete.")
