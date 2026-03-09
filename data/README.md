@@ -214,15 +214,42 @@ CREATE TRIGGER tr_skills_scd2
 
 ---
 
-### 4. Assignments
+### 4. Scenarios
 
-Must be created after personnel and projects (foreign key dependencies).
+Must be created before assignments (foreign key dependency).
+
+```sql
+CREATE TABLE scenarios (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft',         -- 'master' or 'draft'
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_from UUID REFERENCES scenarios(id),   -- which scenario it was branched from
+    archived_at TIMESTAMPTZ,                       -- null = active
+    archived_reason TEXT,                          -- 'superseded', 'deleted', 'limit_exceeded'
+    promoted_to_master_at TIMESTAMPTZ,             -- null if never promoted
+    demoted_from_master_at TIMESTAMPTZ             -- null if still master or never promoted
+);
+
+ALTER TABLE scenarios DISABLE ROW LEVEL SECURITY;
+
+-- Seed the initial master scenario
+INSERT INTO scenarios (name, status, promoted_to_master_at)
+VALUES ('Master Schedule', 'master', NOW());
+```
+
+---
+
+### 5. Assignments
+
+Must be created after personnel, projects, and scenarios (foreign key dependencies).
 
 ```sql
 CREATE TABLE assignments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     personnel_id UUID NOT NULL REFERENCES personnel(id),
     project_id UUID NOT NULL REFERENCES projects(id),
+    scenario_id UUID NOT NULL REFERENCES scenarios(id),
     sequence INTEGER NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
@@ -230,6 +257,14 @@ CREATE TABLE assignments (
 );
 
 ALTER TABLE assignments DISABLE ROW LEVEL SECURITY;
+```
+
+**Migrating existing assignments to the master scenario:**
+```sql
+-- After running the scenarios seed above, get the master ID and update existing rows:
+UPDATE assignments
+SET scenario_id = (SELECT id FROM scenarios WHERE status = 'master' LIMIT 1)
+WHERE scenario_id IS NULL;
 ```
 
 ---
