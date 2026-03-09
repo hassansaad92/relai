@@ -51,6 +51,10 @@ def insert_assignment(data: dict):
     return supabase.table("assignments").insert(data).execute()
 
 
+def delete_assignment(assignment_id: str):
+    return supabase.table("assignments").delete().eq("id", assignment_id).execute()
+
+
 def copy_assignments_to_scenario(from_scenario_id: str, to_scenario_id: str):
     source = supabase.table("assignments").select("*").eq("scenario_id", from_scenario_id).execute().data
     if not source:
