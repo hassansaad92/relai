@@ -1,89 +1,192 @@
 import os
-from supabase import create_client, Client
+from contextlib import contextmanager
 
-SUPABASE_URL = os.environ.get("SUPABASE_RELAI_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_RELAI_SECRET_KEY")
+import psycopg2
+import psycopg2.extras
+from psycopg2.pool import ThreadedConnectionPool
 
-if not SUPABASE_URL or not SUPABASE_KEY:
-    missing = [k for k, v in {"SUPABASE_RELAI_URL": SUPABASE_URL, "SUPABASE_RELAI_SECRET_KEY": SUPABASE_KEY}.items() if not v]
-    raise RuntimeError(f"Missing environment variables: {', '.join(missing)}")
+_pool: ThreadedConnectionPool | None = None
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def _dsn():
+    host = os.environ.get("SUPABASE_RELAI_DB_HOST")
+    password = os.environ.get("SUPABASE_RELAI_DB_PASSWORD")
+    if not host:
+        raise RuntimeError("Missing environment variable: SUPABASE_RELAI_DB_HOST")
+    if not password:
+        raise RuntimeError("Missing environment variable: SUPABASE_RELAI_DB_PASSWORD")
+    return f"postgresql://postgres:{password}@{host}:5432/postgres"
+
+
+def init_pool():
+    global _pool
+    _pool = ThreadedConnectionPool(1, 10, _dsn(), cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+def close_pool():
+    global _pool
+    if _pool:
+        _pool.closeall()
+        _pool = None
+
+
+@contextmanager
+def _cursor():
+    if _pool is None:
+        raise RuntimeError("Database pool is not initialized")
+    conn = _pool.getconn()
+    try:
+        cur = conn.cursor()
+        yield conn, cur
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        _pool.putconn(conn)
 
 
 # ── Personnel ──────────────────────────────────────────────────────────────────
 
 def fetch_personnel():
-    return supabase.table("personnel").select("*").execute().data
+    with _cursor() as (_, cur):
+        cur.execute("SELECT * FROM personnel")
+        return [dict(r) for r in cur.fetchall()]
 
 
 def insert_personnel(data: dict):
-    return supabase.table("personnel").insert(data).execute()
+    with _cursor() as (_, cur):
+        cur.execute(
+            """
+            INSERT INTO personnel (name, skills, availability_status, available_date)
+            VALUES (%(name)s, %(skills)s, %(availability_status)s, %(available_date)s)
+            RETURNING *
+            """,
+            data,
+        )
+        return dict(cur.fetchone())
 
 
 # ── Projects ───────────────────────────────────────────────────────────────────
 
 def fetch_projects():
-    return supabase.table("projects").select("*").execute().data
+    with _cursor() as (_, cur):
+        cur.execute("SELECT * FROM projects")
+        return [dict(r) for r in cur.fetchall()]
 
 
 def insert_project(data: dict):
-    return supabase.table("projects").insert(data).execute()
+    with _cursor() as (_, cur):
+        cur.execute(
+            """
+            INSERT INTO projects (name, start_date, duration_weeks, num_elevators, required_skills, status)
+            VALUES (%(name)s, %(start_date)s, %(duration_weeks)s, %(num_elevators)s, %(required_skills)s, %(status)s)
+            RETURNING *
+            """,
+            data,
+        )
+        return dict(cur.fetchone())
 
 
 # ── Skills ─────────────────────────────────────────────────────────────────────
 
 def fetch_skills():
-    return supabase.table("skills").select("*").execute().data
+    with _cursor() as (_, cur):
+        cur.execute("SELECT * FROM skills")
+        return [dict(r) for r in cur.fetchall()]
 
 
 def insert_skill(data: dict):
-    return supabase.table("skills").insert(data).execute()
+    with _cursor() as (_, cur):
+        cur.execute(
+            "INSERT INTO skills (skill) VALUES (%(skill)s) RETURNING *",
+            data,
+        )
+        return dict(cur.fetchone())
 
 
 # ── Assignments ────────────────────────────────────────────────────────────────
 
 def fetch_assignments_by_scenario(scenario_id: str):
-    return supabase.table("assignments").select("*").eq("scenario_id", scenario_id).execute().data
+    with _cursor() as (_, cur):
+        cur.execute("SELECT * FROM assignments WHERE scenario_id = %s", (scenario_id,))
+        return [dict(r) for r in cur.fetchall()]
 
 
 def insert_assignment(data: dict):
-    return supabase.table("assignments").insert(data).execute()
+    with _cursor() as (_, cur):
+        cur.execute(
+            """
+            INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date)
+            VALUES (%(personnel_id)s, %(project_id)s, %(scenario_id)s, %(sequence)s, %(start_date)s, %(end_date)s)
+            RETURNING *
+            """,
+            data,
+        )
+        return dict(cur.fetchone())
 
 
 def delete_assignment(assignment_id: str):
-    return supabase.table("assignments").delete().eq("id", assignment_id).execute()
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM assignments WHERE id = %s", (assignment_id,))
 
 
 def copy_assignments_to_scenario(from_scenario_id: str, to_scenario_id: str):
-    source = supabase.table("assignments").select("*").eq("scenario_id", from_scenario_id).execute().data
-    if not source:
-        return
-    new_rows = [
-        {k: v for k, v in row.items() if k not in ("id", "created_at", "scenario_id")} | {"scenario_id": to_scenario_id}
-        for row in source
-    ]
-    return supabase.table("assignments").insert(new_rows).execute()
+    with _cursor() as (_, cur):
+        cur.execute(
+            """
+            INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date)
+            SELECT personnel_id, project_id, %s, sequence, start_date, end_date
+            FROM assignments
+            WHERE scenario_id = %s
+            """,
+            (to_scenario_id, from_scenario_id),
+        )
 
 
 # ── Scenarios ──────────────────────────────────────────────────────────────────
 
 def fetch_scenarios():
-    return supabase.table("scenarios").select("*").is_("archived_at", "null").order("created_at").execute().data
+    with _cursor() as (_, cur):
+        cur.execute(
+            "SELECT * FROM scenarios WHERE archived_at IS NULL ORDER BY created_at"
+        )
+        return [dict(r) for r in cur.fetchall()]
 
 
 def fetch_master_scenario():
-    results = supabase.table("scenarios").select("*").eq("status", "master").is_("archived_at", "null").execute().data
-    return results[0] if results else None
+    with _cursor() as (_, cur):
+        cur.execute(
+            "SELECT * FROM scenarios WHERE status = 'master' AND archived_at IS NULL LIMIT 1"
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
 
 
 def fetch_active_drafts():
-    return supabase.table("scenarios").select("*").eq("status", "draft").is_("archived_at", "null").execute().data
+    with _cursor() as (_, cur):
+        cur.execute(
+            "SELECT * FROM scenarios WHERE status = 'draft' AND archived_at IS NULL"
+        )
+        return [dict(r) for r in cur.fetchall()]
 
 
 def insert_scenario(data: dict):
-    return supabase.table("scenarios").insert(data).execute()
+    with _cursor() as (_, cur):
+        cols = ", ".join(data.keys())
+        placeholders = ", ".join(f"%({k})s" for k in data.keys())
+        cur.execute(
+            f"INSERT INTO scenarios ({cols}) VALUES ({placeholders}) RETURNING *",
+            data,
+        )
+        return dict(cur.fetchone())
 
 
 def update_scenario(scenario_id: str, data: dict):
-    return supabase.table("scenarios").update(data).eq("id", scenario_id).execute()
+    with _cursor() as (_, cur):
+        set_clause = ", ".join(f"{k} = %({k})s" for k in data.keys())
+        cur.execute(
+            f"UPDATE scenarios SET {set_clause} WHERE id = %(id)s",
+            {**data, "id": scenario_id},
+        )
