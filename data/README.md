@@ -6,16 +6,16 @@ This project originally used CSV files as its data store:
 
 | File | Description |
 |---|---|
-| `mechanics.csv` | Mechanics with skills, availability status, and available date |
+| `personnel.csv` | Personnel with skills, availability status, and available date |
 | `projects.csv` | Projects with required skills, dates, duration, and status |
 | `skills.csv` | Master list of skills |
-| `assignments.csv` | Mechanic-to-project assignments with sequences and date ranges |
+| `assignments.csv` | Personnel-to-project assignments with sequences and date ranges |
 
 The CSVs used simple integer IDs. We migrated to **Supabase** (Postgres) with UUID primary keys and SCD2 history tables for auditing. The CSVs are kept here as a reference.
 
 The migration was performed via `migrate_to_supabase.py` (in this directory), which:
 1. Inserted projects from CSV, capturing old integer ID → new UUID mappings
-2. Fetched mechanics already in Supabase, mapping them by name
+2. Fetched personnel already in Supabase, mapping them by name
 3. Inserted assignments using the resolved UUIDs
 
 ---
@@ -24,10 +24,10 @@ The migration was performed via `migrate_to_supabase.py` (in this directory), wh
 
 Run the following SQL in order in the Supabase SQL Editor.
 
-### 1. Mechanics
+### 1. Personnel
 
 ```sql
-CREATE TABLE mechanics (
+CREATE TABLE personnel (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     skills TEXT NOT NULL,
@@ -37,11 +37,11 @@ CREATE TABLE mechanics (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE mechanics DISABLE ROW LEVEL SECURITY;
+ALTER TABLE personnel DISABLE ROW LEVEL SECURITY;
 
-CREATE TABLE mechanics_history (
+CREATE TABLE personnel_history (
     hid BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    mechanic_id UUID NOT NULL,
+    personnel_id UUID NOT NULL,
     name TEXT,
     skills TEXT,
     availability_status TEXT,
@@ -51,39 +51,39 @@ CREATE TABLE mechanics_history (
     is_current BOOLEAN DEFAULT TRUE
 );
 
-ALTER TABLE mechanics_history DISABLE ROW LEVEL SECURITY;
+ALTER TABLE personnel_history DISABLE ROW LEVEL SECURITY;
 
-CREATE OR REPLACE FUNCTION update_mechanics_modtime()
+CREATE OR REPLACE FUNCTION update_personnel_modtime()
 RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tr_mechanics_modtime
-    BEFORE UPDATE ON mechanics FOR EACH ROW
-    EXECUTE PROCEDURE update_mechanics_modtime();
+CREATE TRIGGER tr_personnel_modtime
+    BEFORE UPDATE ON personnel FOR EACH ROW
+    EXECUTE PROCEDURE update_personnel_modtime();
 
-CREATE OR REPLACE FUNCTION handle_mechanics_scd2()
+CREATE OR REPLACE FUNCTION handle_personnel_scd2()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'UPDATE') THEN
-        UPDATE mechanics_history SET valid_to = NEW.updated_at, is_current = FALSE
-        WHERE mechanic_id = OLD.id AND is_current = TRUE;
-        INSERT INTO mechanics_history (mechanic_id, name, skills, availability_status, available_date, valid_from, is_current)
+        UPDATE personnel_history SET valid_to = NEW.updated_at, is_current = FALSE
+        WHERE personnel_id = OLD.id AND is_current = TRUE;
+        INSERT INTO personnel_history (personnel_id, name, skills, availability_status, available_date, valid_from, is_current)
         VALUES (NEW.id, NEW.name, NEW.skills, NEW.availability_status, NEW.available_date, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO mechanics_history (mechanic_id, name, skills, availability_status, available_date, valid_from, is_current)
+        INSERT INTO personnel_history (personnel_id, name, skills, availability_status, available_date, valid_from, is_current)
         VALUES (NEW.id, NEW.name, NEW.skills, NEW.availability_status, NEW.available_date, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
-        UPDATE mechanics_history SET valid_to = NOW(), is_current = FALSE
-        WHERE mechanic_id = OLD.id AND is_current = TRUE;
+        UPDATE personnel_history SET valid_to = NOW(), is_current = FALSE
+        WHERE personnel_id = OLD.id AND is_current = TRUE;
     END IF;
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tr_mechanics_scd2
-    AFTER INSERT OR UPDATE OR DELETE ON mechanics FOR EACH ROW
-    EXECUTE PROCEDURE handle_mechanics_scd2();
+CREATE TRIGGER tr_personnel_scd2
+    AFTER INSERT OR UPDATE OR DELETE ON personnel FOR EACH ROW
+    EXECUTE PROCEDURE handle_personnel_scd2();
 ```
 
 ---
@@ -216,12 +216,12 @@ CREATE TRIGGER tr_skills_scd2
 
 ### 4. Assignments
 
-Must be created after mechanics and projects (foreign key dependencies).
+Must be created after personnel and projects (foreign key dependencies).
 
 ```sql
 CREATE TABLE assignments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    mechanic_id UUID NOT NULL REFERENCES mechanics(id),
+    personnel_id UUID NOT NULL REFERENCES personnel(id),
     project_id UUID NOT NULL REFERENCES projects(id),
     sequence INTEGER NOT NULL,
     start_date DATE NOT NULL,
@@ -242,4 +242,4 @@ After creating the tables, re-seed from the CSVs using the migration script in t
 python data/migrate_to_supabase.py
 ```
 
-Note: the script expects mechanics and skills to already be in Supabase (insert those manually or extend the script), then handles projects and assignments automatically.
+Note: the script expects personnel and skills to already be in Supabase (insert those manually or extend the script), then handles projects and assignments automatically.

@@ -4,11 +4,11 @@ from pydantic import BaseModel
 import anthropic
 
 from database import (
-    fetch_mechanics,
+    fetch_personnel,
     fetch_projects,
     fetch_skills,
     fetch_assignments,
-    insert_mechanic,
+    insert_personnel,
     insert_project,
     insert_skill,
     insert_assignment,
@@ -20,7 +20,7 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
-class MechanicCreate(BaseModel):
+class PersonnelCreate(BaseModel):
     name: str
     skills: str
     availability_status: str
@@ -41,7 +41,7 @@ class SkillCreate(BaseModel):
 
 
 class AssignmentCreate(BaseModel):
-    mechanic_id: str
+    personnel_id: str
     project_id: str
     sequence: int
     start_date: str
@@ -52,9 +52,9 @@ class ChatRequest(BaseModel):
     messages: list[dict]  # [{role: str, content: str}]
 
 
-@router.get("/api/mechanics")
-async def get_mechanics():
-    return fetch_mechanics()
+@router.get("/api/personnel")
+async def get_personnel():
+    return fetch_personnel()
 
 
 @router.get("/api/projects")
@@ -72,12 +72,12 @@ async def get_assignments():
     return fetch_assignments()
 
 
-@router.post("/api/mechanics")
-async def create_mechanic(mechanic: MechanicCreate):
-    response = insert_mechanic(mechanic.model_dump())
-    print("INSERT mechanics response:", response)
+@router.post("/api/personnel")
+async def create_personnel(personnel: PersonnelCreate):
+    response = insert_personnel(personnel.model_dump())
+    print("INSERT personnel response:", response)
     if not response.data:
-        raise HTTPException(status_code=500, detail="Failed to create mechanic")
+        raise HTTPException(status_code=500, detail="Failed to create personnel")
     return response.data[0]
 
 
@@ -111,11 +111,11 @@ async def create_assignment(assignment: AssignmentCreate):
 @router.post("/api/chat")
 async def chat(request: ChatRequest):
     projects = fetch_projects()
-    mechanics = fetch_mechanics()
+    personnel = fetch_personnel()
     assignments = fetch_assignments()
 
     projects_by_id = {p['id']: p for p in projects}
-    mechanics_by_id = {m['id']: m for m in mechanics}
+    personnel_by_id = {p['id']: p for p in personnel}
 
     projects_text = "\n".join([
         f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], {p['num_elevators']} elevators, "
@@ -123,13 +123,13 @@ async def chat(request: ChatRequest):
         for p in projects
     ])
 
-    mechanics_text = "\n".join([
-        f"- {m['name']} (id:{m['id']}): skills [{m['skills']}], status: {m['availability_status']}, available: {m['available_date']}"
-        for m in mechanics
+    personnel_text = "\n".join([
+        f"- {p['name']} (id:{p['id']}): skills [{p['skills']}], status: {p['availability_status']}, available: {p['available_date']}"
+        for p in personnel
     ])
 
     assignments_text = "\n".join([
-        f"- {mechanics_by_id.get(a['mechanic_id'], {}).get('name', a['mechanic_id'])} -> "
+        f"- {personnel_by_id.get(a['personnel_id'], {}).get('name', a['personnel_id'])} -> "
         f"{projects_by_id.get(a['project_id'], {}).get('name', a['project_id'])}: "
         f"sequence {a['sequence']}, {a['start_date']} to {a['end_date']}"
         for a in assignments
@@ -141,14 +141,14 @@ You have real-time access to the following data from the database:
 PROJECTS:
 {projects_text}
 
-MECHANICS:
-{mechanics_text}
+PERSONNEL:
+{personnel_text}
 
-ASSIGNMENTS (confirmed mechanic-to-project assignments):
+ASSIGNMENTS (confirmed personnel-to-project assignments):
 {assignments_text}
 
 Answer questions about projects, scheduling, resource allocation, and team assignments based on this data.
-When asked about a mechanic's next project, look up their assignments directly.
+When asked about a personnel member's next project, look up their assignments directly.
 Be concise and helpful. Today's date is 2026-03-08."""
 
     response = anthropic_client.messages.create(

@@ -18,8 +18,8 @@ async def overview():
     return FileResponse("index.html")
 
 
-@app.get("/mechanics")
-async def mechanics_page():
+@app.get("/personnel")
+async def personnel_page():
     return FileResponse("index.html")
 
 

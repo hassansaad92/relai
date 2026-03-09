@@ -154,8 +154,8 @@
         .card {
             background: #ffffff;
             border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
             border-left: 4px solid #f65275;
             border: 1px solid #f0f0f0;
             border-left: 4px solid #f65275;
@@ -183,11 +183,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .card-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #041e42;
         }
@@ -200,7 +200,8 @@
             text-transform: uppercase;
         }
 
-        .card-status.assigned {
+        .card-status.assigned,
+        .card-status.booked {
             background: #041e42;
             color: #ffffff;
         }
@@ -215,9 +216,14 @@
             color: #ffffff;
         }
 
+        .card-status.available {
+            background: #e8f0fe;
+            color: #2b69ac;
+        }
+
         .card-detail {
-            margin: 8px 0;
-            font-size: 14px;
+            margin: 4px 0;
+            font-size: 13px;
             color: #333;
         }
 
@@ -230,19 +236,26 @@
             display: inline-block;
             background: #041e42;
             color: #ffffff;
-            padding: 4px 10px;
+            padding: 2px 8px;
             border-radius: 4px;
-            margin-right: 6px;
-            margin-top: 4px;
-            font-size: 12px;
+            margin-right: 4px;
+            margin-top: 2px;
+            font-size: 11px;
             font-weight: 500;
         }
 
-        .t-minus {
-            font-size: 20px;
-            font-weight: 700;
-            color: #f65275;
-            margin-top: 8px;
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .card-meta {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            margin-left: 12px;
         }
 
         .available-date {
@@ -634,7 +647,7 @@
     <div class="sidebar">
         <div class="sidebar-title">Scheduling</div>
         <div class="nav-item" data-view="overview">Overview</div>
-        <div class="nav-item" data-view="mechanics">Mechanics</div>
+        <div class="nav-item" data-view="personnel">Personnel</div>
         <div class="nav-item" data-view="projects">Projects</div>
         <div class="nav-item" data-view="skills">Skills</div>
     </div>
@@ -666,7 +679,7 @@
                     </div>
                     <div class="chat-messages" id="chatMessages">
                         <div class="chat-msg assistant">
-                            <div class="chat-bubble">Hi! I can answer questions about your projects, mechanics, and scheduling. What would you like to know?</div>
+                            <div class="chat-bubble">Hi! I can answer questions about your projects, personnel, and scheduling. What would you like to know?</div>
                         </div>
                     </div>
                     <div class="chat-input-area">
@@ -677,11 +690,11 @@
             </div>
         </div>
 
-        <!-- Mechanics View -->
-        <div id="mechanics" class="view">
+        <!-- Personnel View -->
+        <div id="personnel" class="view">
             <div class="section">
-                <h2>All Mechanics <button class="header-add-button" onclick="openMechanicModal()">+ Add Mechanic</button></h2>
-                <div id="mechanicsListContainer"></div>
+                <h2>All Personnel <button class="header-add-button" onclick="openPersonnelModal()">+ Add Personnel</button></h2>
+                <div id="personnelListContainer"></div>
             </div>
         </div>
 
@@ -703,14 +716,14 @@
 
     </div>
 
-    <!-- Mechanic Modal -->
-    <div id="mechanicModal" class="modal-overlay">
+    <!-- Personnel Modal -->
+    <div id="personnelModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>Add Mechanic</h3>
-                <button class="close-button" onclick="closeMechanicModal()">&times;</button>
+                <h3>Add Personnel</h3>
+                <button class="close-button" onclick="closePersonnelModal()">&times;</button>
             </div>
-            <form id="mechanicForm" onsubmit="submitMechanic(event)">
+            <form id="personnelForm" onsubmit="submitPersonnel(event)">
                 <div class="form-group">
                     <label>Name *</label>
                     <input type="text" name="name" required>
@@ -734,7 +747,7 @@
                     <input type="date" name="available_date" required>
                 </div>
 
-                <button type="submit" class="submit-button">Add Mechanic</button>
+                <button type="submit" class="submit-button">Add Personnel</button>
             </form>
         </div>
     </div>
@@ -860,48 +873,68 @@
             }
         }
 
-        // Load data
-        let allMechanics = [];
+        // Data store
+        let allPersonnel = [];
         let allProjects = [];
         let allSkills = [];
         let allAssignments = [];
+        let currentView = 'overview';
 
-        async function loadData() {
-            try {
-                const [mechanicsResponse, projectsResponse, skillsResponse, assignmentsResponse] = await Promise.all([
-                    fetch('/api/mechanics'),
-                    fetch('/api/projects'),
-                    fetch('/api/skills'),
-                    fetch('/api/assignments')
-                ]);
-
-                allMechanics = await mechanicsResponse.json();
-                allProjects = await projectsResponse.json();
-                allSkills = await skillsResponse.json();
-                allAssignments = await assignmentsResponse.json();
-
-                renderMechanicsList(allMechanics);
-                renderProjectsList(allProjects);
-                renderSkillsList(allSkills);
-                populateSkillsDropdown();
-                populateMechanicSkillTiles();
-                renderGantt(allAssignments, allMechanics, allProjects);
-            } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('mechanicsContainer').innerHTML =
-                    '<p style="color: red;">Error loading data. Make sure the FastAPI server is running (uvicorn main:app --reload)</p>';
-            }
+        async function loadOverviewData() {
+            const [assignmentsRes, personnelRes, projectsRes] = await Promise.all([
+                fetch('/api/assignments'),
+                fetch('/api/personnel'),
+                fetch('/api/projects')
+            ]);
+            allAssignments = await assignmentsRes.json();
+            allPersonnel = await personnelRes.json();
+            allProjects = await projectsRes.json();
+            renderGantt(allAssignments, allPersonnel, allProjects);
         }
 
-        // Refresh data
+        async function loadPersonnelData() {
+            const [personnelRes, skillsRes] = await Promise.all([
+                fetch('/api/personnel'),
+                fetch('/api/skills')
+            ]);
+            allPersonnel = await personnelRes.json();
+            allSkills = await skillsRes.json();
+            renderPersonnelList(allPersonnel);
+            populatePersonnelSkillTiles();
+        }
+
+        async function loadProjectsData() {
+            const [projectsRes, skillsRes] = await Promise.all([
+                fetch('/api/projects'),
+                fetch('/api/skills')
+            ]);
+            allProjects = await projectsRes.json();
+            allSkills = await skillsRes.json();
+            renderProjectsList(allProjects);
+            populateSkillsDropdown();
+        }
+
+        async function loadSkillsData() {
+            const res = await fetch('/api/skills');
+            allSkills = await res.json();
+            renderSkillsList(allSkills);
+        }
+
+        const viewLoaders = {
+            overview: loadOverviewData,
+            personnel: loadPersonnelData,
+            projects: loadProjectsData,
+            skills: loadSkillsData,
+        };
+
+        // Refresh data (current view only)
         async function refreshData() {
             const button = document.getElementById('refreshButton');
             button.classList.add('loading');
             button.disabled = true;
 
             try {
-                await loadData();
-                console.log('Data refreshed successfully');
+                await viewLoaders[currentView]();
             } catch (error) {
                 console.error('Error refreshing data:', error);
                 alert('Failed to refresh data. Please check your connection.');
@@ -919,27 +952,25 @@
             ).join('');
         }
 
-        // Render mechanics list (full page)
-        function renderMechanicsList(mechanics) {
-            const container = document.getElementById('mechanicsListContainer');
-            const sorted = [...mechanics].sort((a, b) => a.name.localeCompare(b.name));
-            container.innerHTML = sorted.map(mechanic => `
-                <div class="card ${mechanic.availability_status}">
+        // Render personnel list (full page)
+        function renderPersonnelList(personnel) {
+            const container = document.getElementById('personnelListContainer');
+            const sorted = [...personnel].sort((a, b) => a.name.localeCompare(b.name));
+            container.innerHTML = sorted.map(personnel => `
+                <div class="card ${personnel.availability_status}">
                     <div class="card-header">
-                        <div class="card-title">${mechanic.name}</div>
-                        <div class="card-status ${mechanic.availability_status}">${mechanic.availability_status}</div>
+                        <div class="card-title">${personnel.name}</div>
+                        <div class="card-status ${personnel.availability_status}">${personnel.availability_status}</div>
                     </div>
                     <div class="card-detail">
                         <strong>Skills:</strong>
-                        <div>
-                            ${mechanic.skills.split(',').map(skill =>
-                                `<span class="skills-tag">${skill.trim()}</span>`
-                            ).join('')}
-                        </div>
+                        ${personnel.skills.split(',').map(skill =>
+                            `<span class="skills-tag">${skill.trim()}</span>`
+                        ).join('')}
                     </div>
                     <div class="card-detail">
                         <strong>Available:</strong>
-                        <span class="available-date">${new Date(mechanic.available_date + 'T00:00:00').toLocaleDateString('en-US')}</span>
+                        <span class="available-date">${new Date(personnel.available_date + 'T00:00:00').toLocaleDateString('en-US')}</span>
                     </div>
                 </div>
             `).join('');
@@ -950,29 +981,22 @@
             const container = document.getElementById('projectsListContainer');
             const sorted = [...projects].sort((a, b) => a.name.localeCompare(b.name));
             container.innerHTML = sorted.map(project => `
-                <div class="card ${project.status}">
+                <div class="card ${project.status.toLowerCase()}">
                     <div class="card-header">
                         <div class="card-title">${project.name}</div>
-                        <div class="card-status ${project.status}">${project.status.replace('-', ' ')}</div>
+                        <div class="card-status ${project.status.toLowerCase()}">${project.status.replace('-', ' ')}</div>
                     </div>
-                    <div class="card-detail">
-                        <strong>Required Skills:</strong>
-                        <div>
+                    <div class="card-row">
+                        <div class="card-detail">
+                            <strong>Skills:</strong>
                             ${project.required_skills.split(',').map(skill =>
                                 `<span class="skills-tag">${skill.trim()}</span>`
                             ).join('')}
                         </div>
+                        <div class="card-meta">
+                            ${project.num_elevators} elevs &middot; ${new Date(project.start_date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})} &middot; ${project.duration_weeks}w
+                        </div>
                     </div>
-                    <div class="card-detail">
-                        <strong>Elevators:</strong> <span class="duration">${project.num_elevators}</span>
-                    </div>
-                    <div class="card-detail">
-                        <strong>Start Date:</strong> ${new Date(project.start_date + 'T00:00:00').toLocaleDateString('en-US')}
-                    </div>
-                    <div class="card-detail">
-                        <strong>Duration:</strong> <span class="duration">${project.duration_weeks} weeks</span>
-                    </div>
-                    <div class="t-minus">${calculateTMinus(project.start_date)}</div>
                 </div>
             `).join('');
         }
@@ -988,9 +1012,9 @@
             `).join('');
         }
 
-        // Populate mechanic skill tiles dynamically from allSkills
-        function populateMechanicSkillTiles() {
-            const container = document.querySelector('#mechanicModal .skill-tiles');
+        // Populate personnel skill tiles dynamically from allSkills
+        function populatePersonnelSkillTiles() {
+            const container = document.querySelector('#personnelModal .skill-tiles');
             const sorted = [...allSkills].sort((a, b) => a.skill.localeCompare(b.skill));
             container.innerHTML = sorted.map(s => {
                 const id = 'mech-' + s.skill.toLowerCase().replace(/\s+/g, '-');
@@ -1003,14 +1027,14 @@
         }
 
         // Render Gantt chart with Plotly
-        function renderGantt(assignments, mechanics, projects) {
-            const mechanicsById = Object.fromEntries(mechanics.map(m => [m.id, m]));
+        function renderGantt(assignments, personnel, projects) {
+            const personnelById = Object.fromEntries(personnel.map(m => [m.id, m]));
             const projectsById = Object.fromEntries(projects.map(p => [p.id, p]));
 
             const traces = assignments.map((a) => {
-                const mechanic = mechanicsById[a.mechanic_id];
+                const member = personnelById[a.personnel_id];
                 const project = projectsById[a.project_id];
-                const label = mechanic ? mechanic.name : 'Unknown';
+                const label = member ? member.name : 'Unknown';
                 const projectName = project ? project.name : 'Unknown';
                 const isCurrent = a.sequence === '1';
                 const barColor = isCurrent ? '#041e42' : '#6b9fd4';
@@ -1034,7 +1058,7 @@
                         color: barColor,
                         line: { width: 1, color: '#ffffff' }
                     },
-                    showlegend: true,
+                    showlegend: false,
                 };
             });
 
@@ -1055,15 +1079,8 @@
                 },
                 bargap: 0.4,
                 height: Math.max(300, assignments.length * 60 + 120),
-                margin: { l: 140, r: 40, t: 20, b: 60 },
+                margin: { l: 140, r: 40, t: 20, b: 40 },
                 font: { family: 'Montserrat, sans-serif' },
-                legend: {
-                    orientation: 'h',
-                    y: -0.15,
-                    x: 0.5,
-                    xanchor: 'center',
-                    font: { size: 12 },
-                },
                 plot_bgcolor: '#ffffff',
                 paper_bgcolor: '#ffffff',
                 shapes: [{
@@ -1071,7 +1088,7 @@
                     x0: currentDate.toISOString().split('T')[0],
                     x1: currentDate.toISOString().split('T')[0],
                     y0: -0.5,
-                    y1: mechanics.length - 0.5,
+                    y1: personnel.length - 0.5,
                     line: { color: '#000000', width: 1, dash: 'dash' },
                 }],
             };
@@ -1108,11 +1125,15 @@
             // Update page title
             const titles = {
                 'overview': 'Overview',
-                'mechanics': 'Mechanics',
+                'personnel': 'Personnel',
                 'projects': 'Projects',
                 'skills': 'Skills',
             };
             document.getElementById('pageTitle').textContent = titles[viewName];
+
+            // Load data for the new view
+            currentView = viewName;
+            viewLoaders[viewName]().catch(err => console.error('Error loading data:', err));
 
             // Plotly needs a resize when the overview becomes visible
             if (viewName === 'overview') {
@@ -1139,7 +1160,7 @@
         function getViewFromURL() {
             const path = window.location.pathname;
             if (path === '/' || path === '/overview') return 'overview';
-            if (path === '/mechanics') return 'mechanics';
+            if (path === '/personnel') return 'personnel';
             if (path === '/projects') return 'projects';
             if (path === '/skills') return 'skills';
             return 'overview'; // default
@@ -1190,24 +1211,23 @@
                 });
                 if (!response.ok) throw new Error(await response.text());
                 closeSkillModal();
-                await loadData();
+                await loadSkillsData();
             } catch (err) {
                 alert('Failed to add skill: ' + err.message);
             }
         }
 
         // Initialize app
-        loadData();
         initNavigation();
 
         // Modal functions
-        function openMechanicModal() {
-            document.getElementById('mechanicModal').classList.add('active');
+        function openPersonnelModal() {
+            document.getElementById('personnelModal').classList.add('active');
         }
 
-        function closeMechanicModal() {
-            document.getElementById('mechanicModal').classList.remove('active');
-            document.getElementById('mechanicForm').reset();
+        function closePersonnelModal() {
+            document.getElementById('personnelModal').classList.remove('active');
+            document.getElementById('personnelForm').reset();
         }
 
         function openProjectModal() {
@@ -1220,20 +1240,20 @@
         }
 
         // Close modals on outside click
-        document.getElementById('mechanicModal').addEventListener('click', function(e) {
-            if (e.target === this) closeMechanicModal();
+        document.getElementById('personnelModal').addEventListener('click', function(e) {
+            if (e.target === this) closePersonnelModal();
         });
 
         document.getElementById('projectModal').addEventListener('click', function(e) {
             if (e.target === this) closeProjectModal();
         });
 
-        // Submit mechanic form
-        async function submitMechanic(event) {
+        // Submit personnel form
+        async function submitPersonnel(event) {
             event.preventDefault();
             const formData = new FormData(event.target);
 
-            const mechanic = {
+            const personnel = {
                 name: formData.get('name'),
                 skills: formData.getAll('skills').join(','),
                 availability_status: formData.get('availability_status'),
@@ -1241,16 +1261,16 @@
             };
 
             try {
-                const response = await fetch('/api/mechanics', {
+                const response = await fetch('/api/personnel', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(mechanic)
+                    body: JSON.stringify(personnel)
                 });
                 if (!response.ok) throw new Error(await response.text());
-                closeMechanicModal();
-                await loadData();
+                closePersonnelModal();
+                await loadPersonnelData();
             } catch (err) {
-                alert('Failed to add mechanic: ' + err.message);
+                alert('Failed to add personnel: ' + err.message);
             }
         }
 
@@ -1351,7 +1371,7 @@
                 });
                 if (!response.ok) throw new Error(await response.text());
                 closeProjectModal();
-                await loadData();
+                await loadProjectsData();
             } catch (err) {
                 alert('Failed to add project: ' + err.message);
             }

@@ -11,8 +11,8 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-def fetch_mechanics():
-    return supabase.table("mechanics").select("*").execute().data
+def fetch_personnel():
+    return supabase.table("personnel").select("*").execute().data
 
 
 def fetch_projects():
@@ -27,8 +27,8 @@ def fetch_assignments():
     return supabase.table("assignments").select("*").execute().data
 
 
-def insert_mechanic(data: dict):
-    return supabase.table("mechanics").insert(data).execute()
+def insert_personnel(data: dict):
+    return supabase.table("personnel").insert(data).execute()
 
 
 def insert_project(data: dict):
