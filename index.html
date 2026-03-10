@@ -32,6 +32,11 @@
             top: 0;
             display: flex;
             flex-direction: column;
+            transition: width 0.25s ease;
+        }
+
+        .sidebar.collapsed {
+            width: 56px;
         }
 
         .sidebar-title {
@@ -41,6 +46,59 @@
             padding: 0 20px 20px 20px;
             border-bottom: 2px solid #f65275;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            flex-shrink: 0;
+            transition: opacity 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            opacity: 0.7;
+        }
+
+        .sidebar.collapsed .sidebar-title-text,
+        .sidebar.collapsed .nav-label {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-title {
+            padding: 0 0 20px 0;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .nav-item {
+            padding: 16px 0;
+            text-align: center;
+            border-left: none;
+        }
+
+        .sidebar.collapsed .scenario-indicator {
+            padding: 14px 0;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .scenario-indicator span:not(.scenario-dot) {
+            display: none;
+        }
+
+        body.sidebar-collapsed .main-content {
+            margin-left: 56px;
+        }
+
+        body.sidebar-collapsed .scenario-panel {
+            left: 56px;
+            width: 220px;
         }
 
         .nav-item {
@@ -67,6 +125,7 @@
             margin-left: 250px;
             flex: 1;
             padding: 20px;
+            transition: margin-left 0.25s ease;
         }
 
         .view {
@@ -500,19 +559,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Overview two-column layout */
-        .overview-layout {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
-
-        .overview-gantt {
-            flex: 1;
-            min-width: 0;
-        }
-
-        /* Chatbot panel */
+        /* Chatbot panel (in assignments tab) */
         .chatbot-panel {
             width: 340px;
             flex-shrink: 0;
@@ -522,7 +569,8 @@
             border: 1px solid #f0f0f0;
             display: flex;
             flex-direction: column;
-            height: 600px;
+            height: auto;
+            max-height: calc(100vh - 130px);
         }
 
         .chat-header {
@@ -1090,13 +1138,16 @@
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-title">Scheduling</div>
-        <div class="nav-item" data-view="overview">Overview</div>
-        <div class="nav-item" data-view="schedule">Schedule</div>
-        <div class="nav-item" data-view="personnel">Personnel</div>
-        <div class="nav-item" data-view="projects">Projects</div>
-        <div class="nav-item" data-view="skills">Skills</div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-title">
+            <span class="sidebar-title-text">Scheduling</span>
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+        </div>
+        <div class="nav-item" data-view="overview"><span class="nav-label">Overview</span></div>
+        <div class="nav-item" data-view="assignments"><span class="nav-label">Assignments</span></div>
+        <div class="nav-item" data-view="personnel"><span class="nav-label">Personnel</span></div>
+        <div class="nav-item" data-view="projects"><span class="nav-label">Projects</span></div>
+        <div class="nav-item" data-view="skills"><span class="nav-label">Skills</span></div>
         <div class="scenario-indicator" id="scenarioIndicator" onclick="toggleScenarioPanel()">
             <span class="scenario-dot master" id="scenarioDot"></span>
             <span id="scenarioIndicatorName">Loading...</span>
@@ -1128,29 +1179,11 @@
             </div>
         </div>
 
-        <!-- Overview View (Gantt + Chatbot) -->
+        <!-- Overview View (Gantt full width) -->
         <div id="overview" class="view active">
-            <div class="overview-layout">
-                <div class="section overview-gantt">
-                    <h2>Assignment Timeline</h2>
-                    <div id="ganttChart" style="width: 100%; min-height: 400px;"></div>
-                </div>
-
-                <div class="chatbot-panel">
-                    <div class="chat-header">
-                        <span class="chat-status-dot"></span>
-                        AI Assistant
-                    </div>
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="chat-msg assistant">
-                            <div class="chat-bubble">Hi! I can answer questions about your projects, personnel, and scheduling. What would you like to know?</div>
-                        </div>
-                    </div>
-                    <div class="chat-input-area">
-                        <input type="text" id="chatInput" class="chat-input" placeholder="Ask about projects...">
-                        <button id="chatSendBtn" class="chat-send-btn" onclick="sendChatMessage()">Send</button>
-                    </div>
-                </div>
+            <div class="section">
+                <h2>Assignment Timeline</h2>
+                <div id="ganttChart" style="width: 100%; min-height: 400px;"></div>
             </div>
             <div class="section" style="margin-top: 24px;">
                 <h2>Assignments</h2>
@@ -1174,14 +1207,29 @@
             </div>
         </div>
 
-        <!-- Schedule View -->
-        <div id="schedule" class="view">
+        <!-- Assignments View -->
+        <div id="assignments" class="view">
             <div class="schedule-layout">
                 <div class="schedule-projects-panel">
                     <div id="scheduleProjectsList"></div>
                 </div>
                 <div class="schedule-assign-panel" id="scheduleAssignPanel">
                     <p class="schedule-placeholder">← Select a project to manage assignments</p>
+                </div>
+                <div class="chatbot-panel">
+                    <div class="chat-header">
+                        <span class="chat-status-dot"></span>
+                        AI Assistant
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-msg assistant">
+                            <div class="chat-bubble">Hi! I can answer questions about your projects, personnel, and scheduling. What would you like to know?</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" class="chat-input" placeholder="Ask about projects...">
+                        <button id="chatSendBtn" class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1399,7 +1447,7 @@
             populateSkillsDropdown();
         }
 
-        async function loadScheduleData() {
+        async function loadAssignmentsData() {
             const [projectsRes, personnelRes, assignmentsRes] = await Promise.all([
                 fetch('/api/projects'),
                 fetch('/api/personnel'),
@@ -1420,7 +1468,7 @@
 
         const viewLoaders = {
             overview: loadOverviewData,
-            schedule: loadScheduleData,
+            assignments: loadAssignmentsData,
             personnel: loadPersonnelData,
             projects: loadProjectsData,
             skills: loadSkillsData,
@@ -1624,7 +1672,7 @@
             // Update page title
             const titles = {
                 'overview': 'Overview',
-                'schedule': 'Schedule',
+                'assignments': 'Assignments',
                 'personnel': 'Personnel',
                 'projects': 'Projects',
                 'skills': 'Skills',
@@ -1662,7 +1710,7 @@
             if (path === '/' || path === '/overview') return 'overview';
             if (path === '/personnel') return 'personnel';
             if (path === '/projects') return 'projects';
-            if (path === '/schedule') return 'schedule';
+            if (path === '/assignments' || path === '/schedule') return 'assignments';
             if (path === '/skills') return 'skills';
             return 'overview'; // default
         }
@@ -1820,6 +1868,18 @@
             }
         }
 
+        // Toggle sidebar collapse
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            document.body.classList.toggle('sidebar-collapsed');
+            // Resize Plotly chart after sidebar transition
+            setTimeout(() => {
+                const gantt = document.getElementById('ganttChart');
+                if (gantt && gantt.data) Plotly.Plots.resize('ganttChart');
+            }, 300);
+        }
+
         // Initialize app
         async function init() {
             await loadScenarios();
@@ -1960,39 +2020,45 @@
         function renderAssignmentsList() {
             const container = document.getElementById('assignmentsTableContainer');
             if (!container) return;
-            if (!allAssignments.length) {
-                container.innerHTML = '<p class="no-assignments-msg">No assignments yet.</p>';
-                return;
-            }
             const personnelById = Object.fromEntries(allPersonnel.map(p => [p.id, p]));
             const projectsById = Object.fromEntries(allProjects.map(p => [p.id, p]));
-            const sorted = [...allAssignments].sort((a, b) => {
-                const pa = personnelById[a.personnel_id]?.name || '';
-                const pb = personnelById[b.personnel_id]?.name || '';
-                return pa.localeCompare(pb) || a.sequence - b.sequence;
+            const today = currentDate.toISOString().split('T')[0];
+            const fmtDate = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+
+            const rows = [...allPersonnel].sort((a, b) => a.name.localeCompare(b.name)).map(person => {
+                const personAssignments = allAssignments.filter(a => a.personnel_id === person.id);
+                const current = personAssignments.find(a => a.start_date <= today && a.end_date >= today);
+                const upcoming = personAssignments
+                    .filter(a => a.start_date > today)
+                    .sort((a, b) => a.start_date.localeCompare(b.start_date));
+                const next = upcoming.length > 0 ? upcoming[0] : null;
+
+                const currentProject = current ? (projectsById[current.project_id]?.name || 'Unknown') : '-';
+                const currentDates = current ? `${fmtDate(current.start_date)} – ${fmtDate(current.end_date)}` : '-';
+                const nextProject = next ? (projectsById[next.project_id]?.name || 'Unknown') : '-';
+                const nextStarts = next ? fmtDate(next.start_date) : '-';
+
+                return `<tr>
+                    <td>${person.name}</td>
+                    <td>${currentProject}</td>
+                    <td>${currentDates}</td>
+                    <td>${nextProject}</td>
+                    <td>${nextStarts}</td>
+                </tr>`;
             });
+
             container.innerHTML = `
                 <table class="assignments-table">
                     <thead>
                         <tr>
                             <th>Personnel</th>
-                            <th>Project</th>
-                            <th>Seq</th>
-                            <th>Start</th>
-                            <th>End</th>
+                            <th>Current Project</th>
+                            <th>Dates</th>
+                            <th>Next Project</th>
+                            <th>Starts</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${sorted.map(a => `
-                            <tr>
-                                <td>${personnelById[a.personnel_id]?.name || a.personnel_id}</td>
-                                <td>${projectsById[a.project_id]?.name || a.project_id}</td>
-                                <td>${a.sequence}</td>
-                                <td>${new Date(a.start_date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</td>
-                                <td>${new Date(a.end_date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
+                    <tbody>${rows.join('')}</tbody>
                 </table>
             `;
         }
@@ -2048,7 +2114,7 @@
             const personnelById = Object.fromEntries(allPersonnel.map(p => [p.id, p]));
             const projectsById = Object.fromEntries(allProjects.map(p => [p.id, p]));
 
-            const free = [], busy = [];
+            const free = [];
             allPersonnel.forEach(person => {
                 if (assignedIds.has(person.id)) return;
                 const conflicts = allAssignments.filter(a =>
@@ -2057,12 +2123,10 @@
                     new Date(a.end_date) > projectStart
                 );
                 if (conflicts.length === 0) free.push(person);
-                else busy.push({ person, conflicts });
             });
             free.sort((a, b) => a.name.localeCompare(b.name));
-            busy.sort((a, b) => a.person.name.localeCompare(b.person.name));
 
-            const fmtShort = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            const fmtShort = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
 
             const assignedHTML = projectAssignments.length === 0
                 ? '<p class="no-assignments-msg">No one assigned yet.</p>'
@@ -2070,7 +2134,7 @@
                     const p = personnelById[a.personnel_id];
                     return `<div class="schedule-person-row">
                         <div class="schedule-person-name">${p?.name || a.personnel_id}</div>
-                        <div class="schedule-person-info">${fmtShort(a.start_date)} – ${fmtShort(a.end_date)}</div>
+                        <div class="schedule-person-info">Assignment: ${fmtShort(a.start_date)} – ${fmtShort(a.end_date)}</div>
                         <button class="schedule-remove-btn" onclick="scheduleRemove('${a.id}')">×</button>
                     </div>`;
                 }).join('');
@@ -2103,23 +2167,12 @@
             };
 
             const freeHTML = free.length === 0
-                ? '<p class="no-assignments-msg">Everyone is busy during this period.</p>'
+                ? '<p class="no-assignments-msg">No one available during this period.</p>'
                 : free.map(p => `<div class="schedule-person-row">
                     <div class="schedule-person-name">${p.name}</div>
-                    <div class="schedule-person-info">free</div>
+                    <div class="schedule-person-info">Available since ${fmtShort(p.available_date)}</div>
                     <button class="schedule-action-btn" onclick="scheduleShowAssignForm('${p.id}')">+ Assign</button>
                 </div>${assignFormPersonnelId === p.id ? makeAssignForm(p.id) : ''}`).join('');
-
-            const busyHTML = busy.length === 0 ? '' : `
-                <div class="schedule-section-label">Busy during this period</div>
-                ${busy.map(({person, conflicts}) => {
-                    const desc = conflicts.map(c => (projectsById[c.project_id]?.name || 'Unknown') + ' (' + fmtShort(c.start_date) + '–' + fmtShort(c.end_date) + ')').join(', ');
-                    return `<div class="schedule-person-row">
-                        <div class="schedule-person-name">${person.name}</div>
-                        <div class="schedule-person-info">${desc}</div>
-                        <button class="schedule-action-btn outline" onclick="scheduleShowAssignForm('${person.id}')">+ Assign</button>
-                    </div>${assignFormPersonnelId === person.id ? makeAssignForm(person.id) : ''}`;
-                }).join('')}`;
 
             panel.innerHTML = `
                 <div class="schedule-project-header">
@@ -2132,8 +2185,7 @@
                 <div class="schedule-section-label">Assigned</div>
                 ${assignedHTML}
                 <div class="schedule-section-label">Available</div>
-                ${freeHTML}
-                ${busyHTML}`;
+                ${freeHTML}`;
         }
 
         async function scheduleAssign(personnelId, startDate, endDate) {
