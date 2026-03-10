@@ -3,12 +3,24 @@ Reset and re-seed Supabase from CSVs (skills, personnel, projects, scenarios, as
 Deletes all existing data first, then reloads from CSV files.
 
 Run from repo root:
-    python data/reset_supabase_data.py
+    python data/reset_supabase_data.py --seed small   # default
+    python data/reset_supabase_data.py --seed large   # ~100 crew, ~200 projects
+                                                       # (run generate_large.py first)
 """
+import argparse
 import os
 import csv
 from pathlib import Path
 from supabase import create_client, Client
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--seed",
+    choices=["small", "large"],
+    default="small",
+    help="Which seed dataset to load (default: small)",
+)
+args = parser.parse_args()
 
 SUPABASE_URL = os.environ.get("SUPABASE_RELAI_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_RELAI_SECRET_KEY")
@@ -18,7 +30,15 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-DATA_DIR = Path(__file__).parent
+DATA_DIR = Path(__file__).parent / "seeds" / args.seed
+
+if not DATA_DIR.exists():
+    raise RuntimeError(
+        f"Seed directory not found: {DATA_DIR}\n"
+        "For the large seed, run: python data/seeds/generate_large.py"
+    )
+
+print(f"Using seed: {args.seed} ({DATA_DIR})\n")
 
 NULL_UUID = "00000000-0000-0000-0000-000000000000"
 
