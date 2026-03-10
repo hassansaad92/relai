@@ -74,7 +74,8 @@ CREATE TABLE projects (
     duration_weeks INTEGER NOT NULL,
     num_elevators INTEGER NOT NULL,
     required_skills TEXT NOT NULL,
-    status TEXT NOT NULL,
+    award_status TEXT NOT NULL DEFAULT 'awarded',
+    schedule_status TEXT NOT NULL DEFAULT 'not_scheduled',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -89,7 +90,8 @@ CREATE TABLE projects_history (
     duration_weeks INTEGER,
     num_elevators INTEGER,
     required_skills TEXT,
-    status TEXT,
+    award_status TEXT,
+    schedule_status TEXT,
     valid_from TIMESTAMPTZ NOT NULL,
     valid_to TIMESTAMPTZ,
     is_current BOOLEAN DEFAULT TRUE
@@ -112,11 +114,11 @@ BEGIN
     IF (TG_OP = 'UPDATE') THEN
         UPDATE projects_history SET valid_to = NEW.updated_at, is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
-        INSERT INTO projects_history (project_id, name, start_date, duration_weeks, num_elevators, required_skills, status, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.start_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.status, NEW.updated_at, TRUE);
+        INSERT INTO projects_history (project_id, name, start_date, duration_weeks, num_elevators, required_skills, award_status, schedule_status, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.start_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.schedule_status, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO projects_history (project_id, name, start_date, duration_weeks, num_elevators, required_skills, status, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.start_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.status, NEW.created_at, TRUE);
+        INSERT INTO projects_history (project_id, name, start_date, duration_weeks, num_elevators, required_skills, award_status, schedule_status, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.start_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.schedule_status, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
         UPDATE projects_history SET valid_to = NOW(), is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
@@ -201,10 +203,6 @@ CREATE TABLE scenarios (
 );
 
 ALTER TABLE scenarios DISABLE ROW LEVEL SECURITY;
-
--- Seed the initial master scenario
-INSERT INTO scenarios (name, status, promoted_to_master_at)
-VALUES ('Master Schedule', 'master', NOW());
 
 
 -- ── 5. Assignments ────────────────────────────────────────────────────────────

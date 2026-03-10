@@ -36,15 +36,15 @@ def delete_all(table, pk="id"):
 
 # ── 1. Delete all data (reverse FK order) ─────────────────────────────────────
 print("Clearing existing data...")
+# Clear history tables first to avoid SCD2 trigger issues during deletes
+for history_table in ("projects_history", "personnel_history", "skills_history"):
+    delete_all(history_table, pk="hid")
+
 delete_all("assignments")
 delete_all("scenarios")
 delete_all("projects")
 delete_all("personnel")
 delete_all("skills")
-
-# Clear history tables
-for history_table in ("projects_history", "personnel_history", "skills_history"):
-    delete_all(history_table, pk="hid")
 
 print()
 
@@ -97,7 +97,8 @@ for row in projects_csv:
         "duration_weeks": int(row["duration_weeks"]),
         "num_elevators": int(row["num_elevators"]),
         "required_skills": row["required_skills"],
-        "status": row["status"],
+        "award_status": row["award_status"],
+        "schedule_status": row["schedule_status"],
     }
     response = supabase.table("projects").insert(payload).execute()
     if not response.data:
