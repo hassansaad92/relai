@@ -1302,19 +1302,6 @@
                     <div class="skill-tiles"></div>
                 </div>
 
-                <div class="form-group">
-                    <label>Availability Status *</label>
-                    <select name="availability_status" required>
-                        <option value="assigned">Assigned</option>
-                        <option value="available">Available</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Available Date *</label>
-                    <input type="date" name="available_date" required>
-                </div>
-
                 <button type="submit" class="submit-button">Add Personnel</button>
             </form>
         </div>
@@ -1346,8 +1333,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Start Date *</label>
-                    <input type="date" name="start_date" required>
+                    <label>Requested Start Date *</label>
+                    <input type="date" name="requested_start_date" required>
                 </div>
 
                 <div class="form-group">
@@ -1360,14 +1347,6 @@
                     <select name="award_status" required>
                         <option value="awarded">Awarded</option>
                         <option value="prospect">Prospect</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Schedule Status *</label>
-                    <select name="schedule_status" required>
-                        <option value="scheduled">Scheduled</option>
-                        <option value="not_scheduled">Not Scheduled</option>
                     </select>
                 </div>
 
@@ -1462,9 +1441,9 @@
 
         async function loadOverviewData() {
             const [assignmentsRes, personnelRes, projectsRes] = await Promise.all([
-                fetch(`/api/assignments?scenario_id=${currentScenarioId}`),
-                fetch('/api/personnel'),
-                fetch('/api/projects')
+                fetch(`/api/assignments/overview?scenario_id=${currentScenarioId}`),
+                fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
+                fetch(`/api/projects?scenario_id=${currentScenarioId}`)
             ]);
             allAssignments = await assignmentsRes.json();
             allPersonnel = await personnelRes.json();
@@ -1475,7 +1454,7 @@
 
         async function loadPersonnelData() {
             const [personnelRes, skillsRes] = await Promise.all([
-                fetch('/api/personnel'),
+                fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
                 fetch('/api/skills')
             ]);
             allPersonnel = await personnelRes.json();
@@ -1486,7 +1465,7 @@
 
         async function loadProjectsData() {
             const [projectsRes, skillsRes] = await Promise.all([
-                fetch('/api/projects'),
+                fetch(`/api/projects?scenario_id=${currentScenarioId}`),
                 fetch('/api/skills')
             ]);
             allProjects = await projectsRes.json();
@@ -1497,9 +1476,9 @@
 
         async function loadAssignmentsData() {
             const [projectsRes, personnelRes, assignmentsRes] = await Promise.all([
-                fetch('/api/projects'),
-                fetch('/api/personnel'),
-                fetch('/api/assignments?scenario_id=' + currentScenarioId)
+                fetch(`/api/assignments/schedule-projects?scenario_id=${currentScenarioId}`),
+                fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
+                fetch(`/api/assignments?scenario_id=${currentScenarioId}`)
             ]);
             allProjects = await projectsRes.json();
             allPersonnel = await personnelRes.json();
@@ -1551,41 +1530,59 @@
         function renderPersonnelList(personnel) {
             const container = document.getElementById('personnelListContainer');
             const sorted = [...personnel].sort((a, b) => a.name.localeCompare(b.name));
-            container.innerHTML = sorted.map(personnel => `
-                <div class="card ${personnel.availability_status}">
+            const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+            container.innerHTML = sorted.map(person => {
+                const status = person.availability_status || 'available';
+                const currentInfo = person.current_project_name
+                    ? `<div class="card-detail"><strong>Current:</strong> ${person.current_project_name} (until ${fmtDate(person.current_assignment_end)})</div>`
+                    : '';
+                const nextInfo = person.next_project_name
+                    ? `<div class="card-detail"><strong>Next:</strong> ${person.next_project_name} (starts ${fmtDate(person.next_assignment_start)})</div>`
+                    : '';
+                return `
+                <div class="card ${status}">
                     <div class="card-header">
-                        <div class="card-title">${personnel.name}</div>
+                        <div class="card-title">${person.name}</div>
                         <div style="display:flex;align-items:center;">
-                            <div class="card-status ${personnel.availability_status}">${personnel.availability_status}</div>
-                            <button class="delete-btn" onclick="deletePersonnel('${personnel.id}', '${personnel.name.replace(/'/g, "\\'")}')" title="Delete">&times;</button>
+                            <div class="card-status ${status}">${status}</div>
+                            <button class="delete-btn" onclick="deletePersonnel('${person.id}', '${person.name.replace(/'/g, "\\'")}')" title="Delete">&times;</button>
                         </div>
                     </div>
                     <div class="card-detail">
                         <strong>Skills:</strong>
-                        ${personnel.skills.split(',').map(skill =>
+                        ${person.skills.split(',').map(skill =>
                             `<span class="skills-tag">${skill.trim()}</span>`
                         ).join('')}
                     </div>
                     <div class="card-detail">
                         <strong>Available:</strong>
-                        <span class="available-date">${new Date(personnel.available_date + 'T00:00:00').toLocaleDateString('en-US')}</span>
+                        <span class="available-date">${fmtDate(person.next_available_date)}</span>
                     </div>
-                </div>
-            `).join('');
+                    ${currentInfo}
+                    ${nextInfo}
+                </div>`;
+            }).join('');
         }
 
         // Render projects list (full page)
         function renderProjectsList(projects) {
             const container = document.getElementById('projectsListContainer');
             const sorted = [...projects].sort((a, b) => a.name.localeCompare(b.name));
-            container.innerHTML = sorted.map(project => `
+            const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+            container.innerHTML = sorted.map(project => {
+                const schedStatus = project.schedule_status || 'not_scheduled';
+                const requestedDates = `${fmtDate(project.requested_start_date)} – ${fmtDate(project.requested_end_date)}`;
+                const actualDates = project.actual_start_date
+                    ? `${fmtDate(project.actual_start_date)} – ${fmtDate(project.actual_end_date)}`
+                    : 'Not scheduled';
+                return `
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">${project.name}</div>
                         <div style="display:flex;align-items:center;">
                             <div class="status-badges">
                                 <div class="card-status ${project.award_status}">${project.award_status}</div>
-                                <div class="card-status ${project.schedule_status}">${project.schedule_status.replace('_', ' ')}</div>
+                                <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                             </div>
                             <button class="delete-btn" onclick="deleteProject('${project.id}', '${project.name.replace(/'/g, "\\'")}')" title="Delete">&times;</button>
                         </div>
@@ -1598,11 +1595,13 @@
                             ).join('')}
                         </div>
                         <div class="card-meta">
-                            ${project.num_elevators} elevs &middot; ${new Date(project.start_date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})} &middot; ${project.duration_weeks}w
+                            ${project.num_elevators} elevs &middot; ${project.duration_weeks}w
                         </div>
                     </div>
-                </div>
-            `).join('');
+                    <div class="card-detail"><strong>Requested:</strong> ${requestedDates}</div>
+                    <div class="card-detail"><strong>Scheduled:</strong> ${actualDates}</div>
+                </div>`;
+            }).join('');
         }
 
         // Render skills list
@@ -1632,15 +1631,10 @@
 
         // Render Gantt chart with Plotly
         function renderGantt(assignments, personnel, projects) {
-            const personnelById = Object.fromEntries(personnel.map(m => [m.id, m]));
-            const projectsById = Object.fromEntries(projects.map(p => [p.id, p]));
-
             const traces = assignments.map((a) => {
-                const member = personnelById[a.personnel_id];
-                const project = projectsById[a.project_id];
-                const label = member ? member.name : 'Unknown';
-                const projectName = project ? project.name : 'Unknown';
-                const isCurrent = a.sequence === '1';
+                const label = a.personnel_name || 'Unknown';
+                const projectName = a.project_name || 'Unknown';
+                const isCurrent = a.sequence === 1 || a.sequence === '1';
                 const barColor = isCurrent ? '#041e42' : '#6b9fd4';
 
                 return {
@@ -1980,8 +1974,6 @@
             const personnel = {
                 name: formData.get('name'),
                 skills: formData.getAll('skills').join(','),
-                availability_status: formData.get('availability_status'),
-                available_date: formData.get('available_date')
             };
 
             try {
@@ -2077,23 +2069,13 @@
         function renderAssignmentsList() {
             const container = document.getElementById('assignmentsTableContainer');
             if (!container) return;
-            const personnelById = Object.fromEntries(allPersonnel.map(p => [p.id, p]));
-            const projectsById = Object.fromEntries(allProjects.map(p => [p.id, p]));
-            const today = currentDate.toISOString().split('T')[0];
-            const fmtDate = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+            const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
 
             const rows = [...allPersonnel].sort((a, b) => a.name.localeCompare(b.name)).map(person => {
-                const personAssignments = allAssignments.filter(a => a.personnel_id === person.id);
-                const current = personAssignments.find(a => a.start_date <= today && a.end_date >= today);
-                const upcoming = personAssignments
-                    .filter(a => a.start_date > today)
-                    .sort((a, b) => a.start_date.localeCompare(b.start_date));
-                const next = upcoming.length > 0 ? upcoming[0] : null;
-
-                const currentProject = current ? (projectsById[current.project_id]?.name || 'Unknown') : '-';
-                const currentDates = current ? `${fmtDate(current.start_date)} – ${fmtDate(current.end_date)}` : '-';
-                const nextProject = next ? (projectsById[next.project_id]?.name || 'Unknown') : '-';
-                const nextStarts = next ? fmtDate(next.start_date) : '-';
+                const currentProject = person.current_project_name || '-';
+                const currentDates = person.current_assignment_end ? `until ${fmtDate(person.current_assignment_end)}` : '-';
+                const nextProject = person.next_project_name || '-';
+                const nextStarts = person.next_assignment_start ? fmtDate(person.next_assignment_start) : '-';
 
                 return `<tr>
                     <td>${person.name}</td>
@@ -2127,13 +2109,11 @@
 
         function renderScheduleProjects() {
             const container = document.getElementById('scheduleProjectsList');
-            const sorted = [...allProjects].sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+            const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+            const sorted = [...allProjects].sort((a, b) => new Date(a.requested_start_date) - new Date(b.requested_start_date));
             container.innerHTML = sorted.map(p => {
-                const start = new Date(p.start_date + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-                const endDate = new Date(p.start_date + 'T00:00:00');
-                endDate.setDate(endDate.getDate() + p.duration_weeks * 7);
-                const end = endDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-                const count = allAssignments.filter(a => a.project_id === p.id).length;
+                const schedStatus = p.schedule_status || 'not_scheduled';
+                const count = p.assignment_count != null ? p.assignment_count : allAssignments.filter(a => a.project_id === p.id).length;
                 return `
                     <div class="schedule-project-card ${p.id === selectedScheduleProjectId ? 'selected' : ''}"
                          onclick="selectScheduleProject('${p.id}')">
@@ -2141,10 +2121,10 @@
                             <div class="card-title" style="font-size:14px;">${p.name}</div>
                             <div class="status-badges">
                                 <div class="card-status ${p.award_status}" style="font-size:10px;padding:3px 6px;">${p.award_status}</div>
-                                <div class="card-status ${p.schedule_status}" style="font-size:10px;padding:3px 6px;">${p.schedule_status.replace('_', ' ')}</div>
+                                <div class="card-status ${schedStatus}" style="font-size:10px;padding:3px 6px;">${schedStatus.replace('_', ' ')}</div>
                             </div>
                         </div>
-                        <div class="schedule-project-dates">${start} – ${end}</div>
+                        <div class="schedule-project-dates">${fmtDate(p.requested_start_date)} – ${fmtDate(p.requested_end_date)}</div>
                         <div class="schedule-project-assigned">${count} assigned</div>
                     </div>`;
             }).join('');
@@ -2161,18 +2141,18 @@
             const project = allProjects.find(p => p.id === projectId);
             if (!project) return;
 
-            const projectStart = new Date(project.start_date + 'T00:00:00');
-            const projectEnd = new Date(project.start_date + 'T00:00:00');
-            projectEnd.setDate(projectEnd.getDate() + project.duration_weeks * 7);
-            const endDateStr = projectEnd.toISOString().split('T')[0];
+            const projectStartStr = project.requested_start_date;
+            const projectEndStr = project.requested_end_date;
+            const projectStart = new Date(projectStartStr + 'T00:00:00');
+            const projectEnd = new Date(projectEndStr + 'T00:00:00');
 
-            const startFmt = projectStart.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-            const endFmt = projectEnd.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+            const fmtShort = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
+            const startFmt = fmtShort(projectStartStr);
+            const endFmt = fmtShort(projectEndStr);
 
+            const schedStatus = project.schedule_status || 'not_scheduled';
             const projectAssignments = allAssignments.filter(a => a.project_id === projectId);
             const assignedIds = new Set(projectAssignments.map(a => a.personnel_id));
-            const personnelById = Object.fromEntries(allPersonnel.map(p => [p.id, p]));
-            const projectsById = Object.fromEntries(allProjects.map(p => [p.id, p]));
 
             const free = [];
             allPersonnel.forEach(person => {
@@ -2186,31 +2166,38 @@
             });
             free.sort((a, b) => a.name.localeCompare(b.name));
 
-            const fmtShort = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-
             const assignedHTML = projectAssignments.length === 0
                 ? '<p class="no-assignments-msg">No one assigned yet.</p>'
                 : projectAssignments.map(a => {
-                    const p = personnelById[a.personnel_id];
+                    const pName = a.personnel_name || a.personnel_id;
+                    const typeLabel = a.assignment_type && a.assignment_type !== 'full' ? ` (${a.assignment_type})` : '';
                     return `<div class="schedule-person-row">
-                        <div class="schedule-person-name">${p?.name || a.personnel_id}</div>
-                        <div class="schedule-person-info">Assignment: ${fmtShort(a.start_date)} – ${fmtShort(a.end_date)}</div>
+                        <div class="schedule-person-name">${pName}</div>
+                        <div class="schedule-person-info">Assignment: ${fmtShort(a.start_date)} – ${fmtShort(a.end_date)}${typeLabel}</div>
                         <button class="schedule-remove-btn" onclick="scheduleRemove('${a.id}')">×</button>
                     </div>`;
                 }).join('');
 
             const makeAssignForm = (pid) => {
                 const person = allPersonnel.find(p => p.id === pid);
-                const personAvail = person?.available_date || '';
-                const effStart = personAvail > project.start_date ? personAvail : project.start_date;
+                const personAvail = person?.next_available_date || '';
+                const effStart = personAvail > projectStartStr ? personAvail : projectStartStr;
                 const effEnd = new Date(effStart + 'T00:00:00');
                 effEnd.setDate(effEnd.getDate() + project.duration_weeks * 7);
                 const effEndStr = effEnd.toISOString().split('T')[0];
-                const effStartFmt = new Date(effStart + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+                const effStartFmt = fmtShort(effStart);
                 const effEndFmt = effEnd.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
                 return `
                 <div class="assign-date-form">
-                    <div class="assign-date-defaults">Default: ${effStartFmt} – ${effEndFmt}</div>
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label style="font-size:12px;font-weight:600;color:#041e42;margin-bottom:4px;display:block;">Assignment Type</label>
+                        <select id="assignType_${pid}" style="font-size:13px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-family:'Montserrat',sans-serif;" onchange="updateAssignDefaults('${pid}', '${projectStartStr}', '${projectEndStr}', '${personAvail}', ${project.duration_weeks})">
+                            <option value="full">Full alignment</option>
+                            <option value="cascading">Cascading</option>
+                            <option value="partial">Partial</option>
+                        </select>
+                    </div>
+                    <div class="assign-date-defaults" id="assignDefaults_${pid}">Default: ${effStartFmt} – ${effEndFmt}</div>
                     <label class="custom-date-toggle">
                         <input type="checkbox" id="customToggle_${pid}" onchange="toggleCustomDates('${pid}')"> Use custom dates
                     </label>
@@ -2230,7 +2217,7 @@
                 ? '<p class="no-assignments-msg">No one available during this period.</p>'
                 : free.map(p => `<div class="schedule-person-row">
                     <div class="schedule-person-name">${p.name}</div>
-                    <div class="schedule-person-info">Available since ${fmtShort(p.available_date)}</div>
+                    <div class="schedule-person-info">${p.availability_status === 'assigned' ? 'Available ' + fmtShort(p.next_available_date) : 'Available now'}</div>
                     <button class="schedule-action-btn" onclick="scheduleShowAssignForm('${p.id}')">+ Assign</button>
                 </div>${assignFormPersonnelId === p.id ? makeAssignForm(p.id) : ''}`).join('');
 
@@ -2240,10 +2227,11 @@
                         <h3>${project.name}</h3>
                         <div class="status-badges">
                             <div class="card-status ${project.award_status}">${project.award_status}</div>
-                            <div class="card-status ${project.schedule_status}">${project.schedule_status.replace('_', ' ')}</div>
+                            <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                         </div>
                     </div>
-                    <div class="schedule-project-meta">${startFmt} – ${endFmt} · ${project.duration_weeks}w · ${project.num_elevators} elev${project.num_elevators > 1 ? 's' : ''}</div>
+                    <div class="schedule-project-meta">Requested: ${startFmt} – ${endFmt} · ${project.duration_weeks}w · ${project.num_elevators} elev${project.num_elevators > 1 ? 's' : ''}</div>
+                    ${project.actual_start_date ? `<div class="schedule-project-meta">Scheduled: ${fmtShort(project.actual_start_date)} – ${fmtShort(project.actual_end_date)}</div>` : ''}
                 </div>
                 <div class="schedule-section-label">Assigned</div>
                 ${assignedHTML}
@@ -2251,7 +2239,7 @@
                 ${freeHTML}`;
         }
 
-        async function scheduleAssign(personnelId, startDate, endDate) {
+        async function scheduleAssign(personnelId, startDate, endDate, assignmentType = 'full') {
             const existing = allAssignments
                 .filter(a => a.personnel_id === personnelId)
                 .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
@@ -2270,20 +2258,11 @@
                         sequence,
                         start_date: startDate,
                         end_date: endDate,
+                        assignment_type: assignmentType,
                     })
                 });
                 if (!res.ok) throw new Error(await res.text());
-                await fetch(`/api/personnel/${personnelId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ availability_status: 'assigned', available_date: endDate }),
-                });
-                [allAssignments, allPersonnel] = await Promise.all([
-                    fetch('/api/assignments?scenario_id=' + currentScenarioId).then(r => r.json()),
-                    fetch('/api/personnel').then(r => r.json()),
-                ]);
-                renderScheduleProjects();
-                renderScheduleAssignPanel(selectedScheduleProjectId);
+                await loadAssignmentsData();
             } catch (err) {
                 alert('Failed to assign: ' + err.message);
             }
@@ -2301,6 +2280,8 @@
 
         async function scheduleConfirmAssign(personnelId, defaultStart, defaultEnd) {
             const toggle = document.getElementById('customToggle_' + personnelId);
+            const typeSelect = document.getElementById('assignType_' + personnelId);
+            const assignmentType = typeSelect ? typeSelect.value : 'full';
             let startDate = defaultStart;
             let endDate = defaultEnd;
             if (toggle && toggle.checked) {
@@ -2308,7 +2289,42 @@
                 endDate = document.getElementById('customEnd_' + personnelId).value || defaultEnd;
             }
             assignFormPersonnelId = null;
-            await scheduleAssign(personnelId, startDate, endDate);
+            await scheduleAssign(personnelId, startDate, endDate, assignmentType);
+        }
+
+        function updateAssignDefaults(pid, projectStart, projectEnd, personAvail, durationWeeks) {
+            const typeSelect = document.getElementById('assignType_' + pid);
+            const type = typeSelect.value;
+            const defaultsEl = document.getElementById('assignDefaults_' + pid);
+            const startInput = document.getElementById('customStart_' + pid);
+            const endInput = document.getElementById('customEnd_' + pid);
+            const fmtD = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+
+            let effStart, effEndStr;
+            if (type === 'full') {
+                effStart = projectStart;
+                const effEnd = new Date(projectStart + 'T00:00:00');
+                effEnd.setDate(effEnd.getDate() + durationWeeks * 7);
+                effEndStr = effEnd.toISOString().split('T')[0];
+            } else if (type === 'cascading') {
+                effStart = personAvail > projectStart ? personAvail : projectStart;
+                const effEnd = new Date(effStart + 'T00:00:00');
+                effEnd.setDate(effEnd.getDate() + durationWeeks * 7);
+                effEndStr = effEnd.toISOString().split('T')[0];
+            } else {
+                effStart = projectStart;
+                effEndStr = projectEnd;
+            }
+            if (defaultsEl) defaultsEl.textContent = `Default: ${fmtD(effStart)} – ${fmtD(effEndStr)}`;
+            if (startInput) startInput.value = effStart;
+            if (endInput) endInput.value = effEndStr;
+
+            // For partial, auto-enable custom dates
+            const toggle = document.getElementById('customToggle_' + pid);
+            if (type === 'partial' && toggle && !toggle.checked) {
+                toggle.checked = true;
+                toggleCustomDates(pid);
+            }
         }
 
         function cancelAssignForm() {
@@ -2317,27 +2333,10 @@
         }
 
         async function scheduleRemove(assignmentId) {
-            const assignment = allAssignments.find(a => a.id === assignmentId);
-            const personnelId = assignment?.personnel_id;
             try {
                 const res = await fetch('/api/assignments/' + assignmentId, { method: 'DELETE' });
                 if (!res.ok) throw new Error(await res.text());
-                allAssignments = await fetch('/api/assignments?scenario_id=' + currentScenarioId).then(r => r.json());
-                if (personnelId) {
-                    const remaining = allAssignments.filter(a => a.personnel_id === personnelId);
-                    const newStatus = remaining.length === 0 ? 'available' : 'assigned';
-                    const newDate = remaining.length === 0
-                        ? new Date().toISOString().split('T')[0]
-                        : remaining.reduce((max, a) => a.end_date > max ? a.end_date : max, '');
-                    await fetch(`/api/personnel/${personnelId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ availability_status: newStatus, available_date: newDate }),
-                    });
-                    allPersonnel = await fetch('/api/personnel').then(r => r.json());
-                }
-                renderScheduleProjects();
-                renderScheduleAssignPanel(selectedScheduleProjectId);
+                await loadAssignmentsData();
             } catch (err) {
                 alert('Failed to remove: ' + err.message);
             }
@@ -2377,10 +2376,9 @@
                 name: formData.get('name'),
                 required_skills: Array.from(select.selectedOptions).map(o => o.value).join(','),
                 num_elevators: parseInt(formData.get('num_elevators')),
-                start_date: formData.get('start_date'),
+                requested_start_date: formData.get('requested_start_date'),
                 duration_weeks: parseInt(formData.get('duration_weeks')),
                 award_status: formData.get('award_status'),
-                schedule_status: formData.get('schedule_status')
             };
 
             try {

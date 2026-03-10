@@ -10,9 +10,9 @@ This application helps coordinate the assignment of mechanics and work crews to 
 
 - **Gantt chart overview**: Visual timeline of all mechanic assignments across projects
 - **AI scheduling assistant**: Ask questions like "Who is available next week?" or "What is John's next project?" and get answers from live data
-- **Mechanic management**: Track skills, availability status, and upcoming availability dates
-- **Project management**: Track required skills, elevator counts, start dates, and durations
-- **Assignment tracking**: Confirmed mechanic-to-project assignments with sequence and date ranges
+- **Personnel management**: Track skills; availability is automatically derived from assignments
+- **Project management**: Track required skills, elevator counts, requested/actual dates, and durations
+- **Assignment tracking**: Confirmed personnel-to-project assignments with sequence, date ranges, and assignment types (full/cascading/partial)
 
 ## Tech Stack
 
@@ -109,43 +109,60 @@ Open http://localhost:8000 in your browser.
 
 ## Database Schema (Supabase)
 
-Create these tables in your Supabase project:
+Run `data/schema.sql` in the Supabase SQL Editor to create all tables, triggers, and history tables.
 
-**mechanics**
+**personnel** — pure dimension table; availability is derived from assignments via queries
 | Column | Type | Notes |
 |---|---|---|
 | `id` | UUID | Primary key, default `gen_random_uuid()` |
 | `name` | Text | |
 | `skills` | Text | Comma-separated skill tags |
-| `availability_status` | Text | e.g. `available`, `assigned` |
-| `available_date` | Date | When they next become free |
+| `created_at` | Timestamptz | Auto-set |
+| `updated_at` | Timestamptz | Auto-updated via trigger |
 
 **projects**
 | Column | Type | Notes |
 |---|---|---|
 | `id` | UUID | Primary key, default `gen_random_uuid()` |
 | `name` | Text | |
-| `required_skills` | Text | Comma-separated skill tags |
-| `num_elevators` | Integer | |
-| `start_date` | Date | |
+| `requested_start_date` | Date | When the project is requested to start |
+| `requested_end_date` | Date | Computed from `requested_start_date + duration_weeks` |
 | `duration_weeks` | Integer | |
-| `status` | Text | e.g. `upcoming`, `in_progress`, `completed` |
+| `num_elevators` | Integer | |
+| `required_skills` | Text | Comma-separated skill tags |
+| `award_status` | Text | `awarded` or `prospect` |
+| `created_at` | Timestamptz | Auto-set |
+| `updated_at` | Timestamptz | Auto-updated via trigger |
 
 **assignments**
 | Column | Type | Notes |
 |---|---|---|
 | `id` | UUID | Primary key, default `gen_random_uuid()` |
-| `mechanic_id` | UUID | Foreign key → mechanics |
+| `personnel_id` | UUID | Foreign key → personnel |
 | `project_id` | UUID | Foreign key → projects |
-| `sequence` | Integer | Order of assignment for this mechanic |
+| `scenario_id` | UUID | Foreign key → scenarios |
+| `sequence` | Integer | Order of assignment for this person |
 | `start_date` | Date | |
 | `end_date` | Date | |
+| `assignment_type` | Text | `full`, `cascading`, or `partial` |
+| `created_at` | Timestamptz | Auto-set |
+
+**scenarios**
+| Column | Type | Notes |
+|---|---|---|
+| `id` | UUID | Primary key |
+| `name` | Text | |
+| `status` | Text | `master` or `draft` |
+| `created_from` | UUID | FK → scenarios (branched from) |
+| `archived_at` | Timestamptz | null = active |
 
 **skills**
 | Column | Type | Notes |
 |---|---|---|
 | `id` | UUID | Primary key, default `gen_random_uuid()` |
-| `skill` | Text | Skill name |
+| `skill` | Text | Unique skill name |
+
+All core tables (personnel, projects, skills) have SCD2 history tables and triggers for audit tracking.
 
 ---
 
@@ -153,11 +170,24 @@ Create these tables in your Supabase project:
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/mechanics` | List all mechanics |
-| `POST` | `/api/mechanics` | Add a mechanic |
-| `GET` | `/api/projects` | List all projects |
-| `POST` | `/api/projects` | Add a project |
-| `GET` | `/api/assignments` | List all assignments |
+| `GET` | `/api/personnel?scenario_id=` | List personnel with derived availability (enriched via JOIN) |
+| `POST` | `/api/personnel` | Add personnel |
+| `PATCH` | `/api/personnel/:id` | Update personnel (name, skills) |
+| `DELETE` | `/api/personnel/:id` | Delete personnel + their assignments |
+| `GET` | `/api/projects?scenario_id=` | List projects with computed schedule_status and actual dates |
+| `POST` | `/api/projects` | Add a project (`requested_end_date` computed server-side) |
+| `DELETE` | `/api/projects/:id` | Delete project + its assignments |
+| `GET` | `/api/assignments?scenario_id=` | Enriched assignments with personnel/project names |
+| `GET` | `/api/assignments/overview?scenario_id=` | Gantt chart data with joined names |
+| `GET` | `/api/assignments/schedule-projects?scenario_id=` | Schedule tab project list with assignment counts |
+| `GET` | `/api/assignments/available-personnel` | Find unassigned personnel for a date range |
+| `POST` | `/api/assignments` | Create assignment (with `assignment_type`) |
+| `PATCH` | `/api/assignments/:id` | Update assignment |
+| `DELETE` | `/api/assignments/:id` | Delete assignment |
+| `GET` | `/api/scenarios` | List active scenarios |
+| `POST` | `/api/scenarios` | Create draft from master |
+| `POST` | `/api/scenarios/:id/promote` | Promote draft to master |
+| `DELETE` | `/api/scenarios/:id` | Archive scenario |
 | `GET` | `/api/skills` | List all skills |
 | `POST` | `/api/skills` | Add a skill |
 | `POST` | `/api/chat` | Send a message to the AI assistant |
@@ -257,6 +287,18 @@ Chronological record of major technical decisions and what shipped in each PR.
 - The data reset script (`reset_supabase_data.py`) still uses the Supabase client and still requires the service-role key — those env vars now only apply to that script
 - Moved raw SQL queries to `queries.sql` for reference
 - Added `.claude/skills/supabase-connection/` skill documenting the connection details
+
+---
+
+### PR #16 — Normalize data model, extract SQL queries, fix assignment logic
+**Branch:** `feature/normalize-data-model-extract-sql`
+
+- **Removed redundant columns**: `personnel.availability_status` and `available_date` were manually maintained via frontend PATCH calls, duplicating what assignments already track. Personnel is now a pure dimension table — availability is derived via LEFT JOIN LATERAL in `queries/personnel_list.sql`
+- **Removed `projects.schedule_status`**: was manually set at creation time but should be computed from whether assignments exist. Now derived via LEFT JOIN in `queries/projects_list.sql`
+- **Split project dates**: renamed `start_date` → `requested_start_date`, added `requested_end_date` (computed server-side). Actual dates (`actual_start_date`, `actual_end_date`) are computed from assignment JOINs, so project cards now show both requested and scheduled date ranges
+- **Added `assignment_type`**: supports 3 scheduling scenarios — `full` (project start to end), `cascading` (personnel's next available date + duration), and `partial` (custom dates). CHECK constraint enforces valid values
+- **Extracted SQL into `queries/` directory**: 6 `.sql` files with proper JOINs replace inline SQL and frontend-side data joining. Loaded via `_load_sql()` with `@lru_cache`
+- **Eliminated frontend availability management**: `scheduleAssign()` and `scheduleRemove()` no longer PATCH personnel — the source of truth is assignments, and the UI reads derived state from the server
 
 ---
 

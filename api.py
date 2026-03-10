@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -7,9 +7,15 @@ import anthropic
 
 from database import (
     fetch_personnel,
+    fetch_personnel_page,
     fetch_projects,
+    fetch_projects_page,
     fetch_skills,
     fetch_assignments_by_scenario,
+    fetch_assignments_enriched,
+    fetch_overview_data,
+    fetch_schedule_projects,
+    fetch_available_personnel,
     fetch_master_scenario,
     fetch_scenarios,
     fetch_active_drafts,
@@ -41,28 +47,32 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
+def _get_scenario_id(scenario_id: Optional[str]) -> Optional[str]:
+    if scenario_id:
+        return scenario_id
+    master = fetch_master_scenario()
+    return master["id"] if master else None
+
+
 # ── Models ─────────────────────────────────────────────────────────────────────
 
 class PersonnelCreate(BaseModel):
     name: str
     skills: str
-    availability_status: str
-    available_date: str
 
 
 class PersonnelUpdate(BaseModel):
-    availability_status: Optional[str] = None
-    available_date: Optional[str] = None
+    name: Optional[str] = None
+    skills: Optional[str] = None
 
 
 class ProjectCreate(BaseModel):
     name: str
     required_skills: str
     num_elevators: int
-    start_date: str
+    requested_start_date: str
     duration_weeks: int
     award_status: str
-    schedule_status: str
 
 
 class SkillCreate(BaseModel):
@@ -76,11 +86,13 @@ class AssignmentCreate(BaseModel):
     sequence: int
     start_date: str
     end_date: str
+    assignment_type: str = "full"
 
 
 class AssignmentUpdate(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+    assignment_type: Optional[str] = None
 
 
 class ScenarioCreate(BaseModel):
@@ -94,7 +106,10 @@ class ChatRequest(BaseModel):
 # ── Personnel ──────────────────────────────────────────────────────────────────
 
 @router.get("/api/personnel")
-async def get_personnel():
+async def get_personnel(scenario_id: Optional[str] = None):
+    sid = _get_scenario_id(scenario_id)
+    if sid:
+        return fetch_personnel_page(sid)
     return fetch_personnel()
 
 
@@ -124,13 +139,20 @@ async def patch_personnel(personnel_id: str, data: PersonnelUpdate):
 # ── Projects ───────────────────────────────────────────────────────────────────
 
 @router.get("/api/projects")
-async def get_projects():
+async def get_projects(scenario_id: Optional[str] = None):
+    sid = _get_scenario_id(scenario_id)
+    if sid:
+        return fetch_projects_page(sid)
     return fetch_projects()
 
 
 @router.post("/api/projects")
 async def create_project(project: ProjectCreate):
-    return insert_project(project.model_dump())
+    data = project.model_dump()
+    start = datetime.strptime(data["requested_start_date"], "%Y-%m-%d")
+    end = start + timedelta(weeks=data["duration_weeks"])
+    data["requested_end_date"] = end.strftime("%Y-%m-%d")
+    return insert_project(data)
 
 
 @router.delete("/api/projects/{project_id}")
@@ -156,12 +178,36 @@ async def create_skill(skill: SkillCreate):
 
 @router.get("/api/assignments")
 async def get_assignments(scenario_id: Optional[str] = None):
-    if scenario_id:
-        return fetch_assignments_by_scenario(scenario_id)
-    master = fetch_master_scenario()
-    if master:
-        return fetch_assignments_by_scenario(master["id"])
+    sid = _get_scenario_id(scenario_id)
+    if sid:
+        return fetch_assignments_enriched(sid)
     return []
+
+
+@router.get("/api/assignments/overview")
+async def get_overview_assignments(scenario_id: Optional[str] = None):
+    sid = _get_scenario_id(scenario_id)
+    if sid:
+        return fetch_overview_data(sid)
+    return []
+
+
+@router.get("/api/assignments/schedule-projects")
+async def get_schedule_projects(scenario_id: Optional[str] = None):
+    sid = _get_scenario_id(scenario_id)
+    if sid:
+        return fetch_schedule_projects(sid)
+    return []
+
+
+@router.get("/api/assignments/available-personnel")
+async def get_available_personnel(
+    scenario_id: str,
+    project_id: str,
+    project_start: str,
+    project_end: str,
+):
+    return fetch_available_personnel(scenario_id, project_id, project_start, project_end)
 
 
 @router.delete("/api/assignments/{assignment_id}")
@@ -246,29 +292,33 @@ async def delete_scenario(scenario_id: str):
 
 @router.post("/api/chat")
 async def chat(request: ChatRequest):
-    projects = fetch_projects()
-    personnel = fetch_personnel()
     master = fetch_master_scenario()
-    assignments = fetch_assignments_by_scenario(master["id"]) if master else []
+    sid = master["id"] if master else None
 
-    projects_by_id = {p['id']: p for p in projects}
-    personnel_by_id = {p['id']: p for p in personnel}
+    projects = fetch_projects_page(sid) if sid else fetch_projects()
+    personnel = fetch_personnel_page(sid) if sid else fetch_personnel()
+    assignments = fetch_assignments_enriched(sid) if sid else []
 
     projects_text = "\n".join([
         f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], {p['num_elevators']} elevators, "
-        f"starts {p['start_date']}, duration {p['duration_weeks']} weeks, award: {p['award_status']}, schedule: {p['schedule_status']}"
+        f"requested {p['requested_start_date']} to {p['requested_end_date']}, duration {p['duration_weeks']} weeks, "
+        f"award: {p['award_status']}, schedule: {p.get('schedule_status', 'unknown')}"
+        + (f", actual dates: {p.get('actual_start_date')} to {p.get('actual_end_date')}" if p.get('actual_start_date') else "")
         for p in projects
     ])
 
     personnel_text = "\n".join([
-        f"- {p['name']} (id:{p['id']}): skills [{p['skills']}], status: {p['availability_status']}, available: {p['available_date']}"
+        f"- {p['name']} (id:{p['id']}): skills [{p['skills']}], status: {p.get('availability_status', 'unknown')}, "
+        f"next available: {p.get('next_available_date', 'unknown')}"
+        + (f", current project: {p['current_project_name']}" if p.get('current_project_name') else "")
+        + (f", next project: {p['next_project_name']} starting {p['next_assignment_start']}" if p.get('next_project_name') else "")
         for p in personnel
     ])
 
     assignments_text = "\n".join([
-        f"- {personnel_by_id.get(a['personnel_id'], {}).get('name', a['personnel_id'])} -> "
-        f"{projects_by_id.get(a['project_id'], {}).get('name', a['project_id'])}: "
-        f"sequence {a['sequence']}, {a['start_date']} to {a['end_date']}"
+        f"- {a.get('personnel_name', a['personnel_id'])} -> "
+        f"{a.get('project_name', a['project_id'])}: "
+        f"sequence {a['sequence']}, {a['start_date']} to {a['end_date']}, type: {a.get('assignment_type', 'full')}"
         for a in assignments
     ])
 
