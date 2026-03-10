@@ -72,8 +72,6 @@ for row in personnel_csv:
     payload = {
         "name": row["name"],
         "skills": row["skills"],
-        "availability_status": row["availability_status"],
-        "available_date": row["available_date"],
     }
     response = supabase.table("personnel").insert(payload).execute()
     if not response.data:
@@ -93,12 +91,12 @@ old_project_id_to_uuid = {}
 for row in projects_csv:
     payload = {
         "name": row["name"],
-        "start_date": row["start_date"],
+        "requested_start_date": row["requested_start_date"],
+        "requested_end_date": row["requested_end_date"],
         "duration_weeks": int(row["duration_weeks"]),
         "num_elevators": int(row["num_elevators"]),
         "required_skills": row["required_skills"],
         "award_status": row["award_status"],
-        "schedule_status": row["schedule_status"],
     }
     response = supabase.table("projects").insert(payload).execute()
     if not response.data:
@@ -149,6 +147,7 @@ for row in assignments_csv:
         "sequence": int(row["sequence"]),
         "start_date": row["start_date"],
         "end_date": row["end_date"],
+        "assignment_type": row.get("assignment_type", "full"),
     }
     response = supabase.table("assignments").insert(payload).execute()
     if not response.data:

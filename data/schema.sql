@@ -10,8 +10,6 @@ CREATE TABLE personnel (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     skills TEXT NOT NULL,
-    availability_status TEXT NOT NULL,
-    available_date DATE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -23,8 +21,6 @@ CREATE TABLE personnel_history (
     personnel_id UUID NOT NULL,
     name TEXT,
     skills TEXT,
-    availability_status TEXT,
-    available_date DATE,
     valid_from TIMESTAMPTZ NOT NULL,
     valid_to TIMESTAMPTZ,
     is_current BOOLEAN DEFAULT TRUE
@@ -47,11 +43,11 @@ BEGIN
     IF (TG_OP = 'UPDATE') THEN
         UPDATE personnel_history SET valid_to = NEW.updated_at, is_current = FALSE
         WHERE personnel_id = OLD.id AND is_current = TRUE;
-        INSERT INTO personnel_history (personnel_id, name, skills, availability_status, available_date, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.skills, NEW.availability_status, NEW.available_date, NEW.updated_at, TRUE);
+        INSERT INTO personnel_history (personnel_id, name, skills, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.skills, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO personnel_history (personnel_id, name, skills, availability_status, available_date, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.skills, NEW.availability_status, NEW.available_date, NEW.created_at, TRUE);
+        INSERT INTO personnel_history (personnel_id, name, skills, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.skills, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
         UPDATE personnel_history SET valid_to = NOW(), is_current = FALSE
         WHERE personnel_id = OLD.id AND is_current = TRUE;
@@ -70,12 +66,12 @@ CREATE TRIGGER tr_personnel_scd2
 CREATE TABLE projects (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    start_date DATE NOT NULL,
+    requested_start_date DATE NOT NULL,
+    requested_end_date DATE NOT NULL,
     duration_weeks INTEGER NOT NULL,
     num_elevators INTEGER NOT NULL,
     required_skills TEXT NOT NULL,
     award_status TEXT NOT NULL DEFAULT 'awarded',
-    schedule_status TEXT NOT NULL DEFAULT 'not_scheduled',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -86,12 +82,12 @@ CREATE TABLE projects_history (
     hid BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     project_id UUID NOT NULL,
     name TEXT,
-    start_date DATE,
+    requested_start_date DATE,
+    requested_end_date DATE,
     duration_weeks INTEGER,
     num_elevators INTEGER,
     required_skills TEXT,
     award_status TEXT,
-    schedule_status TEXT,
     valid_from TIMESTAMPTZ NOT NULL,
     valid_to TIMESTAMPTZ,
     is_current BOOLEAN DEFAULT TRUE
@@ -114,11 +110,11 @@ BEGIN
     IF (TG_OP = 'UPDATE') THEN
         UPDATE projects_history SET valid_to = NEW.updated_at, is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
-        INSERT INTO projects_history (project_id, name, start_date, duration_weeks, num_elevators, required_skills, award_status, schedule_status, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.start_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.schedule_status, NEW.updated_at, TRUE);
+        INSERT INTO projects_history (project_id, name, requested_start_date, requested_end_date, duration_weeks, num_elevators, required_skills, award_status, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.requested_start_date, NEW.requested_end_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO projects_history (project_id, name, start_date, duration_weeks, num_elevators, required_skills, award_status, schedule_status, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.start_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.schedule_status, NEW.created_at, TRUE);
+        INSERT INTO projects_history (project_id, name, requested_start_date, requested_end_date, duration_weeks, num_elevators, required_skills, award_status, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.requested_start_date, NEW.requested_end_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
         UPDATE projects_history SET valid_to = NOW(), is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
@@ -216,6 +212,7 @@ CREATE TABLE assignments (
     sequence INTEGER NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
+    assignment_type TEXT NOT NULL DEFAULT 'full' CHECK (assignment_type IN ('full', 'cascading', 'partial')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
