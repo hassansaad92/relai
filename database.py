@@ -68,6 +68,17 @@ def insert_personnel(data: dict):
         return dict(cur.fetchone())
 
 
+def update_personnel(personnel_id: str, data: dict):
+    with _cursor() as (_, cur):
+        set_clause = ", ".join(f"{k} = %({k})s" for k in data.keys())
+        cur.execute(
+            f"UPDATE personnel SET {set_clause} WHERE id = %(id)s RETURNING *",
+            {**data, "id": personnel_id},
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 # ── Projects ───────────────────────────────────────────────────────────────────
 
 def fetch_projects():

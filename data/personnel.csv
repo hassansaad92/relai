@@ -1,6 +1,10 @@
 id,name,skills,availability_status,available_date
-1,John Smith,"Gen2,Compass",assigned,2026-04-12
-2,Maria Garcia,"Geared",assigned,2026-05-28
-3,David Chen,"Gearless,Compass,Machine Replacement",assigned,2026-03-19
-4,Sarah Johnson,"Gen2",assigned,2026-06-15
-5,Mike Williams,"Geared,Compass,Machine Replacement",assigned,2026-05-05
+1,John Smith,"Gen2,Compass",available,2026-03-01
+2,Maria Garcia,"Geared",assigned,2026-07-26
+3,David Chen,"Gearless,Compass,Machine Replacement",assigned,2026-08-13
+4,Sarah Johnson,"Gen2",assigned,2026-08-07
+5,Mike Williams,"Geared,Compass,Machine Replacement",assigned,2026-06-21
+6,Emily Rodriguez,"Gen2,Compass",assigned,2026-07-25
+7,James Thompson,"Gearless,Machine Replacement",assigned,2026-07-05
+8,Lisa Park,"Gen2,Geared,Compass",assigned,2026-11-30
+9,Robert Martinez,"Geared,Machine Replacement",assigned,2026-06-21
