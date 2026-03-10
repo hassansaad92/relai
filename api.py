@@ -233,7 +233,9 @@ ASSIGNMENTS (confirmed personnel-to-project assignments):
 
 Answer questions about projects, scheduling, resource allocation, and team assignments based on this data.
 When asked about a personnel member's next project, look up their assignments directly.
-Be concise and helpful. Today's date is 2026-03-08."""
+Be concise and helpful. Today's date is 2026-03-08.
+
+Avoid using emojis unless they convey unambiguous meaning in context. In particular, do not use visual indicators (e.g. checkmarks) for partial matches — for example, a skill match alone does not mean a mechanic is available or suitable for a job. Only use a positive indicator when all relevant conditions are met."""
 
     response = anthropic_client.messages.create(
         model="claude-sonnet-4-6",

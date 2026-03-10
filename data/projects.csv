@@ -5,3 +5,10 @@ id,name,start_date,duration_weeks,num_elevators,required_skills,status
 4,Lincoln High School,2026-04-14,40,4,"Gen2",Booked
 5,Grand Plaza Hotel,2026-05-04,20,2,"Geared,Compass",Booked
 6,Riverside Office Tower,2026-06-01,4,2,"Compass",Booked
+7,Harborview Condominiums,2025-12-01,52,4,"Gen2,Geared",Booked
+8,City Hall Renovation,2026-01-15,30,3,"Gearless,Machine Replacement",Booked
+9,Northgate Tech Campus,2026-02-20,24,2,"Gen2,Compass",Booked
+10,Lakeside Apartments,2026-03-01,16,2,"Geared,Compass",Booked
+11,Downtown Luxury Tower,2026-01-10,28,3,"Gen2,Compass",Booked
+12,Westfield Corporate Center,2026-02-01,22,2,"Gearless,Machine Replacement",Booked
+13,Harbor Heights Residences,2026-02-15,18,2,"Geared,Machine Replacement",Booked
