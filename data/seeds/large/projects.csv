@@ -1,101 +1,110 @@
 id,name,requested_start_date,requested_end_date,duration_weeks,num_elevators,required_skills,award_status
-1,Pinecrest Hotel,2025-12-15,2026-02-23,10,1,"Geared,Compass",awarded
-2,Willowbrook Luxury Tower,2026-03-23,2027-03-08,50,5,Compass,awarded
-3,Greenfield Prep,2026-05-04,2026-05-18,2,0,,awarded
-4,Hillcrest Hotel,2026-02-09,2027-06-14,70,7,Compass,awarded
-5,Greenfield Convention Center,2026-01-19,2027-03-15,60,6,"Gen2,Compass",awarded
-6,Pyramid Prep,2025-12-29,2026-01-05,1,0,,awarded
-7,Stonegate Prep,2026-02-16,2026-02-23,1,0,,awarded
-8,Grand University Hall,2026-02-23,2026-09-21,30,3,"Gearless,Compass",awarded
-9,Lincoln Tower,2026-03-09,2027-07-12,70,7,Compass,awarded
-10,Brookside Shopping Plaza,2026-01-12,2027-07-26,80,8,"Gen2,Geared,Compass",awarded
-11,Maplewood Shopping Plaza,2026-03-02,2026-07-20,20,2,Compass,awarded
-12,Pinecrest Convention Center,2025-12-15,2026-11-30,50,5,"Gen2,Compass",awarded
-13,Clearwater City Hall,2026-03-16,2026-08-03,20,2,Gen2,awarded
-14,Greenfield Stadium,2026-07-27,2028-02-07,80,8,"Gen2,Compass",awarded
-15,Silverton Condominiums,2026-06-22,2027-10-25,70,7,Machine Replacement,awarded
-16,Ridgeline Museum,2026-03-02,2027-09-13,80,8,Gearless,awarded
-17,Pinecrest Museum,2025-12-08,2026-02-16,10,1,"Gearless,Compass",awarded
-18,Willowbrook Corporate Center,2026-01-26,2026-08-24,30,3,Gen2,awarded
-19,Meadowbrook City Hall,2026-05-04,2027-02-08,40,4,"Gen2,Gearless",awarded
-20,Pyramid Touchup,2026-02-09,2026-02-16,1,0,,awarded
-21,Lincoln University Hall,2025-12-29,2027-02-22,60,6,Compass,awarded
-22,Highland Condominiums,2026-02-16,2027-04-12,60,6,"Gearless,Machine Replacement",awarded
-23,Grand Stadium,2026-02-09,2026-06-29,20,2,"Gen2,Machine Replacement",awarded
-24,Silverton University Hall,2026-03-30,2026-08-17,20,2,Compass,awarded
-25,Harborview Museum,2026-03-16,2027-03-01,50,5,"Geared,Compass",awarded
-26,Oceanview Stadium,2026-02-09,2026-06-29,20,2,Gearless,awarded
-27,Highland Shopping Plaza,2026-06-15,2027-03-22,40,4,"Gearless,Compass",awarded
-28,Stonegate Convention Center,2026-03-16,2027-09-27,80,8,Machine Replacement,awarded
-29,Maplewood City Hall,2026-03-16,2026-05-25,10,1,"Gen2,Geared",awarded
-30,Hillcrest High School,2026-01-26,2027-05-31,70,7,"Gen2,Machine Replacement",awarded
-31,Downtown Shopping Plaza,2026-03-23,2026-10-19,30,3,"Gen2,Machine Replacement",awarded
-32,Riverside Office Tower,2025-12-15,2026-02-23,10,1,Machine Replacement,awarded
-33,Harborview Corporate Center,2026-07-13,2026-11-30,20,2,"Gen2,Geared",awarded
-34,Sunset Tech Campus,2026-06-15,2027-03-22,40,4,"Gen2,Geared,Compass",awarded
-35,Westfield Residences,2026-04-06,2027-05-31,60,6,"Gearless,Machine Replacement",awarded
-36,Copperfield Hospital,2026-03-09,2027-07-12,70,7,"Gen2,Geared,Compass",awarded
-37,Riverside Luxury Tower,2026-03-09,2027-05-03,60,6,Machine Replacement,awarded
-38,Gateway Hospital,2025-12-22,2026-12-07,50,5,"Gen2,Geared,Compass",awarded
-39,Grand High School,2026-02-02,2027-03-29,60,6,Gen2,awarded
-40,Willowbrook Touchup,2025-12-29,2026-01-12,2,0,,awarded
-41,Northgate University Hall,2026-03-23,2027-03-08,50,5,Gen2,awarded
-42,Northgate Stadium,2026-03-09,2026-12-14,40,4,"Gen2,Geared",awarded
-43,Northgate City Hall,2026-09-14,2027-02-01,20,2,"Gearless,Compass",awarded
-44,Eastside University Hall,2026-01-19,2027-01-04,50,5,"Gen2,Machine Replacement",awarded
-45,Hillcrest Convention Center,2026-03-30,2026-10-26,30,3,"Geared,Compass",awarded
-46,Northgate Prep,2026-03-16,2026-03-30,2,0,,awarded
-47,Pyramid Medical Center,2026-01-26,2027-08-09,80,8,"Gearless,Machine Replacement",awarded
-48,Westfield City Hall,2026-02-23,2027-04-19,60,6,Geared,awarded
-49,Kingsbridge Prep,2025-12-22,2025-12-29,1,0,,awarded
-50,Grand Library,2026-02-16,2027-06-21,70,7,"Gen2,Compass",awarded
-51,Gateway Touchup,2026-02-23,2026-03-02,1,0,,awarded
-52,Parkview University Hall,2026-02-09,2026-06-29,20,2,"Gen2,Compass",awarded
-53,Hillcrest Library,2026-02-09,2027-08-23,80,8,"Geared,Compass",awarded
-54,Meadowbrook Tech Campus,2027-01-04,2027-08-02,30,3,"Gearless,Compass",awarded
-55,Kingsbridge Library,2025-12-29,2026-12-14,50,5,"Gearless,Machine Replacement",awarded
-56,Oceanview Luxury Tower,2026-01-05,2026-12-21,50,5,Compass,awarded
-57,Fairview Prep,2026-02-02,2026-02-09,1,0,,awarded
-58,Thornfield Convention Center,2026-01-19,2027-08-02,80,8,"Gen2,Gearless",awarded
-59,Maplewood Convention Center,2026-10-12,2026-12-21,10,1,"Gen2,Geared,Compass",awarded
-60,Lincoln Condominiums,2026-03-30,2027-08-02,70,7,"Gen2,Geared,Compass",awarded
-61,Copperfield Apartments,2026-02-02,2026-11-09,40,4,"Gen2,Compass",pending_award
-62,Gateway High School,2025-12-01,2027-04-05,70,7,"Gearless,Compass",pending_award
-63,Birchwood Prep,2026-12-28,2027-01-11,2,0,,pending_award
-64,Silverton Touchup,2026-06-29,2026-07-13,2,0,,pending_award
-65,Ridgeline Medical Center,2026-03-23,2027-07-26,70,7,Machine Replacement,pending_award
-66,Grand Prep,2026-02-02,2026-02-16,2,0,,pending_award
-67,Riverside Stadium,2026-07-06,2027-02-01,30,3,Compass,pending_award
-68,Hillcrest Luxury Tower,2026-02-09,2027-08-23,80,8,"Gearless,Compass",pending_award
-69,Highland Office Tower,2026-02-16,2026-07-06,20,2,"Gearless,Machine Replacement",pending_award
-70,Westfield Museum,2025-12-01,2027-04-05,70,7,"Gen2,Gearless",pending_award
-71,Pinecrest City Hall,2026-03-16,2026-08-03,20,2,"Gearless,Compass",pending_award
-72,Eastside Shopping Plaza,2026-02-09,2027-04-05,60,6,"Gen2,Machine Replacement",pending_award
-73,Northgate Office Tower,2026-02-16,2027-06-21,70,7,"Gen2,Geared,Compass",pending_award
-74,Metropolitan Shopping Plaza,2026-01-12,2027-07-26,80,8,"Gearless,Compass",pending_award
-75,Thornfield Tech Campus,2026-02-02,2027-01-18,50,5,"Geared,Compass",pending_award
-76,Greenfield Luxury Tower,2026-03-16,2027-03-01,50,5,"Gen2,Geared",pending_award
-77,Midtown Library,2026-01-26,2027-05-31,70,7,"Gen2,Geared",pending_award
-78,Elmwood Luxury Tower,2026-06-29,2027-08-23,60,6,"Gearless,Machine Replacement",pending_award
-79,Highland Medical Center,2026-02-09,2027-01-25,50,5,"Gen2,Machine Replacement",pending_award
-80,Downtown University Hall,2026-05-11,2027-09-13,70,7,"Gen2,Compass",pending_award
-81,Sunset Hospital,2026-02-16,2027-08-30,80,8,"Gearless,Machine Replacement",pending_award
-82,Elmwood City Hall,2026-01-19,2027-01-04,50,5,"Geared,Machine Replacement",pending_award
-83,Pyramid Office Tower,2026-02-02,2027-03-29,60,6,"Gen2,Geared",pending_award
-84,Creekside Touchup,2025-12-29,2026-01-05,1,0,,pending_award
-85,Greenfield Residences,2026-03-02,2027-02-15,50,5,Geared,pending_award
-86,Gateway Office Tower,2025-12-01,2026-06-29,30,3,Machine Replacement,pending_award
-87,Riverside Corporate Center,2026-02-23,2027-09-06,80,8,Geared,pending_award
-88,Downtown Tower,2026-01-26,2026-08-24,30,3,Gen2,pending_award
-89,Highland Luxury Tower,2025-12-08,2026-04-27,20,2,"Geared,Compass",pending_award
-90,Maplewood Hotel,2026-02-09,2026-06-29,20,2,Compass,pending_award
-91,Creekside Apartments,2026-02-16,2026-11-23,40,4,"Gearless,Machine Replacement",pending_award
-92,Oceanview Condominiums,2026-01-26,2027-05-31,70,7,Machine Replacement,pending_award
-93,Highland Prep,2026-03-02,2026-03-09,1,0,,pending_award
-94,Cedarwood Touchup,2026-02-09,2026-02-16,1,0,,pending_award
-95,Kingsbridge Museum,2026-01-05,2027-07-19,80,8,Geared,pending_award
-96,Pyramid Convention Center,2026-02-02,2026-08-31,30,3,Machine Replacement,pending_award
-97,Thornfield City Hall,2026-03-09,2027-02-22,50,5,"Gen2,Compass",pending_award
-98,Creekside Library,2026-02-23,2027-02-08,50,5,"Gen2,Machine Replacement",pending_award
-99,Cedarwood City Hall,2026-03-23,2027-05-17,60,6,"Geared,Compass",pending_award
-100,Highland Stadium,2026-02-23,2026-05-04,10,1,"Gearless,Machine Replacement",pending_award
+1,Westfield Apartments,2026-01-19,2026-06-08,20,2,"Gen2,Geared",awarded
+2,Maplewood Hospital,2026-01-26,2026-08-24,30,3,Compass,awarded
+3,Eastside Condominiums,2026-02-09,2026-06-29,20,2,"Gearless,Compass",awarded
+4,Clearwater Hospital,2025-11-24,2026-11-09,50,5,Geared,awarded
+5,Grand Corporate Center,2026-02-16,2026-04-27,10,1,"Gearless,Compass",awarded
+6,Lincoln Tower,2026-01-05,2026-05-25,20,2,"Gearless,Compass",awarded
+7,Brookside Shopping Plaza,2026-01-12,2026-10-19,40,4,Compass,awarded
+8,Maplewood Shopping Plaza,2026-01-12,2026-10-19,40,4,"Gen2,Compass",awarded
+9,Cedarwood Hotel,2026-02-09,2026-06-29,20,2,"Gen2,Machine Replacement",awarded
+10,Sunset Shopping Plaza,2025-12-08,2026-04-27,20,2,"Gen2,Compass",awarded
+11,Lakeside Corporate Center,2026-02-16,2026-11-23,40,4,Compass,awarded
+12,Silverton Corporate Center,2026-02-09,2026-06-29,20,2,Machine Replacement,awarded
+13,Clearwater Condominiums,2026-02-16,2026-04-27,10,1,"Geared,Machine Replacement",awarded
+14,Silverton Medical Center,2025-11-24,2026-08-31,40,4,Machine Replacement,awarded
+15,Grand Stadium,2025-11-24,2026-08-31,40,4,"Gearless,Machine Replacement",awarded
+16,Cedarwood Apartments,2026-01-19,2026-08-17,30,3,Gearless,awarded
+17,Silverton High School,2026-01-12,2026-08-10,30,3,"Geared,Compass",awarded
+18,Downtown Shopping Plaza,2025-11-10,2026-10-26,50,5,"Gen2,Machine Replacement",awarded
+19,Hillcrest Corporate Center,2025-11-10,2026-06-08,30,3,"Gen2,Gearless",awarded
+20,Parkview Tech Campus,2026-01-26,2026-06-15,20,2,"Gearless,Machine Replacement",awarded
+21,Westfield Shopping Plaza,2025-10-20,2026-07-27,40,4,Machine Replacement,awarded
+22,Ridgeline Office Tower,2026-02-09,2026-06-29,20,2,"Gen2,Geared,Compass",awarded
+23,Pinecrest Condominiums,2026-02-23,2026-07-13,20,2,Gen2,awarded
+24,Creekside High School,2025-12-01,2026-09-07,40,4,Gen2,awarded
+25,Meadowbrook Shopping Plaza,2026-02-02,2026-08-31,30,3,"Gen2,Gearless",awarded
+26,Northgate Tower,2026-01-19,2026-08-17,30,3,Compass,awarded
+27,Silverton University Hall,2026-01-26,2026-11-02,40,4,"Geared,Machine Replacement",awarded
+28,Clearwater Museum,2026-02-09,2026-09-07,30,3,Geared,awarded
+29,Riverside Hospital,2026-01-19,2026-06-08,20,2,Gen2,awarded
+30,Thornfield Stadium,2026-01-05,2026-10-12,40,4,Compass,awarded
+31,Oceanview Library,2025-10-06,2026-07-13,40,4,Gearless,awarded
+32,Hillcrest Library,2026-01-05,2026-05-25,20,2,"Gen2,Compass",awarded
+33,Kingsbridge Library,2026-01-26,2026-11-02,40,4,Gearless,awarded
+34,Clearwater High School,2025-12-08,2026-11-23,50,5,"Geared,Machine Replacement",awarded
+35,Birchwood Hotel,2026-02-02,2026-08-31,30,3,"Gen2,Machine Replacement",awarded
+36,Ridgeline Tech Campus,2025-12-01,2026-09-07,40,4,"Gen2,Machine Replacement",awarded
+37,Pyramid Stadium,2025-12-29,2026-10-05,40,4,"Gearless,Machine Replacement",awarded
+38,Gateway High School,2025-10-06,2026-07-13,40,4,"Gen2,Compass",awarded
+39,Fairview Medical Center,2025-11-24,2026-04-13,20,2,Machine Replacement,awarded
+40,Fairview High School,2026-02-09,2026-09-07,30,3,"Gearless,Machine Replacement",awarded
+41,Gateway City Hall,2026-02-09,2026-04-20,10,1,"Gen2,Geared",awarded
+42,Thornfield Hospital,2025-11-10,2026-03-30,20,2,"Geared,Compass",awarded
+43,Harborview Residences,2025-10-27,2026-08-03,40,4,"Gearless,Machine Replacement",awarded
+44,Lincoln Condominiums,2026-01-26,2026-04-06,10,1,Machine Replacement,awarded
+45,Clearwater Shopping Plaza,2025-12-08,2026-04-27,20,2,"Geared,Compass",awarded
+46,Ridgeline Hotel,2025-12-15,2026-09-21,40,4,"Geared,Machine Replacement",awarded
+47,Midtown Medical Center,2025-12-08,2026-11-23,50,5,"Gen2,Compass",awarded
+48,Ridgeline Tower,2025-10-20,2026-07-27,40,4,"Gearless,Machine Replacement",awarded
+49,Silverton Office Tower,2025-11-24,2026-06-22,30,3,"Gen2,Compass",awarded
+50,Sunset Stadium,2026-06-08,2027-05-24,50,5,"Gearless,Compass",pending_award
+51,Copperfield Luxury Tower,2026-08-10,2026-12-28,20,2,Geared,awarded
+52,Metropolitan Library,2026-08-17,2027-01-04,20,2,"Gearless,Compass",pending_award
+53,Lakeside Hospital,2026-03-30,2026-06-08,10,1,Machine Replacement,awarded
+54,Kingsbridge Apartments,2026-06-15,2027-08-09,60,6,"Geared,Compass",pending_award
+55,Bayside Library,2026-08-10,2027-03-08,30,3,"Gen2,Gearless",pending_award
+56,Creekside Convention Center,2026-06-08,2027-01-04,30,3,Machine Replacement,awarded
+57,Pinecrest Convention Center,2026-06-15,2026-08-24,10,1,"Gearless,Compass",awarded
+58,Brookside Convention Center,2026-07-27,2027-02-22,30,3,"Gearless,Compass",pending_award
+59,Eastside Stadium,2026-06-15,2026-11-02,20,2,"Gen2,Geared",awarded
+60,Maplewood Apartments,2026-08-10,2026-12-28,20,2,Machine Replacement,awarded
+61,Brookside Stadium,2026-06-08,2027-08-02,60,6,Gearless,pending_award
+62,Cedarwood Medical Center,2026-08-24,2027-03-22,30,3,"Gen2,Compass",pending_award
+63,Creekside City Hall,2026-05-18,2026-07-27,10,1,Machine Replacement,pending_award
+64,Thornfield Hotel,2026-07-06,2027-04-12,40,4,Geared,awarded
+65,Creekside Apartments,2026-08-17,2027-03-15,30,3,Geared,awarded
+66,Oceanview Condominiums,2026-07-13,2027-06-28,50,5,"Geared,Compass",awarded
+67,Eastside Tower,2026-07-20,2027-04-26,40,4,Machine Replacement,pending_award
+68,Silverton Convention Center,2026-04-13,2027-03-29,50,5,"Gearless,Compass",awarded
+69,Clearwater Residences,2026-06-01,2027-07-26,60,6,Geared,awarded
+70,Copperfield Library,2026-08-17,2026-10-26,10,1,Gearless,awarded
+71,Gateway Museum,2026-08-31,2027-06-07,40,4,Machine Replacement,awarded
+72,Grand Hospital,2026-06-08,2027-08-02,60,6,"Gen2,Geared,Compass",pending_award
+73,Northgate Shopping Plaza,2026-06-01,2027-07-26,60,6,"Geared,Compass",awarded
+74,Midtown Hotel,2026-08-17,2027-01-04,20,2,"Geared,Machine Replacement",awarded
+75,Lincoln Museum,2026-04-13,2026-06-22,10,1,Gearless,pending_award
+76,Lakeside High School,2026-07-20,2026-09-28,10,1,"Gen2,Compass",pending_award
+77,Birchwood Corporate Center,2026-08-03,2027-07-19,50,5,"Gen2,Compass",pending_award
+78,Elmwood City Hall,2026-07-20,2027-09-13,60,6,"Gen2,Geared",pending_award
+79,Midtown Tower,2026-05-25,2027-07-19,60,6,"Gen2,Geared,Compass",awarded
+80,Midtown Residences,2026-04-06,2026-08-24,20,2,"Gen2,Compass",pending_award
+81,Birchwood Luxury Tower,2026-08-24,2027-05-31,40,4,"Geared,Machine Replacement",pending_award
+82,Brookside Residences,2026-06-29,2027-04-05,40,4,"Gen2,Geared",pending_award
+83,Pinehurst Condominiums,2026-06-22,2027-03-29,40,4,"Gearless,Compass",pending_award
+84,Willowbrook High School,2026-08-17,2026-10-26,10,1,"Gen2,Compass",awarded
+85,Meadowbrook Stadium,2026-06-22,2026-08-31,10,1,"Gearless,Machine Replacement",pending_award
+86,Pinecrest University Hall,2026-08-17,2027-05-24,40,4,"Gen2,Gearless",awarded
+87,Cedarwood Corporate Center,2026-06-29,2027-06-14,50,5,"Gearless,Machine Replacement",pending_award
+88,Pinehurst Library,2026-05-18,2026-12-14,30,3,"Gen2,Machine Replacement",awarded
+89,Westfield Museum,2026-08-03,2026-10-12,10,1,Gen2,awarded
+90,Birchwood Hospital,2026-08-17,2026-10-26,10,1,"Gen2,Machine Replacement",pending_award
+91,Metropolitan Museum,2026-04-27,2027-02-01,40,4,Geared,awarded
+92,Kingsbridge Luxury Tower,2026-08-03,2027-09-27,60,6,Machine Replacement,pending_award
+93,Fairview Convention Center,2026-06-01,2027-03-08,40,4,"Gen2,Machine Replacement",awarded
+94,Grand High School,2026-08-31,2027-08-16,50,5,"Gearless,Compass",awarded
+95,Downtown Museum,2026-07-13,2027-02-08,30,3,"Gearless,Machine Replacement",pending_award
+96,Thornfield Library,2026-06-15,2027-05-31,50,5,"Geared,Compass",pending_award
+97,Sunset Apartments,2026-08-10,2027-05-17,40,4,"Gen2,Geared",pending_award
+98,Clearwater Tower,2026-07-06,2027-04-12,40,4,"Gen2,Geared",awarded
+99,Riverside Medical Center,2026-07-06,2026-11-23,20,2,"Gen2,Geared,Compass",pending_award
+100,Fairview Hotel,2026-07-27,2027-09-20,60,6,"Gearless,Machine Replacement",pending_award
+101,Brookside Library,2026-08-03,2026-10-12,10,1,Gearless,pending_award
+102,Thornfield Tech Campus,2026-04-20,2027-04-05,50,5,"Gen2,Compass",awarded
+103,Stonegate Condominiums,2026-05-04,2026-07-13,10,1,"Gen2,Compass",pending_award
+104,Willowbrook Luxury Tower,2026-04-20,2026-11-16,30,3,"Gen2,Geared,Compass",pending_award
+105,Elmwood Corporate Center,2026-08-17,2026-10-26,10,1,"Geared,Compass",awarded
+106,Harborview Tech Campus,2026-06-22,2026-08-31,10,1,Machine Replacement,pending_award
+107,Lincoln Residences,2026-05-04,2026-09-21,20,2,"Gen2,Machine Replacement",pending_award
+108,Clearwater Luxury Tower,2026-05-11,2026-09-28,20,2,Geared,pending_award
+109,Highland Library,2026-08-24,2027-01-11,20,2,Compass,pending_award
