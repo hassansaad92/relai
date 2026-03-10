@@ -1047,6 +1047,45 @@
         }
 
         .schedule-remove-btn:hover { color: #e53935; }
+
+        .assign-date-form {
+            background: #f7f8fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin: 4px 0 6px 0;
+        }
+        .assign-date-defaults {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .custom-date-toggle {
+            font-size: 13px;
+            color: #444;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+        .assign-custom-fields {
+            display: none;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .assign-custom-fields input[type="date"] {
+            font-size: 13px;
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .assign-form-actions {
+            display: flex;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
@@ -1262,7 +1301,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         // Set current date
-        const currentDate = new Date('2026-03-01');
+        const currentDate = new Date();
         document.getElementById('currentDate').textContent = currentDate.toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -1961,6 +2000,7 @@
         // ── Schedule tab ───────────────────────────────────────────────────────
 
         let selectedScheduleProjectId = null;
+        let assignFormPersonnelId = null;
 
         function renderScheduleProjects() {
             const container = document.getElementById('scheduleProjectsList');
@@ -2035,13 +2075,40 @@
                     </div>`;
                 }).join('');
 
+            const makeAssignForm = (pid) => {
+                const person = allPersonnel.find(p => p.id === pid);
+                const personAvail = person?.available_date || '';
+                const effStart = personAvail > project.start_date ? personAvail : project.start_date;
+                const effEnd = new Date(effStart + 'T00:00:00');
+                effEnd.setDate(effEnd.getDate() + project.duration_weeks * 7);
+                const effEndStr = effEnd.toISOString().split('T')[0];
+                const effStartFmt = new Date(effStart + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+                const effEndFmt = effEnd.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+                return `
+                <div class="assign-date-form">
+                    <div class="assign-date-defaults">Default: ${effStartFmt} – ${effEndFmt}</div>
+                    <label class="custom-date-toggle">
+                        <input type="checkbox" id="customToggle_${pid}" onchange="toggleCustomDates('${pid}')"> Use custom dates
+                    </label>
+                    <div class="assign-custom-fields" id="customFields_${pid}">
+                        <input type="date" id="customStart_${pid}" value="${effStart}">
+                        <span style="font-size:13px;color:#666;">–</span>
+                        <input type="date" id="customEnd_${pid}" value="${effEndStr}">
+                    </div>
+                    <div class="assign-form-actions">
+                        <button class="schedule-action-btn" onclick="scheduleConfirmAssign('${pid}', '${effStart}', '${effEndStr}')">Confirm</button>
+                        <button class="schedule-action-btn outline" onclick="cancelAssignForm()">Cancel</button>
+                    </div>
+                </div>`;
+            };
+
             const freeHTML = free.length === 0
                 ? '<p class="no-assignments-msg">Everyone is busy during this period.</p>'
                 : free.map(p => `<div class="schedule-person-row">
                     <div class="schedule-person-name">${p.name}</div>
                     <div class="schedule-person-info">free</div>
-                    <button class="schedule-action-btn" onclick="scheduleAssign('${p.id}', '${project.start_date}', '${endDateStr}')">+ Assign</button>
-                </div>`).join('');
+                    <button class="schedule-action-btn" onclick="scheduleShowAssignForm('${p.id}')">+ Assign</button>
+                </div>${assignFormPersonnelId === p.id ? makeAssignForm(p.id) : ''}`).join('');
 
             const busyHTML = busy.length === 0 ? '' : `
                 <div class="schedule-section-label">Busy during this period</div>
@@ -2050,8 +2117,8 @@
                     return `<div class="schedule-person-row">
                         <div class="schedule-person-name">${person.name}</div>
                         <div class="schedule-person-info">${desc}</div>
-                        <button class="schedule-action-btn outline" onclick="scheduleAssign('${person.id}', '${project.start_date}', '${endDateStr}')">+ Assign</button>
-                    </div>`;
+                        <button class="schedule-action-btn outline" onclick="scheduleShowAssignForm('${person.id}')">+ Assign</button>
+                    </div>${assignFormPersonnelId === person.id ? makeAssignForm(person.id) : ''}`;
                 }).join('')}`;
 
             panel.innerHTML = `
@@ -2091,7 +2158,15 @@
                     })
                 });
                 if (!res.ok) throw new Error(await res.text());
-                allAssignments = await fetch('/api/assignments?scenario_id=' + currentScenarioId).then(r => r.json());
+                await fetch(`/api/personnel/${personnelId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ availability_status: 'assigned', available_date: endDate }),
+                });
+                [allAssignments, allPersonnel] = await Promise.all([
+                    fetch('/api/assignments?scenario_id=' + currentScenarioId).then(r => r.json()),
+                    fetch('/api/personnel').then(r => r.json()),
+                ]);
                 renderScheduleProjects();
                 renderScheduleAssignPanel(selectedScheduleProjectId);
             } catch (err) {
@@ -2099,11 +2174,53 @@
             }
         }
 
+        function scheduleShowAssignForm(personnelId) {
+            assignFormPersonnelId = personnelId;
+            renderScheduleAssignPanel(selectedScheduleProjectId);
+        }
+
+        function toggleCustomDates(personnelId) {
+            const checked = document.getElementById('customToggle_' + personnelId).checked;
+            document.getElementById('customFields_' + personnelId).style.display = checked ? 'flex' : 'none';
+        }
+
+        async function scheduleConfirmAssign(personnelId, defaultStart, defaultEnd) {
+            const toggle = document.getElementById('customToggle_' + personnelId);
+            let startDate = defaultStart;
+            let endDate = defaultEnd;
+            if (toggle && toggle.checked) {
+                startDate = document.getElementById('customStart_' + personnelId).value || defaultStart;
+                endDate = document.getElementById('customEnd_' + personnelId).value || defaultEnd;
+            }
+            assignFormPersonnelId = null;
+            await scheduleAssign(personnelId, startDate, endDate);
+        }
+
+        function cancelAssignForm() {
+            assignFormPersonnelId = null;
+            renderScheduleAssignPanel(selectedScheduleProjectId);
+        }
+
         async function scheduleRemove(assignmentId) {
+            const assignment = allAssignments.find(a => a.id === assignmentId);
+            const personnelId = assignment?.personnel_id;
             try {
                 const res = await fetch('/api/assignments/' + assignmentId, { method: 'DELETE' });
                 if (!res.ok) throw new Error(await res.text());
                 allAssignments = await fetch('/api/assignments?scenario_id=' + currentScenarioId).then(r => r.json());
+                if (personnelId) {
+                    const remaining = allAssignments.filter(a => a.personnel_id === personnelId);
+                    const newStatus = remaining.length === 0 ? 'available' : 'assigned';
+                    const newDate = remaining.length === 0
+                        ? new Date().toISOString().split('T')[0]
+                        : remaining.reduce((max, a) => a.end_date > max ? a.end_date : max, '');
+                    await fetch(`/api/personnel/${personnelId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ availability_status: newStatus, available_date: newDate }),
+                    });
+                    allPersonnel = await fetch('/api/personnel').then(r => r.json());
+                }
                 renderScheduleProjects();
                 renderScheduleAssignPanel(selectedScheduleProjectId);
             } catch (err) {

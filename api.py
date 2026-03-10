@@ -14,6 +14,7 @@ from database import (
     fetch_scenarios,
     fetch_active_drafts,
     insert_personnel,
+    update_personnel,
     insert_project,
     insert_skill,
     insert_assignment,
@@ -42,6 +43,11 @@ class PersonnelCreate(BaseModel):
     skills: str
     availability_status: str
     available_date: str
+
+
+class PersonnelUpdate(BaseModel):
+    availability_status: Optional[str] = None
+    available_date: Optional[str] = None
 
 
 class ProjectCreate(BaseModel):
@@ -84,6 +90,17 @@ async def get_personnel():
 @router.post("/api/personnel")
 async def create_personnel(personnel: PersonnelCreate):
     return insert_personnel(personnel.model_dump())
+
+
+@router.patch("/api/personnel/{personnel_id}")
+async def patch_personnel(personnel_id: str, data: PersonnelUpdate):
+    updates = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = update_personnel(personnel_id, updates)
+    if not result:
+        raise HTTPException(status_code=404, detail="Personnel not found")
+    return result
 
 
 # ── Projects ───────────────────────────────────────────────────────────────────
@@ -233,7 +250,7 @@ ASSIGNMENTS (confirmed personnel-to-project assignments):
 
 Answer questions about projects, scheduling, resource allocation, and team assignments based on this data.
 When asked about a personnel member's next project, look up their assignments directly.
-Be concise and helpful. Today's date is 2026-03-08.
+Be concise and helpful. Today's date is {now_iso()}.
 
 Avoid using emojis unless they convey unambiguous meaning in context. In particular, do not use visual indicators (e.g. checkmarks) for partial matches — for example, a skill match alone does not mean a mechanic is available or suitable for a job. Only use a positive indicator when all relevant conditions are met."""
 

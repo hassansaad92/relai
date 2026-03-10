@@ -11,7 +11,7 @@ Inspired by Otis elevator branding — deep navy authority with a bold pink-red 
 | Role                  | Hex       | RGB              |
 |-----------------------|-----------|------------------|
 | Primary (dark)        | `#041e42` | (4, 30, 66)      |
-| Accent                | `#f65275` | (246, 82, 117)   |
+| Accent                | `#f6DC776` | (246, 82, 117)   |
 | Background            | `#ffffff` | (255, 255, 255)  |
 | Surface border        | `#f0f0f0` | (240, 240, 240)  |
 | Body text             | `#333333` | (51, 51, 51)     |
