@@ -261,9 +261,33 @@
             text-transform: uppercase;
         }
 
-        .card-status.assigned,
-        .card-status.booked {
+        .card-status.assigned {
+            background: #2e7d32;
+            color: #ffffff;
+        }
+
+        .card-status.available {
+            background: #f65275;
+            color: #ffffff;
+        }
+
+        .card-status.awarded {
+            background: #2e7d32;
+            color: #ffffff;
+        }
+
+        .card-status.prospect {
+            background: #e67e22;
+            color: #ffffff;
+        }
+
+        .card-status.scheduled {
             background: #041e42;
+            color: #ffffff;
+        }
+
+        .card-status.not_scheduled {
+            background: #f65275;
             color: #ffffff;
         }
 
@@ -277,9 +301,25 @@
             color: #ffffff;
         }
 
-        .card-status.available {
-            background: #e8f0fe;
-            color: #2b69ac;
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.15s;
+            font-family: 'Montserrat', sans-serif;
+            margin-left: 8px;
+        }
+
+        .delete-btn:hover { color: #e53935; }
+
+        .status-badges {
+            display: flex;
+            gap: 4px;
+            align-items: center;
         }
 
         .card-detail {
@@ -1316,10 +1356,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Status *</label>
-                    <select name="status" required>
-                        <option value="pending">Pending</option>
-                        <option value="in-progress">In Progress</option>
+                    <label>Award Status *</label>
+                    <select name="award_status" required>
+                        <option value="awarded">Awarded</option>
+                        <option value="prospect">Prospect</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Schedule Status *</label>
+                    <select name="schedule_status" required>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="not_scheduled">Not Scheduled</option>
                     </select>
                 </div>
 
@@ -1507,7 +1555,10 @@
                 <div class="card ${personnel.availability_status}">
                     <div class="card-header">
                         <div class="card-title">${personnel.name}</div>
-                        <div class="card-status ${personnel.availability_status}">${personnel.availability_status}</div>
+                        <div style="display:flex;align-items:center;">
+                            <div class="card-status ${personnel.availability_status}">${personnel.availability_status}</div>
+                            <button class="delete-btn" onclick="deletePersonnel('${personnel.id}', '${personnel.name.replace(/'/g, "\\'")}')" title="Delete">&times;</button>
+                        </div>
                     </div>
                     <div class="card-detail">
                         <strong>Skills:</strong>
@@ -1528,10 +1579,16 @@
             const container = document.getElementById('projectsListContainer');
             const sorted = [...projects].sort((a, b) => a.name.localeCompare(b.name));
             container.innerHTML = sorted.map(project => `
-                <div class="card ${project.status.toLowerCase()}">
+                <div class="card">
                     <div class="card-header">
                         <div class="card-title">${project.name}</div>
-                        <div class="card-status ${project.status.toLowerCase()}">${project.status.replace('-', ' ')}</div>
+                        <div style="display:flex;align-items:center;">
+                            <div class="status-badges">
+                                <div class="card-status ${project.award_status}">${project.award_status}</div>
+                                <div class="card-status ${project.schedule_status}">${project.schedule_status.replace('_', ' ')}</div>
+                            </div>
+                            <button class="delete-btn" onclick="deleteProject('${project.id}', '${project.name.replace(/'/g, "\\'")}')" title="Delete">&times;</button>
+                        </div>
                     </div>
                     <div class="card-row">
                         <div class="card-detail">
@@ -2082,7 +2139,10 @@
                          onclick="selectScheduleProject('${p.id}')">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                             <div class="card-title" style="font-size:14px;">${p.name}</div>
-                            <div class="card-status ${p.status.toLowerCase()}">${p.status.replace('-', ' ')}</div>
+                            <div class="status-badges">
+                                <div class="card-status ${p.award_status}" style="font-size:10px;padding:3px 6px;">${p.award_status}</div>
+                                <div class="card-status ${p.schedule_status}" style="font-size:10px;padding:3px 6px;">${p.schedule_status.replace('_', ' ')}</div>
+                            </div>
                         </div>
                         <div class="schedule-project-dates">${start} – ${end}</div>
                         <div class="schedule-project-assigned">${count} assigned</div>
@@ -2178,7 +2238,10 @@
                 <div class="schedule-project-header">
                     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
                         <h3>${project.name}</h3>
-                        <div class="card-status ${project.status.toLowerCase()}">${project.status.replace('-', ' ')}</div>
+                        <div class="status-badges">
+                            <div class="card-status ${project.award_status}">${project.award_status}</div>
+                            <div class="card-status ${project.schedule_status}">${project.schedule_status.replace('_', ' ')}</div>
+                        </div>
                     </div>
                     <div class="schedule-project-meta">${startFmt} – ${endFmt} · ${project.duration_weeks}w · ${project.num_elevators} elev${project.num_elevators > 1 ? 's' : ''}</div>
                 </div>
@@ -2280,6 +2343,30 @@
             }
         }
 
+        // Delete personnel
+        async function deletePersonnel(id, name) {
+            if (!confirm(`Delete ${name}? This will also remove all their assignments.`)) return;
+            try {
+                const res = await fetch(`/api/personnel/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(await res.text());
+                await loadPersonnelData();
+            } catch (err) {
+                alert('Failed to delete personnel: ' + err.message);
+            }
+        }
+
+        // Delete project
+        async function deleteProject(id, name) {
+            if (!confirm(`Delete ${name}? This will also remove all assignments for this project.`)) return;
+            try {
+                const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(await res.text());
+                await loadProjectsData();
+            } catch (err) {
+                alert('Failed to delete project: ' + err.message);
+            }
+        }
+
         // Submit project form
         async function submitProject(event) {
             event.preventDefault();
@@ -2292,7 +2379,8 @@
                 num_elevators: parseInt(formData.get('num_elevators')),
                 start_date: formData.get('start_date'),
                 duration_weeks: parseInt(formData.get('duration_weeks')),
-                status: formData.get('status')
+                award_status: formData.get('award_status'),
+                schedule_status: formData.get('schedule_status')
             };
 
             try {

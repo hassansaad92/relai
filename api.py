@@ -15,10 +15,15 @@ from database import (
     fetch_active_drafts,
     insert_personnel,
     update_personnel,
+    delete_personnel,
     insert_project,
+    delete_project,
     insert_skill,
     insert_assignment,
     delete_assignment,
+    delete_assignments_by_project,
+    delete_assignments_by_personnel,
+    update_assignment,
     insert_scenario,
     update_scenario,
     copy_assignments_to_scenario,
@@ -56,7 +61,8 @@ class ProjectCreate(BaseModel):
     num_elevators: int
     start_date: str
     duration_weeks: int
-    status: str
+    award_status: str
+    schedule_status: str
 
 
 class SkillCreate(BaseModel):
@@ -70,6 +76,11 @@ class AssignmentCreate(BaseModel):
     sequence: int
     start_date: str
     end_date: str
+
+
+class AssignmentUpdate(BaseModel):
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 class ScenarioCreate(BaseModel):
@@ -90,6 +101,13 @@ async def get_personnel():
 @router.post("/api/personnel")
 async def create_personnel(personnel: PersonnelCreate):
     return insert_personnel(personnel.model_dump())
+
+
+@router.delete("/api/personnel/{personnel_id}")
+async def remove_personnel(personnel_id: str):
+    delete_assignments_by_personnel(personnel_id)
+    delete_personnel(personnel_id)
+    return {"success": True}
 
 
 @router.patch("/api/personnel/{personnel_id}")
@@ -113,6 +131,13 @@ async def get_projects():
 @router.post("/api/projects")
 async def create_project(project: ProjectCreate):
     return insert_project(project.model_dump())
+
+
+@router.delete("/api/projects/{project_id}")
+async def remove_project(project_id: str):
+    delete_assignments_by_project(project_id)
+    delete_project(project_id)
+    return {"success": True}
 
 
 # ── Skills ─────────────────────────────────────────────────────────────────────
@@ -143,6 +168,17 @@ async def get_assignments(scenario_id: Optional[str] = None):
 async def remove_assignment(assignment_id: str):
     delete_assignment(assignment_id)
     return {"success": True}
+
+
+@router.patch("/api/assignments/{assignment_id}")
+async def patch_assignment(assignment_id: str, data: AssignmentUpdate):
+    updates = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = update_assignment(assignment_id, updates)
+    if not result:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    return result
 
 
 @router.post("/api/assignments")
@@ -220,7 +256,7 @@ async def chat(request: ChatRequest):
 
     projects_text = "\n".join([
         f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], {p['num_elevators']} elevators, "
-        f"starts {p['start_date']}, duration {p['duration_weeks']} weeks, status: {p['status']}"
+        f"starts {p['start_date']}, duration {p['duration_weeks']} weeks, award: {p['award_status']}, schedule: {p['schedule_status']}"
         for p in projects
     ])
 

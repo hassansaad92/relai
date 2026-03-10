@@ -68,6 +68,11 @@ def insert_personnel(data: dict):
         return dict(cur.fetchone())
 
 
+def delete_personnel(personnel_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM personnel WHERE id = %s", (personnel_id,))
+
+
 def update_personnel(personnel_id: str, data: dict):
     with _cursor() as (_, cur):
         set_clause = ", ".join(f"{k} = %({k})s" for k in data.keys())
@@ -87,12 +92,17 @@ def fetch_projects():
         return [dict(r) for r in cur.fetchall()]
 
 
+def delete_project(project_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM projects WHERE id = %s", (project_id,))
+
+
 def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO projects (name, start_date, duration_weeks, num_elevators, required_skills, status)
-            VALUES (%(name)s, %(start_date)s, %(duration_weeks)s, %(num_elevators)s, %(required_skills)s, %(status)s)
+            INSERT INTO projects (name, start_date, duration_weeks, num_elevators, required_skills, award_status, schedule_status)
+            VALUES (%(name)s, %(start_date)s, %(duration_weeks)s, %(num_elevators)s, %(required_skills)s, %(award_status)s, %(schedule_status)s)
             RETURNING *
             """,
             data,
@@ -141,6 +151,27 @@ def insert_assignment(data: dict):
 def delete_assignment(assignment_id: str):
     with _cursor() as (_, cur):
         cur.execute("DELETE FROM assignments WHERE id = %s", (assignment_id,))
+
+
+def delete_assignments_by_project(project_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM assignments WHERE project_id = %s", (project_id,))
+
+
+def delete_assignments_by_personnel(personnel_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM assignments WHERE personnel_id = %s", (personnel_id,))
+
+
+def update_assignment(assignment_id: str, data: dict):
+    with _cursor() as (_, cur):
+        set_clause = ", ".join(f"{k} = %({k})s" for k in data.keys())
+        cur.execute(
+            f"UPDATE assignments SET {set_clause} WHERE id = %(id)s RETURNING *",
+            {**data, "id": assignment_id},
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
 
 
 def copy_assignments_to_scenario(from_scenario_id: str, to_scenario_id: str):
