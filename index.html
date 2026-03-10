@@ -601,7 +601,7 @@
 
         /* Chatbot panel (in assignments tab) */
         .chatbot-panel {
-            width: 340px;
+            width: 440px;
             flex-shrink: 0;
             background: #ffffff;
             border-radius: 12px;
@@ -2073,16 +2073,31 @@
 
             const rows = [...allPersonnel].sort((a, b) => a.name.localeCompare(b.name)).map(person => {
                 const currentProject = person.current_project_name || '-';
-                const currentDates = person.current_assignment_end ? `until ${fmtDate(person.current_assignment_end)}` : '-';
+                const completion = person.current_assignment_end ? fmtDate(person.current_assignment_end) : '-';
                 const nextProject = person.next_project_name || '-';
-                const nextStarts = person.next_assignment_start ? fmtDate(person.next_assignment_start) : '-';
+                const reqStart = person.next_project_requested_start ? fmtDate(person.next_project_requested_start) : '-';
+
+                let gapCell = '-';
+                if (person.current_assignment_end && person.next_project_requested_start) {
+                    const endMs = new Date(person.current_assignment_end + 'T00:00:00');
+                    const startMs = new Date(person.next_project_requested_start + 'T00:00:00');
+                    const days = Math.round((endMs - startMs) / 86400000);
+                    if (days > 0) {
+                        gapCell = `<span style="color:#c0392b;font-weight:600">+${days}d late</span>`;
+                    } else if (days < 0) {
+                        gapCell = `<span style="color:#27ae60">${days}d</span>`;
+                    } else {
+                        gapCell = `<span style="color:#999">0d</span>`;
+                    }
+                }
 
                 return `<tr>
                     <td>${person.name}</td>
                     <td>${currentProject}</td>
-                    <td>${currentDates}</td>
+                    <td>${completion}</td>
                     <td>${nextProject}</td>
-                    <td>${nextStarts}</td>
+                    <td>${reqStart}</td>
+                    <td>${gapCell}</td>
                 </tr>`;
             });
 
@@ -2092,9 +2107,10 @@
                         <tr>
                             <th>Personnel</th>
                             <th>Current Project</th>
-                            <th>Dates</th>
+                            <th>Completion</th>
                             <th>Next Project</th>
-                            <th>Starts</th>
+                            <th>Req. Start</th>
+                            <th>Gap</th>
                         </tr>
                     </thead>
                     <tbody>${rows.join('')}</tbody>
@@ -2194,11 +2210,11 @@
                         <select id="assignType_${pid}" style="font-size:13px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-family:'Montserrat',sans-serif;" onchange="updateAssignDefaults('${pid}', '${projectStartStr}', '${projectEndStr}', '${personAvail}', ${project.duration_weeks})">
                             <option value="full">Full alignment</option>
                             <option value="cascading">Cascading</option>
-                            <option value="partial">Partial</option>
+                            <option value="partial">Custom</option>
                         </select>
                     </div>
                     <div class="assign-date-defaults" id="assignDefaults_${pid}">Default: ${effStartFmt} – ${effEndFmt}</div>
-                    <label class="custom-date-toggle">
+                    <label class="custom-date-toggle" id="customToggleLabel_${pid}" style="display:none;">
                         <input type="checkbox" id="customToggle_${pid}" onchange="toggleCustomDates('${pid}')"> Use custom dates
                     </label>
                     <div class="assign-custom-fields" id="customFields_${pid}">
@@ -2284,7 +2300,7 @@
             const assignmentType = typeSelect ? typeSelect.value : 'full';
             let startDate = defaultStart;
             let endDate = defaultEnd;
-            if (toggle && toggle.checked) {
+            if (assignmentType === 'partial' || (toggle && toggle.checked)) {
                 startDate = document.getElementById('customStart_' + personnelId).value || defaultStart;
                 endDate = document.getElementById('customEnd_' + personnelId).value || defaultEnd;
             }
@@ -2319,12 +2335,11 @@
             if (startInput) startInput.value = effStart;
             if (endInput) endInput.value = effEndStr;
 
-            // For partial, auto-enable custom dates
-            const toggle = document.getElementById('customToggle_' + pid);
-            if (type === 'partial' && toggle && !toggle.checked) {
-                toggle.checked = true;
-                toggleCustomDates(pid);
-            }
+            // For custom (partial), show date fields directly; for others, hide them
+            const customFields = document.getElementById('customFields_' + pid);
+            const toggleLabel = document.getElementById('customToggleLabel_' + pid);
+            if (toggleLabel) toggleLabel.style.display = 'none';
+            if (customFields) customFields.style.display = type === 'partial' ? 'flex' : 'none';
         }
 
         function cancelAssignForm() {

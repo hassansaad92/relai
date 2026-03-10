@@ -1,101 +1,51 @@
 id,name,skills
-1,Mildred White,Gen2
-2,Sarah Stone,Gen2
-3,Sharon Adams,Gen2
-4,Steven Lewis,Gen2
-5,Justin Jackson,Gen2
-6,Juan Stone,Gen2
-7,Diane Moore,Gen2
-8,Teresa Cox,Gen2
-9,Michael Johnson,Gen2
-10,Linda Nguyen,Gen2
-11,Donna Price,Gen2
-12,Gloria Johnson,Gen2
-13,Alice Scott,"Gen2,Compass"
-14,Joan Russell,"Gen2,Compass"
-15,Frances Henderson,"Gen2,Compass"
-16,Brenda Hill,"Gen2,Compass"
-17,Rachel Patterson,"Gen2,Compass"
-18,Sharon Anderson,"Gen2,Compass"
-19,Theresa Hall,"Gen2,Compass"
-20,Frances Cox,"Gen2,Compass"
-21,Deborah Campbell,"Gen2,Compass"
-22,Karen Nguyen,"Gen2,Compass"
-23,Theresa Collins,Geared
-24,Barbara Moore,Geared
-25,Scott Taylor,Geared
-26,Rebecca Stewart,Geared
-27,Gloria Baker,Geared
-28,Emily West,Geared
-29,Gregory Ross,Geared
-30,Susan Reed,Geared
-31,Charles Coleman,Geared
-32,Michelle Gonzalez,Geared
-33,Evelyn Morris,Geared
-34,Julie Wright,Geared
-35,Albert Martinez,"Geared,Machine Replacement"
-36,Emily Griffin,"Geared,Machine Replacement"
-37,Donna Freeman,"Geared,Machine Replacement"
-38,Michelle Wilson,"Geared,Machine Replacement"
-39,Donna Taylor,"Geared,Machine Replacement"
-40,Scott Campbell,"Geared,Machine Replacement"
-41,Gregory Bryant,"Geared,Machine Replacement"
-42,Frank Hall,"Geared,Machine Replacement"
-43,Catherine Sanchez,"Geared,Machine Replacement"
-44,Donald Diaz,"Geared,Machine Replacement"
-45,Brian Hamilton,Gearless
-46,Kathleen Alexander,Gearless
-47,Patricia Butler,Gearless
-48,Mildred Allen,Gearless
-49,Peter West,Gearless
-50,Carol Hall,Gearless
-51,Christine Reed,Gearless
-52,Brian Bryant,Gearless
-53,Jack Jenkins,Gearless
-54,Steven Myers,Gearless
-55,Kimberly Freeman,"Gearless,Compass"
-56,Beverly Park,"Gearless,Compass"
-57,Donna Williams,"Gearless,Compass"
-58,Anthony Bell,"Gearless,Compass"
-59,Brian Martinez,"Gearless,Compass"
-60,Sandra Perry,"Gearless,Compass"
-61,Joan Roberts,"Gearless,Compass"
-62,Sandra Russell,"Gearless,Compass"
-63,Janet Morgan,"Gearless,Compass"
-64,Roger Gray,"Gearless,Compass"
-65,Richard Baker,"Gen2,Geared"
-66,Dorothy Adams,"Gen2,Geared"
-67,Virginia Jenkins,"Gen2,Geared"
-68,Peter Baker,"Gen2,Geared"
-69,Virginia Long,"Gen2,Geared"
-70,Andrew Long,"Gen2,Geared"
-71,Angela Morris,"Gen2,Geared"
-72,Walter Sanders,"Gen2,Geared"
-73,Linda Owens,"Gearless,Machine Replacement"
-74,Robert White,"Gearless,Machine Replacement"
-75,Karen Gonzalez,"Gearless,Machine Replacement"
-76,Daniel Myers,"Gearless,Machine Replacement"
-77,Andrew Hughes,"Gearless,Machine Replacement"
-78,William Cook,"Gearless,Machine Replacement"
-79,Scott Hughes,"Gearless,Machine Replacement"
-80,Christine Barnes,"Gearless,Machine Replacement"
-81,George Coleman,"Gen2,Compass,Machine Replacement"
-82,Maria Myers,"Gen2,Compass,Machine Replacement"
-83,Jonathan White,"Gen2,Compass,Machine Replacement"
-84,Kathleen Ross,"Gen2,Compass,Machine Replacement"
-85,Keith Rivera,"Gen2,Compass,Machine Replacement"
-86,Wayne Alexander,"Gen2,Compass,Machine Replacement"
-87,Deborah White,"Geared,Gearless,Compass"
-88,Michelle Richardson,"Geared,Gearless,Compass"
-89,Daniel Gray,"Geared,Gearless,Compass"
-90,James Wallace,"Geared,Gearless,Compass"
-91,Jonathan Baker,"Geared,Gearless,Compass"
-92,Dennis Cross,"Geared,Gearless,Compass"
-93,Paul Price,"Gen2,Geared,Gearless,Compass,Machine Replacement"
-94,Barbara Gonzalez,"Gen2,Geared,Gearless,Compass,Machine Replacement"
-95,Ronald Bryant,"Gen2,Geared,Gearless,Compass,Machine Replacement"
-96,Dennis Butler,"Gen2,Geared,Gearless,Compass,Machine Replacement"
-97,Helen Walker,"Gen2,Geared,Gearless,Compass,Machine Replacement"
-98,Catherine Cross,"Gen2,Geared,Gearless,Compass,Machine Replacement"
-99,Daniel Henderson,"Gen2,Geared,Gearless,Compass,Machine Replacement"
-100,Beverly Barnes,"Gen2,Geared,Gearless,Compass,Machine Replacement"
+1,James Smith,"Gen2,Gearless"
+2,Mary Johnson,Geared
+3,Robert Williams,"Machine Replacement,Gen2"
+4,Linda Brown,"Gen2,Machine Replacement"
+5,Michael Jones,Geared
+6,Barbara Garcia,"Gen2,Geared"
+7,David Miller,"Machine Replacement,Compass"
+8,Susan Davis,Machine Replacement
+9,William Rodriguez,Gen2
+10,Jessica Martinez,"Geared,Compass"
+11,Richard Hernandez,Geared
+12,Sarah Lopez,Gearless
+13,Joseph Gonzalez,Compass
+14,Karen Wilson,Gearless
+15,Thomas Anderson,"Gen2,Compass"
+16,Lisa Thomas,"Compass,Gen2"
+17,Charles Taylor,"Machine Replacement,Gearless"
+18,Nancy Moore,"Gen2,Machine Replacement"
+19,Daniel Jackson,"Gearless,Gen2"
+20,Betty Martin,"Gen2,Compass"
+21,Matthew Lee,Gearless
+22,Dorothy Perez,Gearless
+23,Anthony Thompson,Gearless
+24,Sandra White,"Gen2,Geared"
+25,Mark Harris,"Geared,Machine Replacement"
+26,Ashley Sanchez,Gearless
+27,Donald Clark,"Machine Replacement,Geared,Gearless"
+28,Kimberly Ramirez,Gen2
+29,Steven Lewis,Gen2
+30,Emily Robinson,"Compass,Gearless"
+31,Paul Walker,Machine Replacement
+32,Donna Young,"Gearless,Geared"
+33,Andrew Allen,"Compass,Machine Replacement"
+34,Michelle King,Geared
+35,Joshua Wright,Machine Replacement
+36,Carol Scott,"Machine Replacement,Compass"
+37,Kenneth Torres,"Compass,Gearless"
+38,Amanda Nguyen,Geared
+39,Kevin Hill,"Gen2,Machine Replacement"
+40,Melissa Flores,"Geared,Machine Replacement"
+41,Brian Green,"Compass,Gen2"
+42,Deborah Adams,Machine Replacement
+43,George Nelson,"Machine Replacement,Gearless,Compass"
+44,Stephanie Baker,"Gen2,Machine Replacement"
+45,Timothy Hall,"Machine Replacement,Gearless"
+46,Rebecca Rivera,"Gearless,Gen2"
+47,Ronald Campbell,Geared
+48,Sharon Mitchell,Gearless
+49,Edward Carter,"Geared,Gen2,Gearless"
+50,Laura Roberts,Machine Replacement
