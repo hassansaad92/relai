@@ -4,10 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RelAI</title>
+    <script>
+        // Apply saved theme BEFORE paint to prevent flash
+        (function() {
+            var t = localStorage.getItem('relai-theme');
+            if (t === 'otis') {
+                var s = document.documentElement.style;
+                s.setProperty('--accent', '#f65275');
+                s.setProperty('--accent-hover-light', 'rgba(246, 82, 117, 0.1)');
+                s.setProperty('--accent-active-light', 'rgba(246, 82, 117, 0.2)');
+                s.setProperty('--page-bg', '#ffffff');
+                s.setProperty('--surface-border', '#f0f0f0');
+                s.setProperty('--mid-blue', '#2b69ac');
+            }
+        })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --accent: #E8A817;
+            --accent-hover-light: rgba(232, 168, 23, 0.1);
+            --accent-active-light: rgba(232, 168, 23, 0.2);
+            --page-bg: #F4F5F7;
+            --surface-border: #E0E2E6;
+            --mid-blue: #2b69ac;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,7 +40,7 @@
 
         body {
             font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #F4F5F7;
+            background: var(--page-bg);
             margin: 0;
             padding: 0;
             display: flex;
@@ -44,7 +68,7 @@
             font-size: 24px;
             font-weight: 700;
             padding: 0 20px 20px 20px;
-            border-bottom: 2px solid #E8A817;
+            border-bottom: 2px solid var(--accent);
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -125,13 +149,13 @@
         }
 
         .nav-item:hover {
-            background: rgba(232, 168, 23, 0.1);
-            border-left-color: #E8A817;
+            background: var(--accent-hover-light);
+            border-left-color: var(--accent);
         }
 
         .nav-item.active {
-            background: rgba(232, 168, 23, 0.2);
-            border-left-color: #E8A817;
+            background: var(--accent-active-light);
+            border-left-color: var(--accent);
             font-weight: 600;
         }
 
@@ -157,12 +181,12 @@
             align-items: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 2px solid #E8A817;
+            border-bottom: 2px solid var(--accent);
         }
 
         .header h1 {
             font-size: 32px;
-            color: #E8A817;
+            color: var(--accent);
         }
 
         .current-date {
@@ -188,7 +212,7 @@
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid #E0E2E6;
+            border: 1px solid var(--surface-border);
         }
 
         .section h2 {
@@ -204,7 +228,7 @@
         }
 
         .header-add-button {
-            background: #E8A817;
+            background: var(--accent);
             color: #041e42;
             border: none;
             padding: 8px 16px;
@@ -232,15 +256,15 @@
             border-radius: 8px;
             padding: 10px 14px;
             margin-bottom: 10px;
-            border-left: 4px solid #E8A817;
-            border: 1px solid #E0E2E6;
-            border-left: 4px solid #E8A817;
+            border-left: 4px solid var(--accent);
+            border: 1px solid var(--surface-border);
+            border-left: 4px solid var(--accent);
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(232, 168, 23, 0.2);
+            box-shadow: 0 4px 12px var(--accent-active-light);
         }
 
         .card.assigned {
@@ -248,7 +272,7 @@
         }
 
         .card.pending {
-            border-left-color: #E8A817;
+            border-left-color: var(--accent);
         }
 
         .card.in-progress {
@@ -450,7 +474,7 @@
         }
 
         .add-button:hover {
-            background: #E8A817;
+            background: var(--accent);
             color: #041e42;
             transform: translateY(-1px);
         }
@@ -495,7 +519,7 @@
             align-items: center;
             margin-bottom: 24px;
             padding-bottom: 16px;
-            border-bottom: 2px solid #E8A817;
+            border-bottom: 2px solid var(--accent);
         }
 
         .modal-header h3 {
@@ -520,7 +544,7 @@
         }
 
         .close-button:hover {
-            color: #E8A817;
+            color: var(--accent);
         }
 
         .form-group {
@@ -562,7 +586,7 @@
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #E8A817;
+            border-color: var(--accent);
         }
 
         .skill-tiles {
@@ -581,7 +605,7 @@
 
         .skill-tile label {
             display: block;
-            background: #E0E2E6;
+            background: var(--surface-border);
             color: #333;
             padding: 10px 16px;
             border-radius: 6px;
@@ -599,7 +623,7 @@
         }
 
         .skill-tile label:hover {
-            border-color: #E8A817;
+            border-color: var(--accent);
         }
 
         .submit-button {
@@ -618,7 +642,7 @@
         }
 
         .submit-button:hover {
-            background: #E8A817;
+            background: var(--accent);
             color: #041e42;
         }
 
@@ -729,20 +753,20 @@
         }
 
         .chat-msg.assistant .chat-bubble {
-            background: #f4f5f7;
+            background: var(--page-bg);
             color: #1a1a2e;
             border-radius: 12px 12px 12px 4px;
         }
 
         .chat-typing .chat-bubble {
-            background: #f4f5f7;
+            background: var(--page-bg);
             color: #999;
             font-style: italic;
         }
 
         .chat-input-area {
             padding: 12px 16px;
-            border-top: 1px solid #E0E2E6;
+            border-top: 1px solid var(--surface-border);
             display: flex;
             gap: 8px;
         }
@@ -759,11 +783,11 @@
         }
 
         .chat-input:focus {
-            border-color: #E8A817;
+            border-color: var(--accent);
         }
 
         .chat-send-btn {
-            background: #E8A817;
+            background: var(--accent);
             color: #041e42;
             border: none;
             padding: 10px 16px;
@@ -847,7 +871,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #E0E2E6;
+            border-bottom: 1px solid var(--surface-border);
         }
 
         .scenario-panel-close {
@@ -878,7 +902,7 @@
             font-weight: 500;
         }
 
-        .scenario-item-name:hover { color: #2b69ac; }
+        .scenario-item-name:hover { color: var(--mid-blue); }
 
         .scenario-item-badge {
             font-size: 10px;
@@ -907,8 +931,8 @@
         }
 
         .scenario-action-btn:hover {
-            background: #2b69ac;
-            border-color: #2b69ac;
+            background: var(--mid-blue);
+            border-color: var(--mid-blue);
             color: #fff;
         }
 
@@ -920,7 +944,7 @@
 
         .scenario-panel-footer {
             padding: 10px 16px;
-            border-top: 1px solid #E0E2E6;
+            border-top: 1px solid var(--surface-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -929,7 +953,7 @@
         .scenario-new-btn {
             background: none;
             border: none;
-            color: #2b69ac;
+            color: var(--mid-blue);
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
@@ -965,7 +989,7 @@
             font-weight: 600;
             font-size: 11px;
             text-transform: uppercase;
-            border-bottom: 1px solid #E0E2E6;
+            border-bottom: 1px solid var(--surface-border);
         }
 
         .current-assignments-table td {
@@ -996,7 +1020,7 @@
 
         .assign-divider {
             border: none;
-            border-top: 1px solid #E0E2E6;
+            border-top: 1px solid var(--surface-border);
             margin: 16px 0;
         }
 
@@ -1020,7 +1044,7 @@
             font-weight: 600;
             font-size: 11px;
             text-transform: uppercase;
-            border-bottom: 2px solid #E0E2E6;
+            border-bottom: 2px solid var(--surface-border);
         }
 
         .assignments-table td {
@@ -1039,15 +1063,15 @@
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
-            color: #2b69ac;
+            color: var(--mid-blue);
             font-family: 'Montserrat', sans-serif;
             transition: all 0.15s;
             white-space: nowrap;
         }
 
         .assign-btn:hover {
-            background: #2b69ac;
-            border-color: #2b69ac;
+            background: var(--mid-blue);
+            border-color: var(--mid-blue);
             color: #fff;
         }
 
@@ -1079,7 +1103,7 @@
 
         .schedule-project-card {
             padding: 10px 14px;
-            border: 1px solid #E0E2E6;
+            border: 1px solid var(--surface-border);
             border-radius: 6px;
             margin-bottom: 8px;
             cursor: pointer;
@@ -1129,7 +1153,7 @@
             text-transform: uppercase;
             letter-spacing: 0.4px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #E0E2E6;
+            border-bottom: 1px solid var(--surface-border);
             margin: 20px 0 10px;
         }
 
@@ -1259,8 +1283,8 @@
         .gantt-toggle-btn:nth-child(2) { border-radius: 0 4px 4px 0; }
 
         .gantt-toggle-btn.active {
-            background: #E8A817;
-            border-color: #E8A817;
+            background: var(--accent);
+            border-color: var(--accent);
             color: #041e42;
         }
 
@@ -1294,7 +1318,7 @@
             top: 0;
             right: 0;
             background: #ffffff;
-            border-left: 1px solid #E0E2E6;
+            border-left: 1px solid var(--surface-border);
             display: flex;
             flex-direction: column;
             z-index: 100;
@@ -1351,7 +1375,7 @@
         }
 
         .chat-reopen-btn:hover {
-            background: #E8A817;
+            background: var(--accent);
         }
 
         body.chat-collapsed .chat-reopen-btn {
@@ -1395,7 +1419,7 @@
         }
 
         .filter-search:focus {
-            border-color: #E8A817;
+            border-color: var(--accent);
         }
 
         .filter-select {
@@ -1411,7 +1435,7 @@
         }
 
         .filter-select:focus {
-            border-color: #E8A817;
+            border-color: var(--accent);
         }
     </style>
 </head>
@@ -1460,6 +1484,9 @@
             <div style="display: flex; align-items: center; gap: 16px;">
                 <button class="refresh-button" id="refreshButton" onclick="refreshData()" title="Refresh data">
                     <span class="refresh-icon">↻</span>
+                </button>
+                <button class="refresh-button" onclick="openSettingsModal()" title="Settings">
+                    ⚙
                 </button>
                 <div class="current-date" id="currentDate"></div>
             </div>
@@ -1646,9 +1673,88 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button class="close-button" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div style="margin-bottom: 8px; font-weight: 600; color: #041e42; font-size: 14px;">Theme</div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid var(--surface-border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;" id="themeOption-navy-amber">
+                    <input type="radio" name="theme" value="navy-amber" onchange="applyTheme('navy-amber')" style="accent-color: #041e42;">
+                    <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #E8A817; border: 2px solid #041e42; flex-shrink: 0;"></span>
+                    <span style="font-weight: 500; font-size: 14px;">Navy Amber</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid var(--surface-border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;" id="themeOption-otis">
+                    <input type="radio" name="theme" value="otis" onchange="applyTheme('otis')" style="accent-color: #041e42;">
+                    <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #f65275; border: 2px solid #041e42; flex-shrink: 0;"></span>
+                    <span style="font-weight: 500; font-size: 14px;">Otis</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+        // Theme definitions
+        const themes = {
+            'navy-amber': {
+                '--accent': '#E8A817',
+                '--accent-hover-light': 'rgba(232, 168, 23, 0.1)',
+                '--accent-active-light': 'rgba(232, 168, 23, 0.2)',
+                '--page-bg': '#F4F5F7',
+                '--surface-border': '#E0E2E6',
+                '--mid-blue': '#2b69ac',
+            },
+            'otis': {
+                '--accent': '#f65275',
+                '--accent-hover-light': 'rgba(246, 82, 117, 0.1)',
+                '--accent-active-light': 'rgba(246, 82, 117, 0.2)',
+                '--page-bg': '#ffffff',
+                '--surface-border': '#f0f0f0',
+                '--mid-blue': '#2b69ac',
+            }
+        };
+
+        function applyTheme(themeName) {
+            const vars = themes[themeName];
+            if (!vars) return;
+            const root = document.documentElement;
+            for (const [key, value] of Object.entries(vars)) {
+                root.style.setProperty(key, value);
+            }
+            localStorage.setItem('relai-theme', themeName);
+            // Update radio button state
+            const radio = document.querySelector(`input[name="theme"][value="${themeName}"]`);
+            if (radio) radio.checked = true;
+            // Highlight selected option border
+            document.querySelectorAll('#settingsModal label[id^="themeOption-"]').forEach(el => {
+                el.style.borderColor = '';
+            });
+            const selected = document.getElementById('themeOption-' + themeName);
+            if (selected) selected.style.borderColor = vars['--accent'];
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        // Close settings modal on overlay click
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('settingsModal');
+            if (e.target === modal) closeSettingsModal();
+        });
+
+        // Apply saved theme on load
+        applyTheme(localStorage.getItem('relai-theme') || 'navy-amber');
+
         // Set current date
         const currentDate = new Date();
         document.getElementById('currentDate').textContent = currentDate.toLocaleDateString('en-US', {
@@ -1842,7 +1948,7 @@
                 const requestedDates = `${fmtDate(project.requested_start_date)} – ${fmtDate(project.requested_end_date)}`;
                 const actualDates = project.actual_start_date
                     ? `${fmtDate(project.actual_start_date)} – ${fmtDate(project.actual_end_date)}`
-                    : 'Not scheduled';
+                    : '--';
                 return `
                 <div class="card" style="position:relative;">
                     <div class="card-header">
@@ -1963,7 +2069,7 @@
                 xaxis: {
                     type: 'date',
                     title: '',
-                    gridcolor: '#E0E2E6',
+                    gridcolor: getComputedStyle(document.documentElement).getPropertyValue('--surface-border').trim(),
                     dtick: 'M1',
                     tickformat: '%b %Y',
                     tickfont: { family: 'Montserrat, sans-serif', size: 12 },
