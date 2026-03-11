@@ -1493,6 +1493,43 @@
         .filter-select:focus {
             border-color: var(--accent);
         }
+
+        .filter-select.placeholder {
+            color: #999;
+        }
+
+        .filter-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .filter-wrap .filter-select {
+            padding-right: 40px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .filter-clear {
+            position: absolute;
+            right: 24px;
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            line-height: 1;
+            display: none;
+        }
+
+        .filter-clear:hover {
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -1573,14 +1610,20 @@
                 <h2>Personnel <button class="header-add-button" onclick="openPersonnelModal()">+ Add Personnel</button></h2>
                 <div id="resourcesFilterBar" class="filter-bar">
                     <input type="text" class="filter-search" id="personnelSearch" placeholder="Search personnel..." oninput="applyPersonnelFilters()">
-                    <select class="filter-select" id="personnelSkillFilter" onchange="applyPersonnelFilters()">
-                        <option value="">--</option>
-                    </select>
-                    <select class="filter-select" id="personnelStatusFilter" onchange="applyPersonnelFilters()">
-                        <option value="">--</option>
-                        <option value="available">Available</option>
-                        <option value="assigned">Assigned</option>
-                    </select>
+                    <div class="filter-wrap">
+                        <select class="filter-select placeholder" id="personnelSkillFilter" onchange="onFilterChange(this)">
+                            <option value="">Skill</option>
+                        </select>
+                        <button class="filter-clear" onclick="clearFilter(this)">&times;</button>
+                    </div>
+                    <div class="filter-wrap">
+                        <select class="filter-select placeholder" id="personnelStatusFilter" onchange="onFilterChange(this)">
+                            <option value="">Status</option>
+                            <option value="available">Available</option>
+                            <option value="assigned">Assigned</option>
+                        </select>
+                        <button class="filter-clear" onclick="clearFilter(this)">&times;</button>
+                    </div>
                 </div>
                 <div id="personnelListContainer" class="card-grid"></div>
             </div>
@@ -1596,16 +1639,18 @@
                 <h2>All Projects <button class="header-add-button" onclick="openProjectModal()">+ Add Project</button></h2>
                 <div id="projectsFilterBar" class="filter-bar">
                     <input type="text" class="filter-search" id="projectsSearch" placeholder="Search projects..." oninput="applyProjectFilters()">
-                    <select class="filter-select" id="projectsAwardFilter" onchange="applyProjectFilters()">
-                        <option value="">--</option>
-                        <option value="awarded">Awarded</option>
-                        <option value="pending_award">Pending Award</option>
-                    </select>
-                    <select class="filter-select" id="projectsScheduleFilter" onchange="applyProjectFilters()">
-                        <option value="">--</option>
-                        <option value="scheduled">Scheduled</option>
-                        <option value="not_scheduled">Not Scheduled</option>
-                    </select>
+                    <div class="filter-wrap">
+                        <select class="filter-select placeholder" id="projectsAwardFilter" onchange="onFilterChange(this)">
+                            <option value="">Award Status</option>
+                        </select>
+                        <button class="filter-clear" onclick="clearFilter(this)">&times;</button>
+                    </div>
+                    <div class="filter-wrap">
+                        <select class="filter-select placeholder" id="projectsScheduleFilter" onchange="onFilterChange(this)">
+                            <option value="">Schedule Status</option>
+                        </select>
+                        <button class="filter-clear" onclick="clearFilter(this)">&times;</button>
+                    </div>
                 </div>
                 <div id="projectsListContainer" class="card-grid"></div>
             </div>
@@ -1693,9 +1738,7 @@
 
                 <div class="form-group">
                     <label>Award Status *</label>
-                    <select name="award_status" required>
-                        <option value="awarded">Awarded</option>
-                        <option value="pending_award">Pending Award</option>
+                    <select name="award_status" required id="projectFormAwardStatus">
                     </select>
                 </div>
 
@@ -1812,6 +1855,48 @@
             month: 'long',
             day: 'numeric'
         });
+
+        // Status options (single source of truth)
+        const AWARD_STATUSES = [
+            { value: 'awarded', label: 'Awarded' },
+            { value: 'pending_award', label: 'Pending Award' },
+        ];
+        const SCHEDULE_STATUSES = [
+            { value: 'scheduled', label: 'Scheduled' },
+            { value: 'not_scheduled', label: 'Not Scheduled' },
+            { value: 'active', label: 'Active' },
+        ];
+
+        function populateStatusSelects() {
+            const awardOpts = AWARD_STATUSES.map(s => `<option value="${s.value}">${s.label}</option>`).join('');
+            document.getElementById('projectsAwardFilter').innerHTML = '<option value="">Award Status</option>' + awardOpts;
+            document.getElementById('projectFormAwardStatus').innerHTML = awardOpts;
+            const schedOpts = SCHEDULE_STATUSES.map(s => `<option value="${s.value}">${s.label}</option>`).join('');
+            document.getElementById('projectsScheduleFilter').innerHTML = '<option value="">Schedule Status</option>' + schedOpts;
+        }
+
+        // Filter dropdown helpers
+        function onFilterChange(select) {
+            const clearBtn = select.parentElement.querySelector('.filter-clear');
+            if (select.value) {
+                clearBtn.style.display = 'block';
+                select.classList.remove('placeholder');
+            } else {
+                clearBtn.style.display = 'none';
+                select.classList.add('placeholder');
+            }
+            if (select.id.startsWith('personnel')) applyPersonnelFilters();
+            else applyProjectFilters();
+        }
+
+        function clearFilter(btn) {
+            const select = btn.parentElement.querySelector('.filter-select');
+            select.value = '';
+            select.classList.add('placeholder');
+            btn.style.display = 'none';
+            if (select.id.startsWith('personnel')) applyPersonnelFilters();
+            else applyProjectFilters();
+        }
 
         // Parse CSV
         function parseCSV(text) {
@@ -2033,7 +2118,7 @@
         function populatePersonnelSkillFilter() {
             const select = document.getElementById('personnelSkillFilter');
             const current = select.value;
-            select.innerHTML = '<option value="">--</option>' +
+            select.innerHTML = '<option value="">Skill</option>' +
                 [...allSkills].sort((a, b) => a.skill.localeCompare(b.skill))
                     .map(s => `<option value="${s.skill}">${s.skill}</option>`).join('');
             select.value = current;
@@ -2428,6 +2513,7 @@
 
         // Initialize app
         async function init() {
+            populateStatusSelects();
             await loadScenarios();
             initNavigation();
         }
