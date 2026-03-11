@@ -4,7 +4,7 @@ Color palette sets for the RelAI app. Pick a theme and apply its hex values to t
 
 ---
 
-## Otis Theme *(current)*
+## Otis Theme
 
 Inspired by Otis elevator branding — deep navy authority with a bold pink-red accent.
 
@@ -20,6 +20,35 @@ Inspired by Otis elevator branding — deep navy authority with a bold pink-red 
 - Sidebar background → Primary
 - Nav active border, buttons, status badges → Accent
 - Card/modal background → Background
+- Card borders, inputs → Surface border
+- Skills tags → Primary on white text
+
+---
+
+## Navy Amber *(current)*
+
+Deep navy authority with amber gold highlights and steel grey surfaces. Logistics command center.
+
+| Role                  | Hex       | RGB              |
+|-----------------------|-----------|------------------|
+| Primary (dark)        | `#041e42` | (4, 30, 66)      |
+| Accent (gold)         | `#E8A817` | (232, 168, 23)   |
+| Mid-blue              | `#2b69ac` | (43, 105, 172)   |
+| Danger (red)          | `#C20000` | (194, 0, 0)      |
+| Page background       | `#F4F5F7` | (244, 245, 247)  |
+| Card surface          | `#ffffff` | (255, 255, 255)  |
+| Surface border        | `#E0E2E6` | (224, 226, 230)  |
+| Body text             | `#333333` | (51, 51, 51)     |
+
+**Usage pattern:**
+- Sidebar background → Primary
+- Nav active border, buttons, header accents → Accent (gold) with navy text
+- Available / not_scheduled badges → Danger (red)
+- Awarded/assigned badges → green (#2e7d32)
+- Pending award badge → orange (#e67e22)
+- Hover states, links → Mid-blue
+- Page background → Light steel
+- Card/modal background → White
 - Card borders, inputs → Surface border
 - Skills tags → Primary on white text
 

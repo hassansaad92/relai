@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scheduling Assistant</title>
+    <title>RelAI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
 
         body {
             font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #ffffff;
+            background: #F4F5F7;
             margin: 0;
             padding: 0;
             display: flex;
@@ -44,7 +44,7 @@
             font-size: 24px;
             font-weight: 700;
             padding: 0 20px 20px 20px;
-            border-bottom: 2px solid #f65275;
+            border-bottom: 2px solid #E8A817;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -67,6 +67,12 @@
             opacity: 0.7;
         }
 
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
         .sidebar.collapsed .sidebar-title-text,
         .sidebar.collapsed .nav-label {
             display: none;
@@ -79,8 +85,9 @@
 
         .sidebar.collapsed .nav-item {
             padding: 16px 0;
-            text-align: center;
+            justify-content: center;
             border-left: none;
+            gap: 0;
         }
 
         .sidebar.collapsed .scenario-indicator {
@@ -96,6 +103,10 @@
             margin-left: 56px;
         }
 
+        body.chat-collapsed .main-content {
+            margin-right: 0;
+        }
+
         body.sidebar-collapsed .scenario-panel {
             left: 56px;
             width: 220px;
@@ -108,24 +119,28 @@
             transition: background 0.2s;
             font-weight: 500;
             border-left: 4px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .nav-item:hover {
-            background: rgba(246, 82, 117, 0.1);
-            border-left-color: #f65275;
+            background: rgba(232, 168, 23, 0.1);
+            border-left-color: #E8A817;
         }
 
         .nav-item.active {
-            background: rgba(246, 82, 117, 0.2);
-            border-left-color: #f65275;
+            background: rgba(232, 168, 23, 0.2);
+            border-left-color: #E8A817;
             font-weight: 600;
         }
 
         .main-content {
             margin-left: 250px;
+            margin-right: 400px;
             flex: 1;
             padding: 20px;
-            transition: margin-left 0.25s ease;
+            transition: margin-left 0.25s ease, margin-right 0.25s ease;
         }
 
         .view {
@@ -142,12 +157,12 @@
             align-items: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 2px solid #f65275;
+            border-bottom: 2px solid #E8A817;
         }
 
         .header h1 {
             font-size: 32px;
-            color: #f65275;
+            color: #E8A817;
         }
 
         .current-date {
@@ -173,7 +188,7 @@
             border-radius: 12px;
             padding: 24px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid #f0f0f0;
+            border: 1px solid #E0E2E6;
         }
 
         .section h2 {
@@ -189,8 +204,8 @@
         }
 
         .header-add-button {
-            background: #f65275;
-            color: #ffffff;
+            background: #E8A817;
+            color: #041e42;
             border: none;
             padding: 8px 16px;
             font-size: 14px;
@@ -204,7 +219,7 @@
 
         .header-add-button:hover {
             background: #ffffff;
-            color: #f65275;
+            color: #041e42;
             transform: translateY(-1px);
         }
 
@@ -217,15 +232,15 @@
             border-radius: 8px;
             padding: 10px 14px;
             margin-bottom: 10px;
-            border-left: 4px solid #f65275;
-            border: 1px solid #f0f0f0;
-            border-left: 4px solid #f65275;
+            border-left: 4px solid #E8A817;
+            border: 1px solid #E0E2E6;
+            border-left: 4px solid #E8A817;
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(246, 82, 117, 0.2);
+            box-shadow: 0 4px 12px rgba(232, 168, 23, 0.2);
         }
 
         .card.assigned {
@@ -233,7 +248,7 @@
         }
 
         .card.pending {
-            border-left-color: #f65275;
+            border-left-color: #E8A817;
         }
 
         .card.in-progress {
@@ -267,7 +282,7 @@
         }
 
         .card-status.available {
-            background: #f65275;
+            background: #C20000;
             color: #ffffff;
         }
 
@@ -276,7 +291,7 @@
             color: #ffffff;
         }
 
-        .card-status.prospect {
+        .card-status.pending_award {
             background: #e67e22;
             color: #ffffff;
         }
@@ -287,12 +302,12 @@
         }
 
         .card-status.not_scheduled {
-            background: #f65275;
+            background: #C20000;
             color: #ffffff;
         }
 
         .card-status.pending {
-            background: #f65275;
+            background: #C20000;
             color: #ffffff;
         }
 
@@ -316,6 +331,44 @@
 
         .delete-btn:hover { color: #e53935; }
 
+        .card-edit-btn {
+            position: absolute;
+            bottom: 6px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 2px 4px;
+            line-height: 1;
+            transition: color 0.15s;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .card-edit-btn:hover { color: #041e42; }
+
+        .modal-delete-btn {
+            width: 100%;
+            background: none;
+            color: #C20000;
+            border: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            margin-top: 12px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .modal-delete-btn:hover {
+            background: #C20000;
+            color: #ffffff;
+            border-color: #C20000;
+        }
+
         .status-badges {
             display: flex;
             gap: 4px;
@@ -331,6 +384,17 @@
         .card-detail strong {
             color: #041e42;
             margin-right: 8px;
+        }
+
+        .skills-tag-light {
+            display: inline-block;
+            background: #e8e8e8;
+            color: #666;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+            white-space: nowrap;
         }
 
         .skills-tag {
@@ -360,7 +424,7 @@
         }
 
         .available-date {
-            color: #f65275;
+            color: #C20000;
             font-weight: 600;
         }
 
@@ -385,7 +449,8 @@
         }
 
         .add-button:hover {
-            background: #f65275;
+            background: #E8A817;
+            color: #041e42;
             transform: translateY(-1px);
         }
 
@@ -429,7 +494,7 @@
             align-items: center;
             margin-bottom: 24px;
             padding-bottom: 16px;
-            border-bottom: 2px solid #f65275;
+            border-bottom: 2px solid #E8A817;
         }
 
         .modal-header h3 {
@@ -454,7 +519,7 @@
         }
 
         .close-button:hover {
-            color: #f65275;
+            color: #E8A817;
         }
 
         .form-group {
@@ -496,7 +561,7 @@
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #f65275;
+            border-color: #E8A817;
         }
 
         .skill-tiles {
@@ -515,7 +580,7 @@
 
         .skill-tile label {
             display: block;
-            background: #f0f0f0;
+            background: #E0E2E6;
             color: #333;
             padding: 10px 16px;
             border-radius: 6px;
@@ -533,7 +598,7 @@
         }
 
         .skill-tile label:hover {
-            border-color: #f65275;
+            border-color: #E8A817;
         }
 
         .submit-button {
@@ -552,7 +617,8 @@
         }
 
         .submit-button:hover {
-            background: #f65275;
+            background: #E8A817;
+            color: #041e42;
         }
 
         .refresh-button {
@@ -599,19 +665,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Chatbot panel (in assignments tab) */
-        .chatbot-panel {
-            width: 440px;
-            flex-shrink: 0;
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border: 1px solid #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            height: auto;
-            max-height: calc(100vh - 130px);
-        }
+        /* Chatbot styles */
 
         .chat-header {
             background: #041e42;
@@ -687,7 +741,7 @@
 
         .chat-input-area {
             padding: 12px 16px;
-            border-top: 1px solid #f0f0f0;
+            border-top: 1px solid #E0E2E6;
             display: flex;
             gap: 8px;
         }
@@ -704,12 +758,12 @@
         }
 
         .chat-input:focus {
-            border-color: #f65275;
+            border-color: #E8A817;
         }
 
         .chat-send-btn {
-            background: #f65275;
-            color: #ffffff;
+            background: #E8A817;
+            color: #041e42;
             border: none;
             padding: 10px 16px;
             border-radius: 8px;
@@ -792,7 +846,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #E0E2E6;
         }
 
         .scenario-panel-close {
@@ -810,11 +864,11 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            border-bottom: 1px solid #f8f8f8;
+            border-bottom: 1px solid #ECEDF0;
             font-size: 12px;
         }
 
-        .scenario-item.active-view { background: #f0f4ff; }
+        .scenario-item.active-view { background: #EDF0F5; }
 
         .scenario-item-name {
             flex: 1;
@@ -865,7 +919,7 @@
 
         .scenario-panel-footer {
             padding: 10px 16px;
-            border-top: 1px solid #f0f0f0;
+            border-top: 1px solid #E0E2E6;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -910,12 +964,12 @@
             font-weight: 600;
             font-size: 11px;
             text-transform: uppercase;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #E0E2E6;
         }
 
         .current-assignments-table td {
             padding: 7px 8px;
-            border-bottom: 1px solid #f8f8f8;
+            border-bottom: 1px solid #ECEDF0;
             color: #333;
         }
 
@@ -941,7 +995,7 @@
 
         .assign-divider {
             border: none;
-            border-top: 1px solid #f0f0f0;
+            border-top: 1px solid #E0E2E6;
             margin: 16px 0;
         }
 
@@ -965,16 +1019,16 @@
             font-weight: 600;
             font-size: 11px;
             text-transform: uppercase;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid #E0E2E6;
         }
 
         .assignments-table td {
             padding: 9px 12px;
-            border-bottom: 1px solid #f8f8f8;
+            border-bottom: 1px solid #ECEDF0;
             color: #333;
         }
 
-        .assignments-table tr:hover td { background: #f8f9ff; }
+        .assignments-table tr:hover td { background: #EDF0F5; }
 
         .assign-btn {
             background: none;
@@ -1004,6 +1058,12 @@
             overflow: hidden;
         }
 
+        #schedule .schedule-layout {
+            height: auto;
+            min-height: 400px;
+            max-height: calc(100vh - 200px);
+        }
+
         .schedule-projects-panel {
             width: 280px;
             flex-shrink: 0;
@@ -1018,7 +1078,7 @@
 
         .schedule-project-card {
             padding: 10px 14px;
-            border: 1px solid #f0f0f0;
+            border: 1px solid #E0E2E6;
             border-radius: 6px;
             margin-bottom: 8px;
             cursor: pointer;
@@ -1029,7 +1089,7 @@
 
         .schedule-project-card.selected {
             border-color: #041e42;
-            background: #f5f7fa;
+            background: #EDF0F5;
         }
 
         .schedule-project-dates {
@@ -1068,7 +1128,7 @@
             text-transform: uppercase;
             letter-spacing: 0.4px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #E0E2E6;
             margin: 20px 0 10px;
         }
 
@@ -1076,7 +1136,7 @@
             display: flex;
             align-items: center;
             padding: 9px 0;
-            border-bottom: 1px solid #f8f8f8;
+            border-bottom: 1px solid #ECEDF0;
             gap: 12px;
         }
 
@@ -1137,7 +1197,7 @@
         .schedule-remove-btn:hover { color: #e53935; }
 
         .assign-date-form {
-            background: #f7f8fa;
+            background: #ECEDF0;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
             padding: 10px 14px;
@@ -1174,20 +1234,206 @@
             display: flex;
             gap: 8px;
         }
+
+        /* Gantt toggle */
+        .gantt-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .gantt-toggle-btn {
+            background: rgba(255,255,255,0.15);
+            color: #ffffff;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .gantt-toggle-btn:first-child { border-radius: 4px 0 0 4px; }
+        .gantt-toggle-btn:nth-child(2) { border-radius: 0 4px 4px 0; }
+
+        .gantt-toggle-btn.active {
+            background: #E8A817;
+            border-color: #E8A817;
+            color: #041e42;
+        }
+
+        .gantt-collapse-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px 8px;
+            margin-left: 8px;
+            opacity: 0.7;
+            transition: opacity 0.15s, transform 0.2s;
+        }
+
+        .gantt-collapse-btn:hover { opacity: 1; }
+        .gantt-collapse-btn.collapsed { transform: rotate(180deg); }
+
+        .gantt-section #ganttContent {
+            max-height: 45vh;
+            overflow-y: auto;
+        }
+
+        .gantt-section #ganttContent.collapsed { display: none; }
+
+        /* AI Assistant right panel */
+        .chat-panel {
+            width: 400px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            right: 0;
+            background: #ffffff;
+            border-left: 1px solid #E0E2E6;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: width 0.25s ease, transform 0.25s ease;
+        }
+
+        .chat-panel.collapsed {
+            width: 0;
+            overflow: hidden;
+            transform: translateX(400px);
+        }
+
+        .chat-panel .chat-header {
+            border-radius: 0;
+            justify-content: flex-start;
+            flex-shrink: 0;
+        }
+
+        .chat-panel-toggle {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: auto;
+            padding: 0 4px;
+            opacity: 0.8;
+            transition: opacity 0.15s;
+        }
+
+        .chat-panel-toggle:hover { opacity: 1; }
+
+        /* Reopen button when panel is collapsed */
+        .chat-reopen-btn {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            z-index: 99;
+            background: #041e42;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px 0 0 8px;
+            padding: 12px 8px;
+            font-size: 14px;
+            cursor: pointer;
+            writing-mode: vertical-rl;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+            transition: background 0.15s;
+            display: none;
+        }
+
+        .chat-reopen-btn:hover {
+            background: #E8A817;
+        }
+
+        body.chat-collapsed .chat-reopen-btn {
+            display: block;
+        }
+
+        /* Card grid layout — flat stacked list */
+        .card-grid .card {
+            padding: 8px 12px;
+        }
+
+        .card-grid .card-title {
+            font-size: 14px;
+        }
+
+        .card-grid .card-status {
+            padding: 3px 8px;
+        }
+
+        .card-grid .card-detail {
+            font-size: 12px;
+        }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-search {
+            flex: 1;
+            min-width: 180px;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Montserrat', sans-serif;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+
+        .filter-search:focus {
+            border-color: #E8A817;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Montserrat', sans-serif;
+            background: #ffffff;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .filter-select:focus {
+            border-color: #E8A817;
+        }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-title">
-            <span class="sidebar-title-text">Scheduling</span>
+            <span class="sidebar-title-text">RelAI</span>
             <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
         </div>
-        <div class="nav-item" data-view="overview"><span class="nav-label">Overview</span></div>
-        <div class="nav-item" data-view="assignments"><span class="nav-label">Assignments</span></div>
-        <div class="nav-item" data-view="personnel"><span class="nav-label">Personnel</span></div>
-        <div class="nav-item" data-view="projects"><span class="nav-label">Projects</span></div>
-        <div class="nav-item" data-view="skills"><span class="nav-label">Skills</span></div>
+        <div class="nav-item" data-view="schedule">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="17" y2="14"/><line x1="7" y1="18" x2="14" y2="18"/></svg>
+            <span class="nav-label">Schedule</span>
+        </div>
+        <div class="nav-item" data-view="resources">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/></svg>
+            <span class="nav-label">Resources</span>
+        </div>
+        <div class="nav-item" data-view="projects">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>
+            <span class="nav-label">Projects</span>
+        </div>
         <div class="scenario-indicator" id="scenarioIndicator" onclick="toggleScenarioPanel()">
             <span class="scenario-dot master" id="scenarioDot"></span>
             <span id="scenarioIndicatorName">Loading...</span>
@@ -1219,23 +1465,52 @@
             </div>
         </div>
 
-        <!-- Overview View (Gantt full width) -->
-        <div id="overview" class="view active">
-            <div class="section">
-                <h2>Assignment Timeline</h2>
-                <div id="ganttChart" style="width: 100%; min-height: 400px;"></div>
+        <!-- Schedule View (merges Overview + Assignments) -->
+        <div id="schedule" class="view active">
+            <div class="section gantt-section">
+                <h2>
+                    Assignment Timeline
+                    <div class="gantt-toggle">
+                        <button class="gantt-toggle-btn active" data-mode="timeline" onclick="setGanttMode('timeline')">Timeline</button>
+                        <button class="gantt-toggle-btn" data-mode="table" onclick="setGanttMode('table')">Table</button>
+                        <button class="gantt-collapse-btn" onclick="toggleGanttCollapse()" title="Collapse/Expand">▲</button>
+                    </div>
+                </h2>
+                <div id="ganttContent">
+                    <div id="ganttChart" style="width: 100%;"></div>
+                    <div id="assignmentsTableContainer" style="display:none;"></div>
+                </div>
             </div>
-            <div class="section" style="margin-top: 24px;">
-                <h2>Assignments</h2>
-                <div id="assignmentsTableContainer"></div>
+            <div class="schedule-layout" style="margin-top: 24px;">
+                <div class="schedule-projects-panel">
+                    <div id="scheduleProjectsList"></div>
+                </div>
+                <div class="schedule-assign-panel" id="scheduleAssignPanel">
+                    <p class="schedule-placeholder">← Select a project to manage assignments</p>
+                </div>
             </div>
         </div>
 
-        <!-- Personnel View -->
-        <div id="personnel" class="view">
+        <!-- Resources View (merges Personnel + Skills) -->
+        <div id="resources" class="view">
             <div class="section">
-                <h2>All Personnel <button class="header-add-button" onclick="openPersonnelModal()">+ Add Personnel</button></h2>
-                <div id="personnelListContainer"></div>
+                <h2>Personnel <button class="header-add-button" onclick="openPersonnelModal()">+ Add Personnel</button></h2>
+                <div id="resourcesFilterBar" class="filter-bar">
+                    <input type="text" class="filter-search" id="personnelSearch" placeholder="Search personnel..." oninput="applyPersonnelFilters()">
+                    <select class="filter-select" id="personnelSkillFilter" onchange="applyPersonnelFilters()">
+                        <option value="">--</option>
+                    </select>
+                    <select class="filter-select" id="personnelStatusFilter" onchange="applyPersonnelFilters()">
+                        <option value="">--</option>
+                        <option value="available">Available</option>
+                        <option value="assigned">Assigned</option>
+                    </select>
+                </div>
+                <div id="personnelListContainer" class="card-grid"></div>
+            </div>
+            <div class="section" style="margin-top: 24px;">
+                <h2>Skills <button class="header-add-button" onclick="openSkillModal()">+ Add Skill</button></h2>
+                <div id="skillsListContainer"></div>
             </div>
         </div>
 
@@ -1243,46 +1518,43 @@
         <div id="projects" class="view">
             <div class="section">
                 <h2>All Projects <button class="header-add-button" onclick="openProjectModal()">+ Add Project</button></h2>
-                <div id="projectsListContainer"></div>
-            </div>
-        </div>
-
-        <!-- Assignments View -->
-        <div id="assignments" class="view">
-            <div class="schedule-layout">
-                <div class="schedule-projects-panel">
-                    <div id="scheduleProjectsList"></div>
+                <div id="projectsFilterBar" class="filter-bar">
+                    <input type="text" class="filter-search" id="projectsSearch" placeholder="Search projects..." oninput="applyProjectFilters()">
+                    <select class="filter-select" id="projectsAwardFilter" onchange="applyProjectFilters()">
+                        <option value="">--</option>
+                        <option value="awarded">Awarded</option>
+                        <option value="pending_award">Pending Award</option>
+                    </select>
+                    <select class="filter-select" id="projectsScheduleFilter" onchange="applyProjectFilters()">
+                        <option value="">--</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="not_scheduled">Not Scheduled</option>
+                    </select>
                 </div>
-                <div class="schedule-assign-panel" id="scheduleAssignPanel">
-                    <p class="schedule-placeholder">← Select a project to manage assignments</p>
-                </div>
-                <div class="chatbot-panel">
-                    <div class="chat-header">
-                        <span class="chat-status-dot"></span>
-                        AI Assistant
-                    </div>
-                    <div class="chat-messages" id="chatMessages">
-                        <div class="chat-msg assistant">
-                            <div class="chat-bubble">Hi! I can answer questions about your projects, personnel, and scheduling. What would you like to know?</div>
-                        </div>
-                    </div>
-                    <div class="chat-input-area">
-                        <input type="text" id="chatInput" class="chat-input" placeholder="Ask about projects...">
-                        <button id="chatSendBtn" class="chat-send-btn" onclick="sendChatMessage()">Send</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Skills View -->
-        <div id="skills" class="view">
-            <div class="section">
-                <h2>All Skills <button class="header-add-button" onclick="openSkillModal()">+ Add Skill</button></h2>
-                <div id="skillsListContainer"></div>
+                <div id="projectsListContainer" class="card-grid"></div>
             </div>
         </div>
 
     </div>
+
+    <!-- AI Assistant Panel (right side, default open) -->
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+            <span class="chat-status-dot"></span>
+            AI Assistant
+            <button class="chat-panel-toggle" onclick="toggleChatPanel()" title="Close panel">◀</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg assistant">
+                <div class="chat-bubble">Hi! I can answer questions about your projects, personnel, and scheduling. What would you like to know?</div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Ask about scheduling...">
+            <button id="chatSendBtn" class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+        </div>
+    </div>
+    <button class="chat-reopen-btn" onclick="toggleChatPanel()">AI Assistant</button>
 
     <!-- Personnel Modal -->
     <div id="personnelModal" class="modal-overlay">
@@ -1303,6 +1575,7 @@
                 </div>
 
                 <button type="submit" class="submit-button">Add Personnel</button>
+                <button type="button" class="modal-delete-btn" id="personnelDeleteBtn" style="display:none;" onclick="deletePersonnelFromModal()">Delete Personnel</button>
             </form>
         </div>
     </div>
@@ -1346,11 +1619,12 @@
                     <label>Award Status *</label>
                     <select name="award_status" required>
                         <option value="awarded">Awarded</option>
-                        <option value="prospect">Prospect</option>
+                        <option value="pending_award">Pending Award</option>
                     </select>
                 </div>
 
                 <button type="submit" class="submit-button">Add Project</button>
+                <button type="button" class="modal-delete-btn" id="projectDeleteBtn" style="display:none;" onclick="deleteProjectFromModal()">Delete Project</button>
             </form>
         </div>
     </div>
@@ -1433,26 +1707,34 @@
         let allProjects = [];
         let allSkills = [];
         let allAssignments = [];
-        let currentView = 'overview';
+        let currentView = 'schedule';
 
         // Scenario state
         let allScenarios = [];
         let currentScenarioId = null;
 
-        async function loadOverviewData() {
-            const [assignmentsRes, personnelRes, projectsRes] = await Promise.all([
+        async function loadScheduleData() {
+            const [overviewRes, personnelRes, projectsRes, schedProjectsRes, assignmentsRes] = await Promise.all([
                 fetch(`/api/assignments/overview?scenario_id=${currentScenarioId}`),
                 fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
-                fetch(`/api/projects?scenario_id=${currentScenarioId}`)
+                fetch(`/api/projects?scenario_id=${currentScenarioId}`),
+                fetch(`/api/assignments/schedule-projects?scenario_id=${currentScenarioId}`),
+                fetch(`/api/assignments?scenario_id=${currentScenarioId}`)
             ]);
-            allAssignments = await assignmentsRes.json();
+            const overviewAssignments = await overviewRes.json();
             allPersonnel = await personnelRes.json();
             allProjects = await projectsRes.json();
-            renderGantt(allAssignments, allPersonnel, allProjects);
+            const schedProjects = await schedProjectsRes.json();
+            allAssignments = await assignmentsRes.json();
+            // Use schedule-projects for the project list (has assignment_count)
+            allProjects = schedProjects;
+            renderGantt(overviewAssignments, allPersonnel, allProjects);
             renderAssignmentsList();
+            renderScheduleProjects();
+            if (selectedScheduleProjectId) renderScheduleAssignPanel(selectedScheduleProjectId);
         }
 
-        async function loadPersonnelData() {
+        async function loadResourcesData() {
             const [personnelRes, skillsRes] = await Promise.all([
                 fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
                 fetch('/api/skills')
@@ -1461,6 +1743,8 @@
             allSkills = await skillsRes.json();
             renderPersonnelList(allPersonnel);
             populatePersonnelSkillTiles();
+            renderSkillsList(allSkills);
+            populatePersonnelSkillFilter();
         }
 
         async function loadProjectsData() {
@@ -1474,31 +1758,10 @@
             populateSkillsDropdown();
         }
 
-        async function loadAssignmentsData() {
-            const [projectsRes, personnelRes, assignmentsRes] = await Promise.all([
-                fetch(`/api/assignments/schedule-projects?scenario_id=${currentScenarioId}`),
-                fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
-                fetch(`/api/assignments?scenario_id=${currentScenarioId}`)
-            ]);
-            allProjects = await projectsRes.json();
-            allPersonnel = await personnelRes.json();
-            allAssignments = await assignmentsRes.json();
-            renderScheduleProjects();
-            if (selectedScheduleProjectId) renderScheduleAssignPanel(selectedScheduleProjectId);
-        }
-
-        async function loadSkillsData() {
-            const res = await fetch('/api/skills');
-            allSkills = await res.json();
-            renderSkillsList(allSkills);
-        }
-
         const viewLoaders = {
-            overview: loadOverviewData,
-            assignments: loadAssignmentsData,
-            personnel: loadPersonnelData,
+            schedule: loadScheduleData,
+            resources: loadResourcesData,
             projects: loadProjectsData,
-            skills: loadSkillsData,
         };
 
         // Refresh data (current view only)
@@ -1527,39 +1790,44 @@
         }
 
         // Render personnel list (full page)
+        function lastFirstName(name) {
+            const parts = name.trim().split(/\s+/);
+            if (parts.length < 2) return name;
+            const last = parts.pop();
+            return `${last}, ${parts.join(' ')}`;
+        }
+
+        function getLastName(name) {
+            const parts = name.trim().split(/\s+/);
+            return parts.length < 2 ? name : parts[parts.length - 1];
+        }
+
         function renderPersonnelList(personnel) {
             const container = document.getElementById('personnelListContainer');
-            const sorted = [...personnel].sort((a, b) => a.name.localeCompare(b.name));
+            const sorted = [...personnel].sort((a, b) => getLastName(a.name).localeCompare(getLastName(b.name)));
             const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
             container.innerHTML = sorted.map(person => {
                 const status = person.availability_status || 'available';
-                const currentInfo = person.current_project_name
-                    ? `<div class="card-detail"><strong>Current:</strong> ${person.current_project_name} (until ${fmtDate(person.current_assignment_end)})</div>`
+                const displayName = lastFirstName(person.name);
+                const currentProject = person.current_project_name
+                    ? `<strong>Current:</strong> ${person.current_project_name}`
                     : '';
-                const nextInfo = person.next_project_name
-                    ? `<div class="card-detail"><strong>Next:</strong> ${person.next_project_name} (starts ${fmtDate(person.next_assignment_start)})</div>`
-                    : '';
+                const availDate = person.current_project_name
+                    ? `<strong>Available:</strong> <span class="available-date">${fmtDate(person.current_assignment_end)}</span>`
+                    : `<strong>Available:</strong> <span class="available-date">Now</span>`;
                 return `
-                <div class="card ${status}">
+                <div class="card ${status}" style="position:relative;">
                     <div class="card-header">
-                        <div class="card-title">${person.name}</div>
-                        <div style="display:flex;align-items:center;">
-                            <div class="card-status ${status}">${status}</div>
-                            <button class="delete-btn" onclick="deletePersonnel('${person.id}', '${person.name.replace(/'/g, "\\'")}')" title="Delete">&times;</button>
+                        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                            <div class="card-title">${displayName}</div>
+                            ${person.skills.split(',').map(skill =>
+                                `<span class="skills-tag-light">${skill.trim()}</span>`
+                            ).join('')}
                         </div>
+                        <div class="card-status ${status}">${status}</div>
                     </div>
-                    <div class="card-detail">
-                        <strong>Skills:</strong>
-                        ${person.skills.split(',').map(skill =>
-                            `<span class="skills-tag">${skill.trim()}</span>`
-                        ).join('')}
-                    </div>
-                    <div class="card-detail">
-                        <strong>Available:</strong>
-                        <span class="available-date">${fmtDate(person.next_available_date)}</span>
-                    </div>
-                    ${currentInfo}
-                    ${nextInfo}
+                    <div class="card-detail">${currentProject}${currentProject ? ' · ' : ''}${availDate}</div>
+                    <button class="card-edit-btn" onclick="editPersonnel('${person.id}')" title="Edit">✎</button>
                 </div>`;
             }).join('');
         }
@@ -1576,30 +1844,22 @@
                     ? `${fmtDate(project.actual_start_date)} – ${fmtDate(project.actual_end_date)}`
                     : 'Not scheduled';
                 return `
-                <div class="card">
+                <div class="card" style="position:relative;">
                     <div class="card-header">
-                        <div class="card-title">${project.name}</div>
-                        <div style="display:flex;align-items:center;">
-                            <div class="status-badges">
-                                <div class="card-status ${project.award_status}">${project.award_status}</div>
-                                <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
-                            </div>
-                            <button class="delete-btn" onclick="deleteProject('${project.id}', '${project.name.replace(/'/g, "\\'")}')" title="Delete">&times;</button>
-                        </div>
-                    </div>
-                    <div class="card-row">
-                        <div class="card-detail">
-                            <strong>Skills:</strong>
+                        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                            <div class="card-title">${project.name}</div>
+                            <span class="card-meta">${project.num_elevators} elevs · ${project.duration_weeks}w</span>
                             ${project.required_skills.split(',').map(skill =>
-                                `<span class="skills-tag">${skill.trim()}</span>`
+                                `<span class="skills-tag-light">${skill.trim()}</span>`
                             ).join('')}
                         </div>
-                        <div class="card-meta">
-                            ${project.num_elevators} elevs &middot; ${project.duration_weeks}w
+                        <div class="status-badges">
+                            <div class="card-status ${project.award_status}">${project.award_status.replace('_', ' ')}</div>
+                            <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                         </div>
                     </div>
-                    <div class="card-detail"><strong>Requested:</strong> ${requestedDates}</div>
-                    <div class="card-detail"><strong>Scheduled:</strong> ${actualDates}</div>
+                    <div class="card-detail"><strong>Requested:</strong> ${requestedDates} · <strong>Scheduled:</strong> ${actualDates}</div>
+                    <button class="card-edit-btn" onclick="editProject('${project.id}')" title="Edit">✎</button>
                 </div>`;
             }).join('');
         }
@@ -1613,6 +1873,44 @@
                     <div class="card-title">${skill.skill}</div>
                 </div>
             `).join('');
+        }
+
+        // Populate personnel skill filter dropdown
+        function populatePersonnelSkillFilter() {
+            const select = document.getElementById('personnelSkillFilter');
+            const current = select.value;
+            select.innerHTML = '<option value="">--</option>' +
+                [...allSkills].sort((a, b) => a.skill.localeCompare(b.skill))
+                    .map(s => `<option value="${s.skill}">${s.skill}</option>`).join('');
+            select.value = current;
+        }
+
+        // Filter personnel
+        function applyPersonnelFilters() {
+            const search = (document.getElementById('personnelSearch').value || '').toLowerCase();
+            const skill = document.getElementById('personnelSkillFilter').value;
+            const status = document.getElementById('personnelStatusFilter').value;
+            const filtered = allPersonnel.filter(p => {
+                if (search && !p.name.toLowerCase().includes(search)) return false;
+                if (skill && !p.skills.split(',').map(s => s.trim()).includes(skill)) return false;
+                if (status && (p.availability_status || 'available') !== status) return false;
+                return true;
+            });
+            renderPersonnelList(filtered);
+        }
+
+        // Filter projects
+        function applyProjectFilters() {
+            const search = (document.getElementById('projectsSearch').value || '').toLowerCase();
+            const award = document.getElementById('projectsAwardFilter').value;
+            const sched = document.getElementById('projectsScheduleFilter').value;
+            const filtered = allProjects.filter(p => {
+                if (search && !p.name.toLowerCase().includes(search)) return false;
+                if (award && p.award_status !== award) return false;
+                if (sched && (p.schedule_status || 'not_scheduled') !== sched) return false;
+                return true;
+            });
+            renderProjectsList(filtered);
         }
 
         // Populate personnel skill tiles dynamically from allSkills
@@ -1632,7 +1930,7 @@
         // Render Gantt chart with Plotly
         function renderGantt(assignments, personnel, projects) {
             const traces = assignments.map((a) => {
-                const label = a.personnel_name || 'Unknown';
+                const label = lastFirstName(a.personnel_name || 'Unknown');
                 const projectName = a.project_name || 'Unknown';
                 const isCurrent = a.sequence === 1 || a.sequence === '1';
                 const barColor = isCurrent ? '#041e42' : '#6b9fd4';
@@ -1643,12 +1941,12 @@
                     y: [label],
                     x: [new Date(a.end_date) - new Date(a.start_date)],
                     base: [a.start_date],
-                    width: [0.4],
+                    width: [0.6],
                     name: projectName,
                     text: [projectName],
                     textposition: 'inside',
                     insidetextanchor: 'middle',
-                    textfont: { color: '#ffffff', size: 13, family: 'Montserrat, sans-serif' },
+                    textfont: { color: '#ffffff', size: 11, family: 'Montserrat, sans-serif' },
                     hovertemplate: '<b>%{text}</b><br>%{y}<br>%{base|%b %d, %Y} \u2192 ' +
                         new Date(a.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
                         '<extra></extra>',
@@ -1665,19 +1963,19 @@
                 xaxis: {
                     type: 'date',
                     title: '',
-                    gridcolor: '#f0f0f0',
+                    gridcolor: '#E0E2E6',
                     dtick: 'M1',
                     tickformat: '%b %Y',
                     tickfont: { family: 'Montserrat, sans-serif', size: 12 },
                 },
                 yaxis: {
                     autorange: 'reversed',
-                    tickfont: { family: 'Montserrat, sans-serif', size: 14, color: '#041e42' },
+                    tickfont: { family: 'Montserrat, sans-serif', size: 11, color: '#041e42' },
                     fixedrange: true,
                 },
-                bargap: 0.4,
-                height: Math.max(300, assignments.length * 60 + 120),
-                margin: { l: 140, r: 40, t: 20, b: 40 },
+                bargap: 0.2,
+                height: Math.max(250, assignments.length * 28 + 80),
+                margin: { l: 130, r: 20, t: 10, b: 30 },
                 font: { family: 'Montserrat, sans-serif' },
                 plot_bgcolor: '#ffffff',
                 paper_bgcolor: '#ffffff',
@@ -1695,11 +1993,24 @@
                 responsive: true,
                 displayModeBar: true,
                 modeBarButtonsToRemove: ['select2d', 'lasso2d', 'autoScale2d'],
-                scrollZoom: true,
+                scrollZoom: false,
                 displaylogo: false,
             };
 
             Plotly.newPlot('ganttChart', traces, layout, config);
+
+            // Gantt bar click → select project in schedule panel
+            const ganttEl = document.getElementById('ganttChart');
+            ganttEl._projectIds = assignments.map(a => a.project_id);
+            ganttEl.on('plotly_click', function(data) {
+                if (data.points && data.points.length > 0) {
+                    const idx = data.points[0].curveNumber;
+                    const projectId = ganttEl._projectIds[idx];
+                    if (projectId) {
+                        selectScheduleProject(projectId);
+                    }
+                }
+            });
         }
 
         // View navigation
@@ -1722,11 +2033,9 @@
 
             // Update page title
             const titles = {
-                'overview': 'Overview',
-                'assignments': 'Assignments',
-                'personnel': 'Personnel',
+                'schedule': 'Schedule',
+                'resources': 'Resources',
                 'projects': 'Projects',
-                'skills': 'Skills',
             };
             document.getElementById('pageTitle').textContent = titles[viewName];
 
@@ -1734,14 +2043,14 @@
             currentView = viewName;
             viewLoaders[viewName]().catch(err => console.error('Error loading data:', err));
 
-            // Plotly needs a resize when the overview becomes visible
-            if (viewName === 'overview') {
+            // Plotly needs a resize when the schedule view becomes visible
+            if (viewName === 'schedule') {
                 Plotly.Plots.resize('ganttChart');
             }
 
             // Update URL without page reload
             if (updateHistory) {
-                const url = viewName === 'overview' ? '/' : `/${viewName}`;
+                const url = viewName === 'schedule' ? '/' : `/${viewName}`;
                 history.pushState({ view: viewName }, '', url);
             }
         }
@@ -1758,12 +2067,10 @@
         // Get view name from current URL
         function getViewFromURL() {
             const path = window.location.pathname;
-            if (path === '/' || path === '/overview') return 'overview';
-            if (path === '/personnel') return 'personnel';
+            if (path === '/' || path === '/schedule' || path === '/overview' || path === '/assignments') return 'schedule';
+            if (path === '/resources' || path === '/personnel' || path === '/skills') return 'resources';
             if (path === '/projects') return 'projects';
-            if (path === '/assignments' || path === '/schedule') return 'assignments';
-            if (path === '/skills') return 'skills';
-            return 'overview'; // default
+            return 'schedule'; // default
         }
 
         // Initialize navigation
@@ -1811,7 +2118,7 @@
                 });
                 if (!response.ok) throw new Error(await response.text());
                 closeSkillModal();
-                await loadSkillsData();
+                await loadResourcesData();
             } catch (err) {
                 alert('Failed to add skill: ' + err.message);
             }
@@ -1919,6 +2226,40 @@
             }
         }
 
+        // Gantt/Table toggle
+        let ganttMode = 'timeline';
+
+        function setGanttMode(mode) {
+            ganttMode = mode;
+            document.querySelectorAll('.gantt-toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            document.getElementById('ganttChart').style.display = mode === 'timeline' ? 'block' : 'none';
+            document.getElementById('assignmentsTableContainer').style.display = mode === 'table' ? 'block' : 'none';
+            if (mode === 'timeline') {
+                Plotly.Plots.resize('ganttChart');
+            }
+        }
+
+        function toggleGanttCollapse() {
+            const content = document.getElementById('ganttContent');
+            const btn = document.querySelector('.gantt-collapse-btn');
+            content.classList.toggle('collapsed');
+            btn.classList.toggle('collapsed');
+        }
+
+        // Chat panel toggle
+        function toggleChatPanel() {
+            const panel = document.getElementById('chatPanel');
+            panel.classList.toggle('collapsed');
+            document.body.classList.toggle('chat-collapsed');
+            // Resize Plotly chart after panel transition
+            setTimeout(() => {
+                const gantt = document.getElementById('ganttChart');
+                if (gantt && gantt.data) Plotly.Plots.resize('ganttChart');
+            }, 300);
+        }
+
         // Toggle sidebar collapse
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -1946,6 +2287,10 @@
         function closePersonnelModal() {
             document.getElementById('personnelModal').classList.remove('active');
             document.getElementById('personnelForm').reset();
+            editingPersonnelId = null;
+            document.querySelector('#personnelModal .modal-header h3').textContent = 'Add Personnel';
+            document.querySelector('#personnelForm .submit-button').textContent = 'Add Personnel';
+            document.getElementById('personnelDeleteBtn').style.display = 'none';
         }
 
         function openProjectModal() {
@@ -1955,6 +2300,83 @@
         function closeProjectModal() {
             document.getElementById('projectModal').classList.remove('active');
             document.getElementById('projectForm').reset();
+            editingProjectId = null;
+            document.querySelector('#projectModal .modal-header h3').textContent = 'Add Project';
+            document.querySelector('#projectForm .submit-button').textContent = 'Add Project';
+            document.getElementById('projectDeleteBtn').style.display = 'none';
+        }
+
+        // Edit personnel — populate modal with existing data
+        let editingPersonnelId = null;
+
+        function editPersonnel(id) {
+            const person = allPersonnel.find(p => p.id === id);
+            if (!person) return;
+            editingPersonnelId = id;
+            const form = document.getElementById('personnelForm');
+            form.querySelector('[name="name"]').value = person.name;
+            // Check matching skill tiles
+            const skills = person.skills.split(',').map(s => s.trim());
+            form.querySelectorAll('[name="skills"]').forEach(cb => {
+                cb.checked = skills.includes(cb.value);
+            });
+            document.querySelector('#personnelModal .modal-header h3').textContent = 'Edit Personnel';
+            document.querySelector('#personnelForm .submit-button').textContent = 'Save Changes';
+            document.getElementById('personnelDeleteBtn').style.display = 'block';
+            document.getElementById('personnelModal').classList.add('active');
+        }
+
+        async function deletePersonnelFromModal() {
+            const person = allPersonnel.find(p => p.id === editingPersonnelId);
+            const name = person ? person.name : 'this person';
+            if (!confirm(`Delete ${name}? This will also remove all their assignments.`)) return;
+            try {
+                const res = await fetch(`/api/personnel/${editingPersonnelId}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(await res.text());
+                closePersonnelModal();
+                await loadResourcesData();
+            } catch (err) {
+                alert('Failed to delete: ' + err.message);
+            }
+        }
+
+        // Edit project — populate modal with existing data
+        let editingProjectId = null;
+
+        function editProject(id) {
+            const project = allProjects.find(p => p.id === id);
+            if (!project) return;
+            editingProjectId = id;
+            const form = document.getElementById('projectForm');
+            form.querySelector('[name="name"]').value = project.name;
+            form.querySelector('[name="num_elevators"]').value = project.num_elevators;
+            form.querySelector('[name="requested_start_date"]').value = project.requested_start_date;
+            form.querySelector('[name="duration_weeks"]').value = project.duration_weeks;
+            form.querySelector('[name="award_status"]').value = project.award_status;
+            // Select matching skills in dropdown
+            const skills = project.required_skills.split(',').map(s => s.trim());
+            const select = document.getElementById('projectSkillsSelect');
+            Array.from(select.options).forEach(opt => {
+                opt.selected = skills.includes(opt.value);
+            });
+            document.querySelector('#projectModal .modal-header h3').textContent = 'Edit Project';
+            document.querySelector('#projectForm .submit-button').textContent = 'Save Changes';
+            document.getElementById('projectDeleteBtn').style.display = 'block';
+            document.getElementById('projectModal').classList.add('active');
+        }
+
+        async function deleteProjectFromModal() {
+            const project = allProjects.find(p => p.id === editingProjectId);
+            const name = project ? project.name : 'this project';
+            if (!confirm(`Delete ${name}? This will also remove all assignments for this project.`)) return;
+            try {
+                const res = await fetch(`/api/projects/${editingProjectId}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error(await res.text());
+                closeProjectModal();
+                await loadProjectsData();
+            } catch (err) {
+                alert('Failed to delete: ' + err.message);
+            }
         }
 
         // Close modals on outside click
@@ -1966,7 +2388,7 @@
             if (e.target === this) closeProjectModal();
         });
 
-        // Submit personnel form
+        // Submit personnel form (create or update)
         async function submitPersonnel(event) {
             event.preventDefault();
             const formData = new FormData(event.target);
@@ -1977,16 +2399,18 @@
             };
 
             try {
-                const response = await fetch('/api/personnel', {
-                    method: 'POST',
+                const url = editingPersonnelId ? `/api/personnel/${editingPersonnelId}` : '/api/personnel';
+                const method = editingPersonnelId ? 'PATCH' : 'POST';
+                const response = await fetch(url, {
+                    method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(personnel)
                 });
                 if (!response.ok) throw new Error(await response.text());
                 closePersonnelModal();
-                await loadPersonnelData();
+                await loadResourcesData();
             } catch (err) {
-                alert('Failed to add personnel: ' + err.message);
+                alert('Failed to save personnel: ' + err.message);
             }
         }
 
@@ -2071,7 +2495,7 @@
             if (!container) return;
             const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
 
-            const rows = [...allPersonnel].sort((a, b) => a.name.localeCompare(b.name)).map(person => {
+            const rows = [...allPersonnel].sort((a, b) => getLastName(a.name).localeCompare(getLastName(b.name))).map(person => {
                 const currentProject = person.current_project_name || '-';
                 const completion = person.current_assignment_end ? fmtDate(person.current_assignment_end) : '-';
                 const nextProject = person.next_project_name || '-';
@@ -2083,7 +2507,7 @@
                     const startMs = new Date(person.next_project_requested_start + 'T00:00:00');
                     const days = Math.round((endMs - startMs) / 86400000);
                     if (days > 0) {
-                        gapCell = `<span style="color:#c0392b;font-weight:600">+${days}d late</span>`;
+                        gapCell = `<span style="color:#C20000;font-weight:600">+${days}d late</span>`;
                     } else if (days < 0) {
                         gapCell = `<span style="color:#27ae60">${days}d</span>`;
                     } else {
@@ -2092,7 +2516,7 @@
                 }
 
                 return `<tr>
-                    <td>${person.name}</td>
+                    <td>${lastFirstName(person.name)}</td>
                     <td>${currentProject}</td>
                     <td>${completion}</td>
                     <td>${nextProject}</td>
@@ -2136,7 +2560,7 @@
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                             <div class="card-title" style="font-size:14px;">${p.name}</div>
                             <div class="status-badges">
-                                <div class="card-status ${p.award_status}" style="font-size:10px;padding:3px 6px;">${p.award_status}</div>
+                                <div class="card-status ${p.award_status}" style="font-size:10px;padding:3px 6px;">${p.award_status.replace('_', ' ')}</div>
                                 <div class="card-status ${schedStatus}" style="font-size:10px;padding:3px 6px;">${schedStatus.replace('_', ' ')}</div>
                             </div>
                         </div>
@@ -2147,6 +2571,14 @@
         }
 
         function selectScheduleProject(projectId) {
+            if (selectedScheduleProjectId === projectId) {
+                // Deselect
+                selectedScheduleProjectId = null;
+                renderScheduleProjects();
+                document.getElementById('scheduleAssignPanel').innerHTML =
+                    '<p class="schedule-placeholder">← Select a project to manage assignments</p>';
+                return;
+            }
             selectedScheduleProjectId = projectId;
             renderScheduleProjects();
             renderScheduleAssignPanel(projectId);
@@ -2242,7 +2674,7 @@
                     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
                         <h3>${project.name}</h3>
                         <div class="status-badges">
-                            <div class="card-status ${project.award_status}">${project.award_status}</div>
+                            <div class="card-status ${project.award_status}">${project.award_status.replace('_', ' ')}</div>
                             <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                         </div>
                     </div>
@@ -2278,7 +2710,7 @@
                     })
                 });
                 if (!res.ok) throw new Error(await res.text());
-                await loadAssignmentsData();
+                await loadScheduleData();
             } catch (err) {
                 alert('Failed to assign: ' + err.message);
             }
@@ -2351,7 +2783,7 @@
             try {
                 const res = await fetch('/api/assignments/' + assignmentId, { method: 'DELETE' });
                 if (!res.ok) throw new Error(await res.text());
-                await loadAssignmentsData();
+                await loadScheduleData();
             } catch (err) {
                 alert('Failed to remove: ' + err.message);
             }
@@ -2363,7 +2795,7 @@
             try {
                 const res = await fetch(`/api/personnel/${id}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error(await res.text());
-                await loadPersonnelData();
+                await loadResourcesData();
             } catch (err) {
                 alert('Failed to delete personnel: ' + err.message);
             }
@@ -2397,8 +2829,10 @@
             };
 
             try {
-                const response = await fetch('/api/projects', {
-                    method: 'POST',
+                const url = editingProjectId ? `/api/projects/${editingProjectId}` : '/api/projects';
+                const method = editingProjectId ? 'PATCH' : 'POST';
+                const response = await fetch(url, {
+                    method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(project)
                 });
@@ -2406,7 +2840,7 @@
                 closeProjectModal();
                 await loadProjectsData();
             } catch (err) {
-                alert('Failed to add project: ' + err.message);
+                alert('Failed to save project: ' + err.message);
             }
         }
     </script>
