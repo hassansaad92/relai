@@ -11,7 +11,7 @@ This application helps coordinate the assignment of mechanics and work crews to 
 - **Gantt chart overview**: Visual timeline of all mechanic assignments across projects
 - **AI scheduling assistant**: Ask questions like "Who is available next week?" or "What is John's next project?" and get answers from live data
 - **Personnel management**: Track skills; availability is automatically derived from assignments
-- **Project management**: Track required skills, elevator counts, requested/actual dates, and durations
+- **Project management**: Track required skills, elevator counts, contract/actual dates, and durations
 - **Assignment tracking**: Confirmed personnel-to-project assignments with sequence, date ranges, and assignment types (full/cascading/partial)
 
 ## Tech Stack
@@ -125,8 +125,8 @@ Run `data/schema.sql` in the Supabase SQL Editor to create all tables, triggers,
 |---|---|---|
 | `id` | UUID | Primary key, default `gen_random_uuid()` |
 | `name` | Text | |
-| `requested_start_date` | Date | When the project is requested to start |
-| `requested_end_date` | Date | Computed from `requested_start_date + duration_weeks` |
+| `contract_start_date` | Date | Contract start date for the project |
+| `contract_end_date` | Date | Computed from `contract_start_date + duration_weeks` |
 | `duration_weeks` | Integer | |
 | `num_elevators` | Integer | |
 | `required_skills` | Text | Comma-separated skill tags |
@@ -175,7 +175,7 @@ All core tables (personnel, projects, skills) have SCD2 history tables and trigg
 | `PATCH` | `/api/personnel/:id` | Update personnel (name, skills) |
 | `DELETE` | `/api/personnel/:id` | Delete personnel + their assignments |
 | `GET` | `/api/projects?scenario_id=` | List projects with computed schedule_status and actual dates |
-| `POST` | `/api/projects` | Add a project (`requested_end_date` computed server-side) |
+| `POST` | `/api/projects` | Add a project (`contract_end_date` computed server-side) |
 | `DELETE` | `/api/projects/:id` | Delete project + its assignments |
 | `GET` | `/api/assignments?scenario_id=` | Enriched assignments with personnel/project names |
 | `GET` | `/api/assignments/overview?scenario_id=` | Gantt chart data with joined names |
@@ -295,7 +295,7 @@ Chronological record of major technical decisions and what shipped in each PR.
 
 - **Removed redundant columns**: `personnel.availability_status` and `available_date` were manually maintained via frontend PATCH calls, duplicating what assignments already track. Personnel is now a pure dimension table — availability is derived via LEFT JOIN LATERAL in `queries/personnel_list.sql`
 - **Removed `projects.schedule_status`**: was manually set at creation time but should be computed from whether assignments exist. Now derived via LEFT JOIN in `queries/projects_list.sql`
-- **Split project dates**: renamed `start_date` → `requested_start_date`, added `requested_end_date` (computed server-side). Actual dates (`actual_start_date`, `actual_end_date`) are computed from assignment JOINs, so project cards now show both requested and scheduled date ranges
+- **Split project dates**: renamed `start_date` → `contract_start_date`, added `contract_end_date` (computed server-side). Actual dates (`actual_start_date`, `actual_end_date`) are computed from assignment JOINs, so project cards now show both contract and scheduled date ranges
 - **Added `assignment_type`**: supports 3 scheduling scenarios — `full` (project start to end), `cascading` (personnel's next available date + duration), and `partial` (custom dates). CHECK constraint enforces valid values
 - **Extracted SQL into `queries/` directory**: 6 `.sql` files with proper JOINs replace inline SQL and frontend-side data joining. Loaded via `_load_sql()` with `@lru_cache`
 - **Eliminated frontend availability management**: `scheduleAssign()` and `scheduleRemove()` no longer PATCH personnel — the source of truth is assignments, and the UI reads derived state from the server

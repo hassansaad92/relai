@@ -10,6 +10,7 @@ from database import (
     fetch_personnel_page,
     fetch_projects,
     fetch_projects_page,
+    fetch_project_by_id,
     fetch_skills,
     fetch_assignments_by_scenario,
     fetch_assignments_enriched,
@@ -34,6 +35,7 @@ from database import (
     insert_scenario,
     update_scenario,
     copy_assignments_to_scenario,
+    shift_project_assignments,
 )
 
 router = APIRouter()
@@ -71,7 +73,7 @@ class ProjectCreate(BaseModel):
     name: str
     required_skills: str
     num_elevators: int
-    requested_start_date: str
+    contract_start_date: str
     duration_weeks: int
     award_status: str
 
@@ -80,7 +82,7 @@ class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     required_skills: Optional[str] = None
     num_elevators: Optional[int] = None
-    requested_start_date: Optional[str] = None
+    contract_start_date: Optional[str] = None
     duration_weeks: Optional[int] = None
     award_status: Optional[str] = None
 
@@ -103,6 +105,10 @@ class AssignmentUpdate(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     assignment_type: Optional[str] = None
+
+
+class ShiftScheduleRequest(BaseModel):
+    new_start_date: str
 
 
 class ScenarioCreate(BaseModel):
@@ -159,9 +165,9 @@ async def get_projects(scenario_id: Optional[str] = None):
 @router.post("/api/projects")
 async def create_project(project: ProjectCreate):
     data = project.model_dump()
-    start = datetime.strptime(data["requested_start_date"], "%Y-%m-%d")
+    start = datetime.strptime(data["contract_start_date"], "%Y-%m-%d")
     end = start + timedelta(weeks=data["duration_weeks"])
-    data["requested_end_date"] = end.strftime("%Y-%m-%d")
+    data["contract_end_date"] = end.strftime("%Y-%m-%d")
     return insert_project(data)
 
 
@@ -178,12 +184,17 @@ async def patch_project(project_id: str, data: ProjectUpdate):
     if not updates:
         raise HTTPException(400, "No fields to update")
     # Recalculate end date if start or duration changed
-    if "requested_start_date" in updates or "duration_weeks" in updates:
-        start_str = updates.get("requested_start_date")
+    if "contract_start_date" in updates or "duration_weeks" in updates:
+        start_str = updates.get("contract_start_date")
         weeks = updates.get("duration_weeks")
-        if start_str and weeks:
-            start = datetime.strptime(start_str, "%Y-%m-%d")
-            updates["requested_end_date"] = (start + timedelta(weeks=weeks)).strftime("%Y-%m-%d")
+        if not start_str or not weeks:
+            current = fetch_project_by_id(project_id)
+            if not current:
+                raise HTTPException(404, "Project not found")
+            start_str = start_str or str(current["contract_start_date"])
+            weeks = weeks or current["duration_weeks"]
+        start = datetime.strptime(start_str, "%Y-%m-%d")
+        updates["contract_end_date"] = (start + timedelta(weeks=weeks)).strftime("%Y-%m-%d")
     result = update_project(project_id, updates)
     if not result:
         raise HTTPException(404, "Project not found")
@@ -260,6 +271,15 @@ async def create_assignment(assignment: AssignmentCreate):
     return insert_assignment(assignment.model_dump())
 
 
+@router.post("/api/projects/{project_id}/shift-schedule")
+async def shift_schedule(project_id: str, data: ShiftScheduleRequest, scenario_id: Optional[str] = None):
+    sid = _get_scenario_id(scenario_id)
+    if not sid:
+        raise HTTPException(400, "No scenario found")
+    result = shift_project_assignments(sid, project_id, data.new_start_date)
+    return result
+
+
 # ── Scenarios ──────────────────────────────────────────────────────────────────
 
 @router.get("/api/scenarios")
@@ -329,7 +349,7 @@ async def chat(request: ChatRequest):
 
     projects_text = "\n".join([
         f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], {p['num_elevators']} elevators, "
-        f"requested {p['requested_start_date']} to {p['requested_end_date']}, duration {p['duration_weeks']} weeks, "
+        f"contract {p['contract_start_date']} to {p['contract_end_date']}, duration {p['duration_weeks']} weeks, "
         f"award: {p['award_status']}, schedule: {p.get('schedule_status', 'unknown')}"
         + (f", actual dates: {p.get('actual_start_date')} to {p.get('actual_end_date')}" if p.get('actual_start_date') else "")
         for p in projects

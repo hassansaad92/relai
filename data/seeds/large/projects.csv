@@ -1,4 +1,4 @@
-id,name,requested_start_date,requested_end_date,duration_weeks,num_elevators,required_skills,award_status
+id,name,contract_start_date,contract_end_date,duration_weeks,num_elevators,required_skills,award_status
 1,Westfield Apartments,2026-01-19,2026-06-08,20,2,"Gen2,Geared",awarded
 2,Maplewood Hospital,2026-01-26,2026-08-24,30,3,Compass,awarded
 3,Eastside Condominiums,2026-02-09,2026-06-29,20,2,"Gearless,Compass",awarded

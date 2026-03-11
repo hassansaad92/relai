@@ -1,8 +1,8 @@
 SELECT
     p.id,
     p.name,
-    p.requested_start_date,
-    p.requested_end_date,
+    p.contract_start_date,
+    p.contract_end_date,
     p.duration_weeks,
     p.num_elevators,
     p.required_skills,
@@ -14,9 +14,10 @@ SELECT
     COUNT(a.id) AS assignment_count,
     CASE
         WHEN COUNT(a.id) = 0 THEN 'not_scheduled'
+        WHEN MIN(a.start_date) <= CURRENT_DATE AND MAX(a.end_date) >= CURRENT_DATE THEN 'active'
         ELSE 'scheduled'
     END AS schedule_status
 FROM projects p
 LEFT JOIN assignments a ON a.project_id = p.id AND a.scenario_id = %(scenario_id)s
 GROUP BY p.id
-ORDER BY p.requested_start_date
+ORDER BY p.contract_start_date
