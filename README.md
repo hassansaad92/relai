@@ -88,7 +88,7 @@ echo $ANTHROPIC_API_KEY
 
 ### Data reset script
 
-`data/reset_supabase_data.py` reseeds the database from CSV files using the Supabase Python client. It requires two additional env vars — the project URL (same host as `SUPABASE_RELAI_DB_HOST` but replacing `db.` with `https://`) and a service role key:
+`data/repopulate_supabase_data.py` reseeds the database from CSV files using the Supabase Python client. It requires two additional env vars — the project URL (same host as `SUPABASE_RELAI_DB_HOST` but replacing `db.` with `https://`) and a service role key:
 
 ```bash
 export SUPABASE_RELAI_URL="https://your-project-id.supabase.co"
@@ -272,7 +272,7 @@ Chronological record of major technical decisions and what shipped in each PR.
 ### PR #10 — Data reset script
 **Branch:** `feature/reseed-migration-script`
 
-- Renamed `migrate_to_supabase.py` → `reset_supabase_data.py` to reflect its actual purpose (reset + reseed, not one-time migration)
+- Renamed `migrate_to_supabase.py` → `repopulate_supabase_data.py` to reflect its actual purpose (reset + reseed, not one-time migration)
 - Script deletes all rows and re-inserts from CSVs using the Supabase service-role client
 
 ---
@@ -284,7 +284,7 @@ Chronological record of major technical decisions and what shipped in each PR.
 - **Why:** The Supabase client requires the service-role secret key, which has admin-level access. Direct PostgreSQL credentials (`DB_HOST` + `DB_PASSWORD`) are sufficient for the app and follow the principle of least privilege
 - Env vars changed: `SUPABASE_RELAI_URL` + `SUPABASE_RELAI_SECRET_KEY` → `SUPABASE_RELAI_DB_HOST` + `SUPABASE_RELAI_DB_PASSWORD`
 - Pool is initialized/closed via FastAPI `lifespan` context manager
-- The data reset script (`reset_supabase_data.py`) still uses the Supabase client and still requires the service-role key — those env vars now only apply to that script
+- The data reset script (`repopulate_supabase_data.py`) still uses the Supabase client and still requires the service-role key — those env vars now only apply to that script
 - Moved raw SQL queries to `queries.sql` for reference
 - Added `.claude/skills/supabase-connection/` skill documenting the connection details
 

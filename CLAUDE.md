@@ -9,6 +9,15 @@ Key rules:
 - Always create a feature branch before making changes
 - See `.claude/skills/git-workflow/SKILL.md` for complete workflow details
 
+## Schema Rebuild
+
+**MANDATORY**: When modifying `data/schema.sql`, follow the `/schema-rebuild` skill.
+
+Key rules:
+- Always review and update `drop_all_tables.py`, `clear_all_data.py`, and `repopulate_supabase_data.py` to stay in sync
+- The rebuild flow is: `drop_all_tables.py` → `schema.sql` → `repopulate_supabase_data.py`
+- See `.claude/skills/schema-rebuild/SKILL.md` for complete details
+
 ## Asana Workspace
 
 **MANDATORY**: When working in the RelAI directory, follow the `/asana-workspace` skill.

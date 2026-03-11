@@ -1,11 +1,11 @@
 """
-Reset and re-seed Supabase from CSVs (skills, personnel, projects, scenarios, assignments).
+Repopulate Supabase from CSVs (skills, personnel, projects, scenarios, assignments).
 Deletes all existing data first, then reloads from CSV files.
 
 Run from repo root:
-    python data/reset_supabase_data.py --seed small   # default
-    python data/reset_supabase_data.py --seed large   # ~100 crew, ~200 projects
-                                                       # (run generate_large.py first)
+    python data/repopulate_supabase_data.py --seed small   # default
+    python data/repopulate_supabase_data.py --seed large   # ~100 crew, ~200 projects
+                                                            # (run generate_large.py first)
 """
 import argparse
 import os
