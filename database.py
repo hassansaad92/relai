@@ -118,6 +118,17 @@ def delete_project(project_id: str):
         cur.execute("DELETE FROM projects WHERE id = %s", (project_id,))
 
 
+def update_project(project_id: str, data: dict):
+    with _cursor() as (_, cur):
+        set_clause = ", ".join(f"{k} = %({k})s" for k in data.keys())
+        cur.execute(
+            f"UPDATE projects SET {set_clause} WHERE id = %(id)s RETURNING *",
+            {**data, "id": project_id},
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(

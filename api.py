@@ -23,6 +23,7 @@ from database import (
     update_personnel,
     delete_personnel,
     insert_project,
+    update_project,
     delete_project,
     insert_skill,
     insert_assignment,
@@ -73,6 +74,15 @@ class ProjectCreate(BaseModel):
     requested_start_date: str
     duration_weeks: int
     award_status: str
+
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    required_skills: Optional[str] = None
+    num_elevators: Optional[int] = None
+    requested_start_date: Optional[str] = None
+    duration_weeks: Optional[int] = None
+    award_status: Optional[str] = None
 
 
 class SkillCreate(BaseModel):
@@ -160,6 +170,24 @@ async def remove_project(project_id: str):
     delete_assignments_by_project(project_id)
     delete_project(project_id)
     return {"success": True}
+
+
+@router.patch("/api/projects/{project_id}")
+async def patch_project(project_id: str, data: ProjectUpdate):
+    updates = {k: v for k, v in data.model_dump().items() if v is not None}
+    if not updates:
+        raise HTTPException(400, "No fields to update")
+    # Recalculate end date if start or duration changed
+    if "requested_start_date" in updates or "duration_weeks" in updates:
+        start_str = updates.get("requested_start_date")
+        weeks = updates.get("duration_weeks")
+        if start_str and weeks:
+            start = datetime.strptime(start_str, "%Y-%m-%d")
+            updates["requested_end_date"] = (start + timedelta(weeks=weeks)).strftime("%Y-%m-%d")
+    result = update_project(project_id, updates)
+    if not result:
+        raise HTTPException(404, "Project not found")
+    return result
 
 
 # ── Skills ─────────────────────────────────────────────────────────────────────
