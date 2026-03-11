@@ -331,6 +331,22 @@
             color: #ffffff;
         }
 
+        .card-status.active {
+            background: #1565C0;
+            color: #ffffff;
+        }
+
+        .editable-date {
+            border-bottom: 1px dashed #999;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .editable-date:hover {
+            color: #041e42;
+            border-bottom-color: #041e42;
+        }
+
         .card-status.pending {
             background: #C20000;
             color: #ffffff;
@@ -1076,45 +1092,35 @@
         }
 
         /* Schedule tab */
-        .schedule-layout {
-            display: flex;
-            gap: 24px;
-            height: calc(100vh - 130px);
-            overflow: hidden;
-        }
-
-        #schedule .schedule-layout {
-            height: auto;
-            min-height: 400px;
-            max-height: calc(100vh - 200px);
-        }
-
-        .schedule-projects-panel {
-            width: 280px;
-            flex-shrink: 0;
-            overflow-y: auto;
-        }
-
-        .schedule-assign-panel {
-            flex: 1;
-            overflow-y: auto;
-            padding-left: 4px;
-        }
-
         .schedule-project-card {
+            background: #ffffff;
+            border-radius: 8px;
             padding: 10px 14px;
+            margin-bottom: 10px;
             border: 1px solid var(--surface-border);
-            border-radius: 6px;
-            margin-bottom: 8px;
+            border-left: 4px solid var(--accent);
             cursor: pointer;
-            transition: border-color 0.15s, background 0.15s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .schedule-project-card:hover { border-color: #041e42; }
+        .schedule-project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--accent-active-light);
+        }
 
         .schedule-project-card.selected {
-            border-color: #041e42;
-            background: #EDF0F5;
+            border-left-color: #041e42;
+            box-shadow: 0 4px 12px var(--accent-active-light);
+        }
+
+        .schedule-assign-inline {
+            background: #f8f9fb;
+            border: 1px solid var(--surface-border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            padding: 16px;
+            margin-top: -10px;
+            margin-bottom: 10px;
         }
 
         .schedule-project-dates {
@@ -1135,16 +1141,66 @@
             padding: 60px 0;
         }
 
-        .schedule-project-header { margin-bottom: 20px; }
+        .schedule-project-meta { font-size: 13px; color: #666; margin-bottom: 4px; }
 
-        .schedule-project-header h3 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #041e42;
-            margin: 0 0 4px 0;
+        .schedule-date-edit-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
-        .schedule-project-meta { font-size: 13px; color: #666; }
+        .schedule-date-edit-row label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #041e42;
+            white-space: nowrap;
+        }
+
+        .schedule-date-edit-row input[type="date"] {
+            font-size: 13px;
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .schedule-date-edit-row button {
+            background: #041e42;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            transition: opacity 0.15s;
+        }
+
+        .schedule-date-edit-row button:hover { opacity: 0.8; }
+
+        .schedule-conflict-alert {
+            background: #FFF3CD;
+            border: 1px solid #FFE69C;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #856404;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .schedule-gap-alert {
+            background: #D1ECF1;
+            border: 1px solid #BEE5EB;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #0C5460;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
 
         .schedule-section-label {
             font-size: 11px;
@@ -1508,14 +1564,7 @@
                     <div id="assignmentsTableContainer" style="display:none;"></div>
                 </div>
             </div>
-            <div class="schedule-layout" style="margin-top: 24px;">
-                <div class="schedule-projects-panel">
-                    <div id="scheduleProjectsList"></div>
-                </div>
-                <div class="schedule-assign-panel" id="scheduleAssignPanel">
-                    <p class="schedule-placeholder">← Select a project to manage assignments</p>
-                </div>
-            </div>
+            <div id="scheduleProjectsList" style="margin-top: 24px;"></div>
         </div>
 
         <!-- Resources View (merges Personnel + Skills) -->
@@ -1633,8 +1682,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Requested Start Date *</label>
-                    <input type="date" name="requested_start_date" required>
+                    <label>Contract Start Date *</label>
+                    <input type="date" name="contract_start_date" required>
                 </div>
 
                 <div class="form-group">
@@ -1837,7 +1886,6 @@
             renderGantt(overviewAssignments, allPersonnel, allProjects);
             renderAssignmentsList();
             renderScheduleProjects();
-            if (selectedScheduleProjectId) renderScheduleAssignPanel(selectedScheduleProjectId);
         }
 
         async function loadResourcesData() {
@@ -1945,7 +1993,7 @@
             const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
             container.innerHTML = sorted.map(project => {
                 const schedStatus = project.schedule_status || 'not_scheduled';
-                const requestedDates = `${fmtDate(project.requested_start_date)} – ${fmtDate(project.requested_end_date)}`;
+                const contractDates = `${fmtDate(project.contract_start_date)} – ${fmtDate(project.contract_end_date)}`;
                 const actualDates = project.actual_start_date
                     ? `${fmtDate(project.actual_start_date)} – ${fmtDate(project.actual_end_date)}`
                     : '--';
@@ -1964,7 +2012,7 @@
                             <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                         </div>
                     </div>
-                    <div class="card-detail"><strong>Requested:</strong> ${requestedDates} · <strong>Scheduled:</strong> ${actualDates}</div>
+                    <div class="card-detail"><strong>Contract:</strong> <span class="editable-date" onclick="editProject('${project.id}')">${contractDates}</span> · <strong>Scheduled:</strong> ${actualDates}</div>
                     <button class="card-edit-btn" onclick="editProject('${project.id}')" title="Edit">✎</button>
                 </div>`;
             }).join('');
@@ -2456,7 +2504,7 @@
             const form = document.getElementById('projectForm');
             form.querySelector('[name="name"]').value = project.name;
             form.querySelector('[name="num_elevators"]').value = project.num_elevators;
-            form.querySelector('[name="requested_start_date"]').value = project.requested_start_date;
+            form.querySelector('[name="contract_start_date"]').value = project.contract_start_date;
             form.querySelector('[name="duration_weeks"]').value = project.duration_weeks;
             form.querySelector('[name="award_status"]').value = project.award_status;
             // Select matching skills in dropdown
@@ -2605,12 +2653,12 @@
                 const currentProject = person.current_project_name || '-';
                 const completion = person.current_assignment_end ? fmtDate(person.current_assignment_end) : '-';
                 const nextProject = person.next_project_name || '-';
-                const reqStart = person.next_project_requested_start ? fmtDate(person.next_project_requested_start) : '-';
+                const reqStart = person.next_project_contract_start ? fmtDate(person.next_project_contract_start) : '-';
 
                 let gapCell = '-';
-                if (person.current_assignment_end && person.next_project_requested_start) {
+                if (person.current_assignment_end && person.next_project_contract_start) {
                     const endMs = new Date(person.current_assignment_end + 'T00:00:00');
-                    const startMs = new Date(person.next_project_requested_start + 'T00:00:00');
+                    const startMs = new Date(person.next_project_contract_start + 'T00:00:00');
                     const days = Math.round((endMs - startMs) / 86400000);
                     if (days > 0) {
                         gapCell = `<span style="color:#C20000;font-weight:600">+${days}d late</span>`;
@@ -2639,7 +2687,7 @@
                             <th>Current Project</th>
                             <th>Completion</th>
                             <th>Next Project</th>
-                            <th>Req. Start</th>
+                            <th>Contract Start</th>
                             <th>Gap</th>
                         </tr>
                     </thead>
@@ -2656,38 +2704,48 @@
         function renderScheduleProjects() {
             const container = document.getElementById('scheduleProjectsList');
             const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
-            const sorted = [...allProjects].sort((a, b) => new Date(a.requested_start_date) - new Date(b.requested_start_date));
+            const sorted = [...allProjects].sort((a, b) => new Date(a.contract_start_date) - new Date(b.contract_start_date));
             container.innerHTML = sorted.map(p => {
                 const schedStatus = p.schedule_status || 'not_scheduled';
                 const count = p.assignment_count != null ? p.assignment_count : allAssignments.filter(a => a.project_id === p.id).length;
-                return `
-                    <div class="schedule-project-card ${p.id === selectedScheduleProjectId ? 'selected' : ''}"
+                const isSelected = p.id === selectedScheduleProjectId;
+                const skillTags = p.required_skills ? p.required_skills.split(',').map(s =>
+                    `<span class="skills-tag-light">${s.trim()}</span>`
+                ).join('') : '';
+                const contractDates = `${fmtDate(p.contract_start_date)} – ${fmtDate(p.contract_end_date)}`;
+                const actualDates = p.actual_start_date
+                    ? `${fmtDate(p.actual_start_date)} – ${fmtDate(p.actual_end_date)}`
+                    : '--';
+                let html = `
+                    <div class="schedule-project-card ${isSelected ? 'selected' : ''}"
                          onclick="selectScheduleProject('${p.id}')">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                            <div class="card-title" style="font-size:14px;">${p.name}</div>
+                        <div class="card-header">
+                            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                                <div class="card-title">${p.name}</div>
+                                <span class="card-meta">${p.num_elevators} elevs · ${p.duration_weeks}w · ${count} assigned</span>
+                                ${skillTags}
+                            </div>
                             <div class="status-badges">
-                                <div class="card-status ${p.award_status}" style="font-size:10px;padding:3px 6px;">${p.award_status.replace('_', ' ')}</div>
-                                <div class="card-status ${schedStatus}" style="font-size:10px;padding:3px 6px;">${schedStatus.replace('_', ' ')}</div>
+                                <div class="card-status ${p.award_status}">${p.award_status.replace('_', ' ')}</div>
+                                <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                             </div>
                         </div>
-                        <div class="schedule-project-dates">${fmtDate(p.requested_start_date)} – ${fmtDate(p.requested_end_date)}</div>
-                        <div class="schedule-project-assigned">${count} assigned</div>
+                        <div class="card-detail"><strong>Contract:</strong> ${contractDates} · <strong>Scheduled:</strong> ${actualDates}</div>
                     </div>`;
+                if (isSelected) {
+                    html += `<div class="schedule-assign-inline" id="scheduleAssignPanel"></div>`;
+                }
+                return html;
             }).join('');
+            if (selectedScheduleProjectId) {
+                renderScheduleAssignPanel(selectedScheduleProjectId);
+            }
         }
 
         function selectScheduleProject(projectId) {
-            if (selectedScheduleProjectId === projectId) {
-                // Deselect
-                selectedScheduleProjectId = null;
-                renderScheduleProjects();
-                document.getElementById('scheduleAssignPanel').innerHTML =
-                    '<p class="schedule-placeholder">← Select a project to manage assignments</p>';
-                return;
-            }
-            selectedScheduleProjectId = projectId;
+            selectedScheduleProjectId = selectedScheduleProjectId === projectId ? null : projectId;
+            assignFormPersonnelId = null;
             renderScheduleProjects();
-            renderScheduleAssignPanel(projectId);
         }
 
         function renderScheduleAssignPanel(projectId) {
@@ -2695,8 +2753,8 @@
             const project = allProjects.find(p => p.id === projectId);
             if (!project) return;
 
-            const projectStartStr = project.requested_start_date;
-            const projectEndStr = project.requested_end_date;
+            const projectStartStr = project.contract_start_date;
+            const projectEndStr = project.contract_end_date;
             const projectStart = new Date(projectStartStr + 'T00:00:00');
             const projectEnd = new Date(projectEndStr + 'T00:00:00');
 
@@ -2775,22 +2833,117 @@
                     <button class="schedule-action-btn" onclick="scheduleShowAssignForm('${p.id}')">+ Assign</button>
                 </div>${assignFormPersonnelId === p.id ? makeAssignForm(p.id) : ''}`).join('');
 
+            const scheduledStartRow = projectAssignments.length > 0 ? `
+                <div class="schedule-date-edit-row">
+                    <label>Scheduled Start</label>
+                    <input type="date" value="${project.actual_start_date || ''}" id="editScheduledStart_${projectId}">
+                    <button onclick="shiftScheduledDate('${projectId}')">Shift</button>
+                </div>` : '';
+
             panel.innerHTML = `
-                <div class="schedule-project-header">
-                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-                        <h3>${project.name}</h3>
-                        <div class="status-badges">
-                            <div class="card-status ${project.award_status}">${project.award_status.replace('_', ' ')}</div>
-                            <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
-                        </div>
-                    </div>
-                    <div class="schedule-project-meta">Requested: ${startFmt} – ${endFmt} · ${project.duration_weeks}w · ${project.num_elevators} elev${project.num_elevators > 1 ? 's' : ''}</div>
-                    ${project.actual_start_date ? `<div class="schedule-project-meta">Scheduled: ${fmtShort(project.actual_start_date)} – ${fmtShort(project.actual_end_date)}</div>` : ''}
+                <div id="scheduleConflictAlerts_${projectId}"></div>
+                <div class="schedule-date-edit-row">
+                    <label>Contract Start</label>
+                    <input type="date" value="${project.contract_start_date}" id="editContractStart_${projectId}">
+                    <button onclick="saveContractDate('${projectId}')">Update</button>
                 </div>
-                <div class="schedule-section-label">Assigned</div>
+                ${scheduledStartRow}
+                <div class="schedule-section-label" style="margin-top:0;">Assigned</div>
                 ${assignedHTML}
                 <div class="schedule-section-label">Available</div>
                 ${freeHTML}`;
+        }
+
+        async function shiftScheduledDate(projectId) {
+            const input = document.getElementById('editScheduledStart_' + projectId);
+            if (!input || !input.value) return;
+            try {
+                const res = await fetch(`/api/projects/${projectId}/shift-schedule?scenario_id=${currentScenarioId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_start_date: input.value })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                await loadScheduleData();
+                checkScheduleConflicts(projectId);
+            } catch (err) {
+                alert('Failed to shift schedule: ' + err.message);
+            }
+        }
+
+        async function saveContractDate(projectId) {
+            const input = document.getElementById('editContractStart_' + projectId);
+            if (!input || !input.value) return;
+            try {
+                const res = await fetch(`/api/projects/${projectId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contract_start_date: input.value })
+                });
+                if (!res.ok) throw new Error(await res.text());
+                await loadScheduleData();
+                checkScheduleConflicts(projectId);
+            } catch (err) {
+                alert('Failed to update contract date: ' + err.message);
+            }
+        }
+
+        function checkScheduleConflicts(projectId) {
+            const container = document.getElementById('scheduleConflictAlerts_' + projectId);
+            if (!container) return;
+            const project = allProjects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const projectAssignments = allAssignments.filter(a => a.project_id === projectId);
+            const fmtShort = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+            const conflicts = [];
+            const gaps = [];
+
+            projectAssignments.forEach(pa => {
+                const paStart = new Date(pa.start_date);
+                const paEnd = new Date(pa.end_date);
+                const personName = pa.personnel_name || pa.personnel_id;
+
+                // Check for overlapping assignments
+                allAssignments.forEach(other => {
+                    if (other.id === pa.id) return;
+                    if (other.personnel_id !== pa.personnel_id) return;
+                    const otherStart = new Date(other.start_date);
+                    const otherEnd = new Date(other.end_date);
+                    if (otherStart < paEnd && otherEnd > paStart) {
+                        const otherProject = allProjects.find(p => p.id === other.project_id);
+                        const otherName = otherProject ? otherProject.name : other.project_id;
+                        conflicts.push(`${personName} is also assigned to ${otherName} from ${fmtShort(other.start_date)} to ${fmtShort(other.end_date)}`);
+                    }
+                });
+
+                // Check for gaps between this person's current assignment end and contract start
+                if (project.contract_start_date) {
+                    const contractStart = new Date(project.contract_start_date + 'T00:00:00');
+                    const otherAssignments = allAssignments.filter(a =>
+                        a.personnel_id === pa.personnel_id && a.id !== pa.id && new Date(a.end_date) <= contractStart
+                    ).sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
+
+                    if (otherAssignments.length > 0) {
+                        const prevEnd = new Date(otherAssignments[0].end_date + 'T00:00:00');
+                        const gapDays = Math.round((contractStart - prevEnd) / 86400000);
+                        if (gapDays > 14) {
+                            const prevProject = allProjects.find(p => p.id === otherAssignments[0].project_id);
+                            const prevName = prevProject ? prevProject.name : 'previous project';
+                            gaps.push(`${personName} has a ${gapDays}-day gap between ${prevName} (ends ${fmtShort(otherAssignments[0].end_date)}) and this project (contract start ${fmtShort(project.contract_start_date)})`);
+                        }
+                    }
+                }
+            });
+
+            let html = '';
+            if (conflicts.length > 0) {
+                html += `<div class="schedule-conflict-alert">${conflicts.map(c => `<div>&#9888; ${c}</div>`).join('')}</div>`;
+            }
+            if (gaps.length > 0) {
+                html += `<div class="schedule-gap-alert">${gaps.map(g => `<div>&#8505; ${g}</div>`).join('')}</div>`;
+            }
+            container.innerHTML = html;
         }
 
         async function scheduleAssign(personnelId, startDate, endDate, assignmentType = 'full') {
@@ -2929,7 +3082,7 @@
                 name: formData.get('name'),
                 required_skills: Array.from(select.selectedOptions).map(o => o.value).join(','),
                 num_elevators: parseInt(formData.get('num_elevators')),
-                requested_start_date: formData.get('requested_start_date'),
+                contract_start_date: formData.get('contract_start_date'),
                 duration_weeks: parseInt(formData.get('duration_weeks')),
                 award_status: formData.get('award_status'),
             };

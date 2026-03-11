@@ -66,8 +66,8 @@ CREATE TRIGGER tr_personnel_scd2
 CREATE TABLE projects (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    requested_start_date DATE NOT NULL,
-    requested_end_date DATE NOT NULL,
+    contract_start_date DATE NOT NULL,
+    contract_end_date DATE NOT NULL,
     duration_weeks INTEGER NOT NULL,
     num_elevators INTEGER NOT NULL,
     required_skills TEXT NOT NULL,
@@ -82,8 +82,8 @@ CREATE TABLE projects_history (
     hid BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     project_id UUID NOT NULL,
     name TEXT,
-    requested_start_date DATE,
-    requested_end_date DATE,
+    contract_start_date DATE,
+    contract_end_date DATE,
     duration_weeks INTEGER,
     num_elevators INTEGER,
     required_skills TEXT,
@@ -110,11 +110,11 @@ BEGIN
     IF (TG_OP = 'UPDATE') THEN
         UPDATE projects_history SET valid_to = NEW.updated_at, is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
-        INSERT INTO projects_history (project_id, name, requested_start_date, requested_end_date, duration_weeks, num_elevators, required_skills, award_status, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.requested_start_date, NEW.requested_end_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.updated_at, TRUE);
+        INSERT INTO projects_history (project_id, name, contract_start_date, contract_end_date, duration_weeks, num_elevators, required_skills, award_status, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.contract_start_date, NEW.contract_end_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO projects_history (project_id, name, requested_start_date, requested_end_date, duration_weeks, num_elevators, required_skills, award_status, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.requested_start_date, NEW.requested_end_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.created_at, TRUE);
+        INSERT INTO projects_history (project_id, name, contract_start_date, contract_end_date, duration_weeks, num_elevators, required_skills, award_status, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.contract_start_date, NEW.contract_end_date, NEW.duration_weeks, NEW.num_elevators, NEW.required_skills, NEW.award_status, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
         UPDATE projects_history SET valid_to = NOW(), is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;

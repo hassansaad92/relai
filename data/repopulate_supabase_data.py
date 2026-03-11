@@ -111,8 +111,8 @@ old_project_id_to_uuid = {}
 for row in projects_csv:
     payload = {
         "name": row["name"],
-        "requested_start_date": row["requested_start_date"],
-        "requested_end_date": row["requested_end_date"],
+        "contract_start_date": row["contract_start_date"],
+        "contract_end_date": row["contract_end_date"],
         "duration_weeks": int(row["duration_weeks"]),
         "num_elevators": int(row["num_elevators"]),
         "required_skills": row["required_skills"],

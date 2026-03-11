@@ -118,8 +118,8 @@ for i in range(1, 101):
     projects.append({
         "id": i,
         "name": name,
-        "requested_start_date": req_start.isoformat(),
-        "requested_end_date": req_end.isoformat(),
+        "contract_start_date": req_start.isoformat(),
+        "contract_end_date": req_end.isoformat(),
         "duration_weeks": duration_weeks,
         "num_elevators": num_elevators,
         "required_skills": required_skills,
@@ -140,16 +140,16 @@ today = date(2026, 3, 10)
 # Sort awarded projects by requested_start for realistic scheduling
 awarded_projects = sorted(
     [p for p in projects if p["award_status"] == "awarded"],
-    key=lambda p: p["requested_start_date"],
+    key=lambda p: p["contract_start_date"],
 )
 
 # Split into "current" (can be active today) and "future" pools
 # Current: projects with requested_start up to 4 weeks after today (already begun)
 current_cutoff = today + timedelta(weeks=4)
 current_pool = [p for p in awarded_projects
-                if date.fromisoformat(p["requested_start_date"]) <= current_cutoff]
+                if date.fromisoformat(p["contract_start_date"]) <= current_cutoff]
 future_pool = [p for p in awarded_projects
-               if date.fromisoformat(p["requested_start_date"]) > current_cutoff]
+               if date.fromisoformat(p["contract_start_date"]) > current_cutoff]
 random.shuffle(current_pool)
 random.shuffle(future_pool)
 
@@ -168,7 +168,7 @@ for person in personnel:
     # ── Current assignment (active today) ──
     proj1 = current_pool.pop(0)
     assigned_project_ids.add(proj1["id"])
-    p1_start = date.fromisoformat(proj1["requested_start_date"])
+    p1_start = date.fromisoformat(proj1["contract_start_date"])
     duration = timedelta(weeks=proj1["duration_weeks"])
 
     # Assignment start: near project requested start ± a few days
@@ -200,14 +200,14 @@ for person in personnel:
     if future_pool and random.random() < 0.7:
         candidates = [
             p for p in future_pool
-            if -30 <= (assign1_end - date.fromisoformat(p["requested_start_date"])).days <= 60
+            if -30 <= (assign1_end - date.fromisoformat(p["contract_start_date"])).days <= 60
         ]
         if candidates:
             proj2 = random.choice(candidates)
             future_pool.remove(proj2)
             assigned_project_ids.add(proj2["id"])
 
-            p2_req_start = date.fromisoformat(proj2["requested_start_date"])
+            p2_req_start = date.fromisoformat(proj2["contract_start_date"])
 
             # Assignment starts when mechanic is available (current end + small buffer)
             buffer_days = random.randint(-5, 10)
@@ -238,8 +238,8 @@ for proj in remaining[:10]:
     if not extra_personnel:
         break
     person = extra_personnel.pop(0)
-    p_start = date.fromisoformat(proj["requested_start_date"])
-    p_end = date.fromisoformat(proj["requested_end_date"])
+    p_start = date.fromisoformat(proj["contract_start_date"])
+    p_end = date.fromisoformat(proj["contract_end_date"])
 
     assign_start = p_start + timedelta(days=random.randint(-7, 14))
     assign_end = assign_start + timedelta(weeks=proj["duration_weeks"]) + timedelta(days=random.randint(-10, 14))
@@ -271,7 +271,7 @@ with open(OUT / "personnel.csv", "w", newline="") as f:
 
 with open(OUT / "projects.csv", "w", newline="") as f:
     w = csv.DictWriter(f, fieldnames=[
-        "id", "name", "requested_start_date", "requested_end_date",
+        "id", "name", "contract_start_date", "contract_end_date",
         "duration_weeks", "num_elevators", "required_skills", "award_status",
     ])
     w.writeheader()
@@ -300,9 +300,9 @@ for a2 in seq2[:8]:
     a1 = next((a for a in seq1 if a["personnel_id"] == a2["personnel_id"]), None)
     if a1:
         current_end = date.fromisoformat(a1["end_date"])
-        req_start = date.fromisoformat(proj2["requested_start_date"])
+        req_start = date.fromisoformat(proj2["contract_start_date"])
         delta = (current_end - req_start).days
         person_name = next(p["name"] for p in personnel if p["id"] == a2["personnel_id"])
         label = f"+{delta}d LATE" if delta > 0 else f"{delta}d gap" if delta < 0 else "exact"
         print(f"  {person_name}: finishes {a1['end_date']}, "
-              f"next wants {proj2['requested_start_date']} ({label})")
+              f"next wants {proj2['contract_start_date']} ({label})")

@@ -103,7 +103,7 @@ def update_personnel(personnel_id: str, data: dict):
 
 def fetch_projects():
     with _cursor() as (_, cur):
-        cur.execute("SELECT * FROM projects ORDER BY requested_start_date")
+        cur.execute("SELECT * FROM projects ORDER BY contract_start_date")
         return [dict(r) for r in cur.fetchall()]
 
 
@@ -129,12 +129,19 @@ def update_project(project_id: str, data: dict):
         return dict(row) if row else None
 
 
+def fetch_project_by_id(project_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("SELECT * FROM projects WHERE id = %s", (project_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
 def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO projects (name, requested_start_date, requested_end_date, duration_weeks, num_elevators, required_skills, award_status)
-            VALUES (%(name)s, %(requested_start_date)s, %(requested_end_date)s, %(duration_weeks)s, %(num_elevators)s, %(required_skills)s, %(award_status)s)
+            INSERT INTO projects (name, contract_start_date, contract_end_date, duration_weeks, num_elevators, required_skills, award_status)
+            VALUES (%(name)s, %(contract_start_date)s, %(contract_end_date)s, %(duration_weeks)s, %(num_elevators)s, %(required_skills)s, %(award_status)s)
             RETURNING *
             """,
             data,
@@ -233,6 +240,33 @@ def update_assignment(assignment_id: str, data: dict):
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+def shift_project_assignments(scenario_id: str, project_id: str, new_start_date: str):
+    from datetime import date, timedelta
+    new_start = date.fromisoformat(new_start_date)
+    with _cursor() as (_, cur):
+        cur.execute(
+            "SELECT MIN(start_date) AS min_start FROM assignments WHERE scenario_id = %s AND project_id = %s",
+            (scenario_id, project_id),
+        )
+        row = cur.fetchone()
+        if not row or not row["min_start"]:
+            return {"shifted": 0, "delta_days": 0}
+        min_start = row["min_start"]
+        delta = (new_start - min_start).days
+        if delta == 0:
+            return {"shifted": 0, "delta_days": 0}
+        cur.execute(
+            """
+            UPDATE assignments
+            SET start_date = start_date + %s * INTERVAL '1 day',
+                end_date = end_date + %s * INTERVAL '1 day'
+            WHERE scenario_id = %s AND project_id = %s
+            """,
+            (delta, delta, scenario_id, project_id),
+        )
+        return {"shifted": cur.rowcount, "delta_days": delta}
 
 
 def copy_assignments_to_scenario(from_scenario_id: str, to_scenario_id: str):
