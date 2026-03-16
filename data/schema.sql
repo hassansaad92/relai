@@ -217,3 +217,24 @@ CREATE TABLE assignments (
 );
 
 ALTER TABLE assignments DISABLE ROW LEVEL SECURITY;
+
+
+-- ── 6. Assignments Archive ───────────────────────────────────────────────────
+-- Archived assignments from promoted/deleted scenarios. Kept separate from
+-- assignments so it never bloats AI context or active queries.
+
+CREATE TABLE assignments_archive (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    original_assignment_id UUID,
+    personnel_id UUID NOT NULL,
+    project_id UUID NOT NULL,
+    scenario_id UUID NOT NULL,
+    scenario_name TEXT NOT NULL,
+    sequence INTEGER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    assignment_type TEXT NOT NULL DEFAULT 'full',
+    archived_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE assignments_archive DISABLE ROW LEVEL SECURITY;

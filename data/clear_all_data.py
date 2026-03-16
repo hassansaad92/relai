@@ -23,6 +23,7 @@ NULL_UUID = "00000000-0000-0000-0000-000000000000"
 
 # Order matters: delete child rows before parent rows (FK constraints).
 TABLES = [
+    "assignments_archive",
     "assignments",
     "scenarios",
     "projects",
