@@ -271,6 +271,25 @@ def shift_project_assignments(scenario_id: str, project_id: str, new_start_date:
         return {"shifted": cur.rowcount, "delta_days": delta}
 
 
+def bulk_insert_assignments(scenario_id: str, assignments_list: list[dict]):
+    with _cursor() as (_, cur):
+        for a in assignments_list:
+            cur.execute(
+                """
+                INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date, assignment_type)
+                VALUES (%(personnel_id)s, %(project_id)s, %(scenario_id)s, %(sequence)s, %(start_date)s, %(end_date)s, %(assignment_type)s)
+                """,
+                {**a, "scenario_id": scenario_id},
+            )
+        return {"inserted": len(assignments_list)}
+
+
+def delete_assignments_by_scenario(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM assignments WHERE scenario_id = %s", (scenario_id,))
+        return {"deleted": cur.rowcount}
+
+
 def copy_assignments_to_scenario(from_scenario_id: str, to_scenario_id: str):
     with _cursor() as (_, cur):
         cur.execute(
@@ -320,6 +339,11 @@ def insert_scenario(data: dict):
             data,
         )
         return dict(cur.fetchone())
+
+
+def delete_scenario(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM scenarios WHERE id = %s", (scenario_id,))
 
 
 def update_scenario(scenario_id: str, data: dict):

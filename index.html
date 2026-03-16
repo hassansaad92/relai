@@ -901,21 +901,26 @@
         }
 
         .scenario-item {
-            padding: 9px 16px;
+            padding: 9px 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             border-bottom: 1px solid #ECEDF0;
             font-size: 12px;
+            flex-wrap: wrap;
         }
 
         .scenario-item.active-view { background: #EDF0F5; }
 
         .scenario-item-name {
             flex: 1;
+            min-width: 0;
             cursor: pointer;
             color: #333;
             font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .scenario-item-name:hover { color: var(--mid-blue); }
@@ -1529,6 +1534,30 @@
 
         .filter-clear:hover {
             color: #333;
+        }
+
+        /* Toast notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1a7f37;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            max-width: 500px;
+            text-align: center;
+        }
+        .toast-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
     </style>
 </head>
@@ -2450,7 +2479,7 @@
         }
 
         async function deleteScenario(id) {
-            if (!confirm('Archive this draft? It will no longer be editable.')) return;
+            if (!confirm('Delete this draft? This cannot be undone.')) return;
             try {
                 const res = await fetch(`/api/scenarios/${id}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error(await res.text());
@@ -2461,7 +2490,7 @@
                 await loadScenarios();
                 await viewLoaders[currentView]();
             } catch (err) {
-                alert('Failed to archive: ' + err.message);
+                alert('Failed to delete: ' + err.message);
             }
         }
 
@@ -2684,6 +2713,18 @@
             return div;
         }
 
+        function showScheduleNotification(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         async function sendChatMessage() {
             const input = document.getElementById('chatInput');
             const sendBtn = document.getElementById('chatSendBtn');
@@ -2709,6 +2750,17 @@
                 typingEl.remove();
                 appendChatMessage('assistant', data.response);
                 chatHistory.push({ role: 'assistant', content: data.response });
+
+                // Auto-switch to new draft if schedule was created
+                if (data.schedule_created && data.scenario_id) {
+                    await loadScenarios();
+                    await switchScenario(data.scenario_id);
+                    // Switch to Schedule view if not already there
+                    if (currentView !== 'schedule') {
+                        document.querySelector(`.tab-btn[data-view="schedule"]`).click();
+                    }
+                    showScheduleNotification(`AI draft '${data.scenario_name}' created. Viewing now.`);
+                }
             } catch (err) {
                 typingEl.remove();
                 appendChatMessage('assistant', 'Sorry, I encountered an error. Please try again.');
