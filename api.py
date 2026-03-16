@@ -5,6 +5,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import anthropic
 
+import json
+import logging
+
 from database import (
     fetch_personnel,
     fetch_personnel_page,
@@ -20,6 +23,8 @@ from database import (
     fetch_master_scenario,
     fetch_scenarios,
     fetch_active_drafts,
+    fetch_ai_scheduling_context,
+    fetch_ai_unscheduled_projects,
     insert_personnel,
     update_personnel,
     delete_personnel,
@@ -36,6 +41,12 @@ from database import (
     update_scenario,
     copy_assignments_to_scenario,
     shift_project_assignments,
+    bulk_insert_assignments,
+    delete_assignments_by_scenario,
+    delete_scenario as db_delete_scenario,
+    archive_scenario_assignments,
+    fetch_archived_scenarios,
+    fetch_archived_assignments,
 )
 
 router = APIRouter()
@@ -43,15 +54,191 @@ router = APIRouter()
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 anthropic_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-MAX_ACTIVE_DRAFTS = 5
+MAX_ACTIVE_DRAFTS = 1
+
+logger = logging.getLogger(__name__)
+
+SCHEDULE_TOOL = {
+    "name": "generate_schedule",
+    "description": "Generate a complete draft schedule by creating assignments for personnel to projects. Only use this when the user explicitly asks to CREATE or GENERATE a schedule.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "draft_name": {
+                "type": "string",
+                "description": "A descriptive name for this draft schedule",
+            },
+            "assignments": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "personnel_id": {"type": "string"},
+                        "project_id": {"type": "string"},
+                        "sequence": {"type": "integer"},
+                        "start_date": {"type": "string", "description": "YYYY-MM-DD"},
+                        "end_date": {"type": "string", "description": "YYYY-MM-DD"},
+                        "assignment_type": {
+                            "type": "string",
+                            "enum": ["full", "cascading", "partial"],
+                        },
+                    },
+                    "required": ["personnel_id", "project_id", "sequence", "start_date", "end_date", "assignment_type"],
+                },
+                "description": "List of personnel-to-project assignments",
+            },
+            "reasoning": {
+                "type": "string",
+                "description": "Brief explanation of the scheduling strategy used",
+            },
+        },
+        "required": ["draft_name", "assignments", "reasoning"],
+    },
+}
+
+
+def _execute_schedule_tool(tool_input: dict, is_tweaking: bool = False) -> dict:
+    """Execute the generate_schedule tool: validate, create draft, insert assignments."""
+    # If tweaking, delete the existing draft first to make room
+    if is_tweaking:
+        active_drafts = fetch_active_drafts()
+        for draft in active_drafts:
+            delete_assignments_by_scenario(draft["id"])
+            db_delete_scenario(draft["id"])
+    else:
+        # Check draft limit
+        active_drafts = fetch_active_drafts()
+        if len(active_drafts) >= MAX_ACTIVE_DRAFTS:
+            return {"success": False, "error": "A draft already exists. Delete or promote it first."}
+
+    assignments = tool_input.get("assignments", [])
+    if not assignments:
+        return {"success": False, "error": "No assignments provided."}
+
+    # Validate all personnel_id and project_id values exist
+    personnel = fetch_personnel()
+    projects = fetch_projects()
+    valid_personnel_ids = {str(p["id"]) for p in personnel}
+    valid_project_ids = {str(p["id"]) for p in projects}
+
+    for a in assignments:
+        if str(a["personnel_id"]) not in valid_personnel_ids:
+            return {"success": False, "error": f"Invalid personnel_id: {a['personnel_id']}"}
+        if str(a["project_id"]) not in valid_project_ids:
+            return {"success": False, "error": f"Invalid project_id: {a['project_id']}"}
+
+    # Create draft branched from master — copy existing assignments first
+    master = fetch_master_scenario()
+    try:
+        new_scenario = insert_scenario({
+            "name": tool_input["draft_name"],
+            "status": "draft",
+            "created_from": master["id"] if master else None,
+        })
+        scenario_id = new_scenario["id"]
+
+        # Copy all existing master assignments so staffed projects stay intact
+        if master:
+            copy_assignments_to_scenario(master["id"], scenario_id)
+
+        # Add Claude's new assignments on top
+        result = bulk_insert_assignments(scenario_id, assignments)
+
+        return {
+            "success": True,
+            "scenario_id": str(scenario_id),
+            "scenario_name": tool_input["draft_name"],
+            "assignments_created": result["inserted"],
+        }
+    except Exception as e:
+        logger.exception("Failed to create AI schedule draft")
+        # Try to archive the failed scenario if it was created
+        try:
+            if 'scenario_id' in locals():
+                update_scenario(scenario_id, {
+                    "archived_at": now_iso(),
+                    "archived_reason": "failed_creation",
+                })
+        except Exception:
+            pass
+        return {"success": False, "error": f"Database error: {str(e)}"}
 
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
+def _build_ai_context(scenario_id: str) -> str:
+    """Build pre-computed scheduling context string for the AI system prompt."""
+    rows = fetch_ai_scheduling_context(scenario_id)
+    unscheduled = fetch_ai_unscheduled_projects(scenario_id)
+
+    # Group by personnel
+    from collections import OrderedDict
+    people: OrderedDict[str, dict] = OrderedDict()
+    for r in rows:
+        pid = str(r["personnel_id"])
+        if pid not in people:
+            people[pid] = {
+                "name": r["personnel_name"],
+                "skills": r["skills"],
+                "assignments": [],
+            }
+        if r["project_id"] is not None:
+            people[pid]["assignments"].append({
+                "project_id": str(r["project_id"]),
+                "project_name": r["project_name"],
+                "start_date": str(r["start_date"]),
+                "end_date": str(r["end_date"]),
+                "sequence": r["sequence"],
+                "assignment_type": r["assignment_type"],
+            })
+
+    # Build personnel text with available windows
+    lines = ["PERSONNEL & AVAILABILITY:"]
+    for pid, info in people.items():
+        lines.append(f"\n{info['name']} (id:{pid}), skills: [{info['skills']}]")
+        assignments = sorted(info["assignments"], key=lambda a: a["start_date"])
+        if assignments:
+            lines.append("  Current assignments:")
+            for a in assignments:
+                lines.append(
+                    f"    seq {a['sequence']}: {a['project_name']} "
+                    f"({a['start_date']} to {a['end_date']}, {a['assignment_type']})"
+                )
+            # Compute available windows (gaps between assignments)
+            windows = []
+            for i in range(len(assignments) - 1):
+                gap_start = assignments[i]["end_date"]
+                gap_end = assignments[i + 1]["start_date"]
+                if gap_start < gap_end:
+                    windows.append(f"    {gap_start} to {gap_end} (gap)")
+            # Open window after last assignment
+            last_end = assignments[-1]["end_date"]
+            windows.append(f"    {last_end} onward (open)")
+            lines.append("  Available windows:")
+            lines.extend(windows)
+        else:
+            lines.append("  No current assignments — fully available")
+
+    # Build unscheduled projects text
+    lines.append("\n\nUNSCHEDULED PROJECTS:")
+    if unscheduled:
+        for p in unscheduled:
+            lines.append(
+                f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], "
+                f"{p['num_elevators']} elevators, "
+                f"contract {p['contract_start_date']} to {p['contract_end_date']}, "
+                f"{p['duration_weeks']} weeks"
+            )
+    else:
+        lines.append("(none)")
+
+    return "\n".join(lines)
+
+
 def _get_scenario_id(scenario_id: Optional[str]) -> Optional[str]:
-    if scenario_id:
+    if scenario_id and scenario_id not in ("null", "undefined"):
         return scenario_id
     master = fetch_master_scenario()
     return master["id"] if master else None
@@ -284,7 +471,11 @@ async def shift_schedule(project_id: str, data: ShiftScheduleRequest, scenario_i
 
 @router.get("/api/scenarios")
 async def get_scenarios():
-    return fetch_scenarios()
+    scenarios = fetch_scenarios()
+    if not scenarios:
+        insert_scenario({"name": "Master Schedule", "status": "master"})
+        scenarios = fetch_scenarios()
+    return scenarios
 
 
 @router.post("/api/scenarios")
@@ -293,7 +484,7 @@ async def create_draft(scenario: ScenarioCreate):
     if len(active_drafts) >= MAX_ACTIVE_DRAFTS:
         raise HTTPException(
             status_code=400,
-            detail=f"Maximum of {MAX_ACTIVE_DRAFTS} active drafts reached. Archive one before creating a new draft."
+            detail="A draft already exists. Delete or promote it first."
         )
 
     master = fetch_master_scenario()
@@ -314,12 +505,9 @@ async def promote_scenario(scenario_id: str):
     now = now_iso()
     master = fetch_master_scenario()
     if master:
-        update_scenario(master["id"], {
-            "status": "draft",
-            "archived_at": now,
-            "archived_reason": "superseded",
-            "demoted_from_master_at": now,
-        })
+        # Archive old master's assignments, then hard-delete the scenario row
+        archive_scenario_assignments(master["id"], master["name"])
+        db_delete_scenario(master["id"])
     update_scenario(scenario_id, {
         "status": "master",
         "promoted_to_master_at": now,
@@ -328,12 +516,22 @@ async def promote_scenario(scenario_id: str):
 
 
 @router.delete("/api/scenarios/{scenario_id}")
-async def delete_scenario(scenario_id: str):
-    update_scenario(scenario_id, {
-        "archived_at": now_iso(),
-        "archived_reason": "deleted",
-    })
+async def remove_scenario(scenario_id: str):
+    delete_assignments_by_scenario(scenario_id)
+    db_delete_scenario(scenario_id)
     return {"success": True}
+
+
+# ── Archive ────────────────────────────────────────────────────────────────────
+
+@router.get("/api/archive/scenarios")
+async def get_archived_scenarios():
+    return fetch_archived_scenarios()
+
+
+@router.get("/api/archive/assignments")
+async def get_archived_assignments(scenario_id: str):
+    return fetch_archived_assignments(scenario_id)
 
 
 # ── Chat ───────────────────────────────────────────────────────────────────────
@@ -341,65 +539,138 @@ async def delete_scenario(scenario_id: str):
 @router.post("/api/chat")
 async def chat(request: ChatRequest):
     master = fetch_master_scenario()
-    sid = master["id"] if master else None
 
-    projects = fetch_projects_page(sid) if sid else fetch_projects()
-    personnel = fetch_personnel_page(sid) if sid else fetch_personnel()
-    assignments = fetch_assignments_enriched(sid) if sid else []
+    # Draft-aware context: if a draft exists, use it so Claude sees current draft state
+    is_tweaking = False
+    active_drafts = fetch_active_drafts()
+    if active_drafts:
+        draft = active_drafts[0]
+        sid = draft["id"]
+        is_tweaking = True
+    elif master:
+        sid = master["id"]
+    else:
+        sid = None
 
-    projects_text = "\n".join([
-        f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], {p['num_elevators']} elevators, "
-        f"contract {p['contract_start_date']} to {p['contract_end_date']}, duration {p['duration_weeks']} weeks, "
-        f"award: {p['award_status']}, schedule: {p.get('schedule_status', 'unknown')}"
-        + (f", actual dates: {p.get('actual_start_date')} to {p.get('actual_end_date')}" if p.get('actual_start_date') else "")
-        for p in projects
-    ])
-
-    personnel_text = "\n".join([
-        f"- {p['name']} (id:{p['id']}): skills [{p['skills']}], status: {p.get('availability_status', 'unknown')}, "
-        f"next available: {p.get('next_available_date', 'unknown')}"
-        + (f", current project: {p['current_project_name']}" if p.get('current_project_name') else "")
-        + (f", next project: {p['next_project_name']} starting {p['next_assignment_start']}" if p.get('next_project_name') else "")
-        for p in personnel
-    ])
-
-    assignments_text = "\n".join([
-        f"- {a.get('personnel_name', a['personnel_id'])} -> "
-        f"{a.get('project_name', a['project_id'])}: "
-        f"sequence {a['sequence']}, {a['start_date']} to {a['end_date']}, type: {a.get('assignment_type', 'full')}"
-        for a in assignments
-    ])
+    # Build pre-computed context string
+    ai_context = _build_ai_context(sid) if sid else "No scenario data available."
 
     system_prompt = f"""You are a helpful scheduling assistant for an elevator installation company.
 You have real-time access to the following data from the database:
 
-PROJECTS:
-{projects_text}
-
-PERSONNEL:
-{personnel_text}
-
-ASSIGNMENTS (confirmed personnel-to-project assignments):
-{assignments_text}
+{ai_context}
 
 Answer questions about projects, scheduling, resource allocation, and team assignments based on this data.
 When asked about a personnel member's next project, look up their assignments directly.
-Be concise and helpful. Today's date is {now_iso()}.
+Today's date is {now_iso()}.
 
-Avoid using emojis unless they convey unambiguous meaning in context. 
-In particular, do not use visual indicators (e.g. checkmarks) for partial matches — for example, a skill match alone does not mean a mechanic is available or suitable for a job. 
-Only use a positive indicator when all relevant conditions are met.
+Keep responses concise. Use short bullet points, not tables. When summarizing a schedule, use simple lines like: 'John Smith → Project Alpha (Jan 6 – Mar 30)'. Only use markdown tables if the user explicitly requests one.
+
+Avoid using emojis unless they convey unambiguous meaning in context.
 
 If I tell you to give me a recommendation for how to schedule a bunch of projects, just give me a simple output via:
-Mechanic Name (Available Date) --> Project Name (Contract Start Date). 
+Mechanic Name (Available Date) --> Project Name (Contract Start Date).
 Make sure to ask if I want to match skills or not.
 
+SCHEDULE GENERATION INSTRUCTIONS:
+You have a tool called "generate_schedule" that creates a draft schedule in the system.
+Only use this tool when the user EXPLICITLY asks you to CREATE, GENERATE, or BUILD a schedule.
+Do NOT use the tool for questions, recommendations, or analysis — only for actual schedule creation.
+
+When generating a schedule:
+- IMPORTANT: Only schedule projects listed under UNSCHEDULED PROJECTS above. Projects that already have assignments are preserved automatically — do NOT re-schedule them.
+- Use the PERSONNEL & AVAILABILITY section above to find available windows. Do not create overlapping date ranges for the same person.
+- Match personnel skills to project required_skills. If a person's skills overlap with the project's required skills, they are a candidate.
+- CRITICAL DATE RULE: end_date = start_date + duration_weeks. This is the ONLY way to compute end_date.
+  - contract_start_date is the EARLIEST a project can start. If a mechanic is not available until later, the project starts later.
+  - contract_end_date is informational only — NEVER use it as an assignment end_date.
+  - If a mechanic is unavailable until after contract_start_date, set start_date = mechanic's available date, and end_date = start_date + duration_weeks.
+- Number NEW assignments sequentially per person, continuing from their highest existing sequence number.
+- Default assignment_type to "full".
+- Only schedule projects with award_status = 'awarded' unless the user explicitly asks otherwise.
+- Give the draft a descriptive name reflecting the strategy used.
+- Before calling the tool, briefly explain your scheduling strategy to the user.
+- After the tool executes, summarize what was created (how many assignments, which personnel/projects).
 """
 
+    # Add tweak-mode instructions when a draft exists
+    if is_tweaking:
+        system_prompt += """
+TWEAK MODE — ACTIVE DRAFT:
+You are viewing an existing draft schedule, not the master. The user wants to make changes to this draft.
+- Apply the user's requested changes to the current assignment set.
+- When you call generate_schedule, output the FULL set of assignments for ALL previously-unscheduled projects (both changed and unchanged ones).
+- The system will automatically delete the old draft and create a new one with your assignments.
+- Master assignments (already scheduled projects) are copied automatically — do NOT include them in your output.
+"""
+
+    # First Claude API call — with tool definition
     response = anthropic_client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=4096,
+        system=system_prompt,
+        messages=request.messages,
+        tools=[SCHEDULE_TOOL],
+    )
+
+    # Check if Claude wants to use a tool
+    tool_use_block = None
+    text_blocks = []
+    for block in response.content:
+        if block.type == "tool_use":
+            tool_use_block = block
+        elif block.type == "text":
+            text_blocks.append(block.text)
+
+    # No tool use — return text response as before
+    if not tool_use_block:
+        return {"response": "\n".join(text_blocks) if text_blocks else ""}
+
+    # Execute the tool
+    tool_result = _execute_schedule_tool(tool_use_block.input, is_tweaking=is_tweaking)
+
+    # Build the messages for the second Claude call (include tool result)
+    follow_up_messages = list(request.messages) + [
+        {"role": "assistant", "content": [b.model_dump() for b in response.content]},
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": tool_use_block.id,
+                    "content": json.dumps(tool_result),
+                }
+            ],
+        },
+    ]
+
+    # Second Claude call — get summary text
+    summary_response = anthropic_client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1024,
         system=system_prompt,
-        messages=request.messages,
+        messages=follow_up_messages,
+        tools=[SCHEDULE_TOOL],
     )
-    return {"response": response.content[0].text}
+
+    summary_text_parts = []
+    for block in summary_response.content:
+        if block.type == "text":
+            summary_text_parts.append(block.text)
+
+    # Combine any pre-tool text with the summary
+    all_text = []
+    if text_blocks:
+        all_text.extend(text_blocks)
+    if summary_text_parts:
+        all_text.extend(summary_text_parts)
+
+    result = {"response": "\n\n".join(all_text) if all_text else "Schedule generation completed."}
+
+    # If schedule was created successfully, include metadata for frontend
+    if tool_result.get("success"):
+        result["schedule_created"] = True
+        result["scenario_id"] = tool_result["scenario_id"]
+        result["scenario_name"] = tool_result["scenario_name"]
+
+    return result

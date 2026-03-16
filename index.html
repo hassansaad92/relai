@@ -901,21 +901,26 @@
         }
 
         .scenario-item {
-            padding: 9px 16px;
+            padding: 9px 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             border-bottom: 1px solid #ECEDF0;
             font-size: 12px;
+            flex-wrap: wrap;
         }
 
         .scenario-item.active-view { background: #EDF0F5; }
 
         .scenario-item-name {
             flex: 1;
+            min-width: 0;
             cursor: pointer;
             color: #333;
             font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .scenario-item-name:hover { color: var(--mid-blue); }
@@ -1530,6 +1535,30 @@
         .filter-clear:hover {
             color: #333;
         }
+
+        /* Toast notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1a7f37;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            max-width: 500px;
+            text-align: center;
+        }
+        .toast-notification.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -1551,6 +1580,10 @@
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>
             <span class="nav-label">Projects</span>
         </div>
+        <div class="nav-item" data-view="history">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="nav-label">History</span>
+        </div>
         <div class="scenario-indicator" id="scenarioIndicator" onclick="toggleScenarioPanel()">
             <span class="scenario-dot master" id="scenarioDot"></span>
             <span id="scenarioIndicatorName">Loading...</span>
@@ -1565,8 +1598,7 @@
         </div>
         <div id="scenarioList"></div>
         <div class="scenario-panel-footer">
-            <button class="scenario-new-btn" onclick="createDraft()">+ New Draft</button>
-            <span class="scenario-draft-count" id="draftCount"></span>
+            <button class="scenario-new-btn" id="newDraftBtn" onclick="createDraft()">+ New Draft</button>
         </div>
     </div>
 
@@ -1653,6 +1685,13 @@
                     </div>
                 </div>
                 <div id="projectsListContainer" class="card-grid"></div>
+            </div>
+        </div>
+
+        <div id="history" class="view">
+            <div class="section">
+                <h2>Archived Schedules</h2>
+                <div id="historyListContainer"></div>
             </div>
         </div>
 
@@ -1997,10 +2036,53 @@
             populateSkillsDropdown();
         }
 
+        async function loadHistoryData() {
+            const res = await fetch('/api/archive/scenarios');
+            const scenarios = await res.json();
+            const container = document.getElementById('historyListContainer');
+            if (!scenarios.length) {
+                container.innerHTML = '<p style="padding:16px;color:#666;">No archived schedules yet. Promote a draft to archive the previous master.</p>';
+                return;
+            }
+            const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+            container.innerHTML = scenarios.map(s => `
+                <div class="card" style="cursor:pointer;" onclick="toggleArchiveDetail('${s.scenario_id}', this)">
+                    <div class="card-header">
+                        <span class="card-title">${s.scenario_name}</span>
+                        <span class="card-status" style="background:#e0e2e6;color:#041e42;">${s.assignment_count} assignments</span>
+                    </div>
+                    <div style="font-size:12px;color:#666;">Archived ${fmtDate(s.archived_at)}</div>
+                    <div class="archive-detail" style="display:none;margin-top:10px;"></div>
+                </div>
+            `).join('');
+        }
+
+        async function toggleArchiveDetail(scenarioId, card) {
+            const detail = card.querySelector('.archive-detail');
+            if (detail.style.display !== 'none') {
+                detail.style.display = 'none';
+                return;
+            }
+            detail.innerHTML = '<span style="color:#999;">Loading...</span>';
+            detail.style.display = 'block';
+            try {
+                const res = await fetch(`/api/archive/assignments?scenario_id=${scenarioId}`);
+                const assignments = await res.json();
+                const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+                detail.innerHTML = assignments.map(a =>
+                    `<div style="font-size:13px;padding:4px 0;border-bottom:1px solid #f0f0f0;">${a.personnel_name || 'Unknown'} &rarr; ${a.project_name || 'Unknown'} (${fmtDate(a.start_date)} &ndash; ${fmtDate(a.end_date)})</div>`
+                ).join('');
+                if (!assignments.length) detail.innerHTML = '<span style="color:#999;">No assignments found.</span>';
+            } catch (err) {
+                detail.innerHTML = '<span style="color:red;">Failed to load assignments.</span>';
+            }
+        }
+
         const viewLoaders = {
             schedule: loadScheduleData,
             resources: loadResourcesData,
             projects: loadProjectsData,
+            history: loadHistoryData,
         };
 
         // Refresh data (current view only)
@@ -2172,7 +2254,9 @@
                 const label = lastFirstName(a.personnel_name || 'Unknown');
                 const projectName = a.project_name || 'Unknown';
                 const isCurrent = a.sequence === 1 || a.sequence === '1';
-                const barColor = isCurrent ? '#041e42' : '#6b9fd4';
+                const startsAfterContract = a.contract_start_date && a.start_date > a.contract_start_date;
+                const barColor = startsAfterContract ? '#e8a0a0' : (isCurrent ? '#041e42' : '#6b9fd4');
+                const textColor = startsAfterContract ? '#5c1a1a' : '#ffffff';
 
                 return {
                     type: 'bar',
@@ -2185,7 +2269,7 @@
                     text: [projectName],
                     textposition: 'inside',
                     insidetextanchor: 'middle',
-                    textfont: { color: '#ffffff', size: 11, family: 'Montserrat, sans-serif' },
+                    textfont: { color: textColor, size: 11, family: 'Montserrat, sans-serif' },
                     hovertemplate: '<b>%{text}</b><br>%{y}<br>%{base|%b %d, %Y} \u2192 ' +
                         new Date(a.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
                         '<extra></extra>',
@@ -2275,6 +2359,7 @@
                 'schedule': 'Schedule',
                 'resources': 'Resources',
                 'projects': 'Projects',
+                'history': 'History',
             };
             document.getElementById('pageTitle').textContent = titles[viewName];
 
@@ -2309,6 +2394,7 @@
             if (path === '/' || path === '/schedule' || path === '/overview' || path === '/assignments') return 'schedule';
             if (path === '/resources' || path === '/personnel' || path === '/skills') return 'resources';
             if (path === '/projects') return 'projects';
+            if (path === '/history') return 'history';
             return 'schedule'; // default
         }
 
@@ -2397,7 +2483,8 @@
                         </div>` : ''}
                 </div>
             `).join('');
-            document.getElementById('draftCount').textContent = `${drafts.length} / 5 drafts`;
+            // Hide New Draft button when a draft already exists
+            document.getElementById('newDraftBtn').style.display = drafts.length > 0 ? 'none' : '';
         }
 
         function toggleScenarioPanel() {
@@ -2437,7 +2524,7 @@
         }
 
         async function promoteScenario(id) {
-            if (!confirm('Promote this draft to master? The current master will be archived.')) return;
+            if (!confirm('Promote this draft to master? The current master will be archived to History.')) return;
             try {
                 const res = await fetch(`/api/scenarios/${id}/promote`, { method: 'POST' });
                 if (!res.ok) throw new Error(await res.text());
@@ -2450,7 +2537,7 @@
         }
 
         async function deleteScenario(id) {
-            if (!confirm('Archive this draft? It will no longer be editable.')) return;
+            if (!confirm('Delete this draft? This cannot be undone.')) return;
             try {
                 const res = await fetch(`/api/scenarios/${id}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error(await res.text());
@@ -2461,7 +2548,7 @@
                 await loadScenarios();
                 await viewLoaders[currentView]();
             } catch (err) {
-                alert('Failed to archive: ' + err.message);
+                alert('Failed to delete: ' + err.message);
             }
         }
 
@@ -2684,6 +2771,18 @@
             return div;
         }
 
+        function showScheduleNotification(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         async function sendChatMessage() {
             const input = document.getElementById('chatInput');
             const sendBtn = document.getElementById('chatSendBtn');
@@ -2709,6 +2808,17 @@
                 typingEl.remove();
                 appendChatMessage('assistant', data.response);
                 chatHistory.push({ role: 'assistant', content: data.response });
+
+                // Auto-switch to new draft if schedule was created
+                if (data.schedule_created && data.scenario_id) {
+                    await loadScenarios();
+                    await switchScenario(data.scenario_id);
+                    // Switch to Schedule view if not already there
+                    if (currentView !== 'schedule') {
+                        document.querySelector(`.tab-btn[data-view="schedule"]`).click();
+                    }
+                    showScheduleNotification(`AI draft '${data.scenario_name}' created. Viewing now.`);
+                }
             } catch (err) {
                 typingEl.remove();
                 appendChatMessage('assistant', 'Sorry, I encountered an error. Please try again.');

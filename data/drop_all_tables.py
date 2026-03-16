@@ -26,6 +26,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # Functions are dropped explicitly since they aren't removed by CASCADE on tables.
 DROP_SQL = """
 -- Drop tables (CASCADE removes triggers and FK constraints)
+DROP TABLE IF EXISTS assignments_archive CASCADE;
 DROP TABLE IF EXISTS assignments        CASCADE;
 DROP TABLE IF EXISTS scenarios          CASCADE;
 DROP TABLE IF EXISTS projects_history   CASCADE;

@@ -271,6 +271,25 @@ def shift_project_assignments(scenario_id: str, project_id: str, new_start_date:
         return {"shifted": cur.rowcount, "delta_days": delta}
 
 
+def bulk_insert_assignments(scenario_id: str, assignments_list: list[dict]):
+    with _cursor() as (_, cur):
+        for a in assignments_list:
+            cur.execute(
+                """
+                INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date, assignment_type)
+                VALUES (%(personnel_id)s, %(project_id)s, %(scenario_id)s, %(sequence)s, %(start_date)s, %(end_date)s, %(assignment_type)s)
+                """,
+                {**a, "scenario_id": scenario_id},
+            )
+        return {"inserted": len(assignments_list)}
+
+
+def delete_assignments_by_scenario(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM assignments WHERE scenario_id = %s", (scenario_id,))
+        return {"deleted": cur.rowcount}
+
+
 def copy_assignments_to_scenario(from_scenario_id: str, to_scenario_id: str):
     with _cursor() as (_, cur):
         cur.execute(
@@ -320,6 +339,70 @@ def insert_scenario(data: dict):
             data,
         )
         return dict(cur.fetchone())
+
+
+def delete_scenario(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute("DELETE FROM scenarios WHERE id = %s", (scenario_id,))
+
+
+def archive_scenario_assignments(scenario_id: str, scenario_name: str):
+    """Copy assignments to archive, then delete originals. Single transaction."""
+    with _cursor() as (_, cur):
+        cur.execute(
+            """
+            INSERT INTO assignments_archive
+                (original_assignment_id, personnel_id, project_id, scenario_id, scenario_name, sequence, start_date, end_date, assignment_type)
+            SELECT id, personnel_id, project_id, scenario_id, %s, sequence, start_date, end_date, assignment_type
+            FROM assignments
+            WHERE scenario_id = %s
+            """,
+            (scenario_name, scenario_id),
+        )
+        archived = cur.rowcount
+        cur.execute("DELETE FROM assignments WHERE scenario_id = %s", (scenario_id,))
+        return {"archived": archived}
+
+
+def fetch_archived_scenarios():
+    with _cursor() as (_, cur):
+        cur.execute(
+            """
+            SELECT scenario_id, scenario_name, MAX(archived_at) AS archived_at, COUNT(*) AS assignment_count
+            FROM assignments_archive
+            GROUP BY scenario_id, scenario_name
+            ORDER BY MAX(archived_at) DESC
+            """
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def fetch_archived_assignments(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute(
+            """
+            SELECT aa.*, p.name AS personnel_name, pr.name AS project_name
+            FROM assignments_archive aa
+            LEFT JOIN personnel p ON p.id = aa.personnel_id
+            LEFT JOIN projects pr ON pr.id = aa.project_id
+            WHERE aa.scenario_id = %s
+            ORDER BY p.name, aa.start_date
+            """,
+            (scenario_id,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def fetch_ai_scheduling_context(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute(_load_sql("ai_scheduling_context"), {"scenario_id": scenario_id})
+        return [dict(r) for r in cur.fetchall()]
+
+
+def fetch_ai_unscheduled_projects(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute(_load_sql("ai_unscheduled_projects"), {"scenario_id": scenario_id})
+        return [dict(r) for r in cur.fetchall()]
 
 
 def update_scenario(scenario_id: str, data: dict):
