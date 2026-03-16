@@ -386,7 +386,15 @@ Answer questions about projects, scheduling, resource allocation, and team assig
 When asked about a personnel member's next project, look up their assignments directly.
 Be concise and helpful. Today's date is {now_iso()}.
 
-Avoid using emojis unless they convey unambiguous meaning in context. In particular, do not use visual indicators (e.g. checkmarks) for partial matches — for example, a skill match alone does not mean a mechanic is available or suitable for a job. Only use a positive indicator when all relevant conditions are met."""
+Avoid using emojis unless they convey unambiguous meaning in context. 
+In particular, do not use visual indicators (e.g. checkmarks) for partial matches — for example, a skill match alone does not mean a mechanic is available or suitable for a job. 
+Only use a positive indicator when all relevant conditions are met.
+
+If I tell you to give me a recommendation for how to schedule a bunch of projects, just give me a simple output via:
+Mechanic Name (Available Date) --> Project Name (Contract Start Date). 
+Make sure to ask if I want to match skills or not.
+
+"""
 
     response = anthropic_client.messages.create(
         model="claude-sonnet-4-6",

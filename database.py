@@ -24,7 +24,9 @@ def _dsn():
         raise RuntimeError("Missing environment variable: SUPABASE_RELAI_DB_HOST")
     if not password:
         raise RuntimeError("Missing environment variable: SUPABASE_RELAI_DB_PASSWORD")
-    return f"postgresql://postgres:{password}@{host}:5432/postgres"
+    user = os.environ.get("SUPABASE_RELAI_DB_USER", "postgres.grkdykxrckzusbgkgsuk")
+    port = os.environ.get("SUPABASE_RELAI_DB_PORT", "6543")
+    return f"postgresql://{user}:{password}@{host}:{port}/postgres"
 
 
 def init_pool():
