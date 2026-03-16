@@ -1580,6 +1580,10 @@
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 6V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/></svg>
             <span class="nav-label">Projects</span>
         </div>
+        <div class="nav-item" data-view="history">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="nav-label">History</span>
+        </div>
         <div class="scenario-indicator" id="scenarioIndicator" onclick="toggleScenarioPanel()">
             <span class="scenario-dot master" id="scenarioDot"></span>
             <span id="scenarioIndicatorName">Loading...</span>
@@ -1594,8 +1598,7 @@
         </div>
         <div id="scenarioList"></div>
         <div class="scenario-panel-footer">
-            <button class="scenario-new-btn" onclick="createDraft()">+ New Draft</button>
-            <span class="scenario-draft-count" id="draftCount"></span>
+            <button class="scenario-new-btn" id="newDraftBtn" onclick="createDraft()">+ New Draft</button>
         </div>
     </div>
 
@@ -1682,6 +1685,13 @@
                     </div>
                 </div>
                 <div id="projectsListContainer" class="card-grid"></div>
+            </div>
+        </div>
+
+        <div id="history" class="view">
+            <div class="section">
+                <h2>Archived Schedules</h2>
+                <div id="historyListContainer"></div>
             </div>
         </div>
 
@@ -2026,10 +2036,53 @@
             populateSkillsDropdown();
         }
 
+        async function loadHistoryData() {
+            const res = await fetch('/api/archive/scenarios');
+            const scenarios = await res.json();
+            const container = document.getElementById('historyListContainer');
+            if (!scenarios.length) {
+                container.innerHTML = '<p style="padding:16px;color:#666;">No archived schedules yet. Promote a draft to archive the previous master.</p>';
+                return;
+            }
+            const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+            container.innerHTML = scenarios.map(s => `
+                <div class="card" style="cursor:pointer;" onclick="toggleArchiveDetail('${s.scenario_id}', this)">
+                    <div class="card-header">
+                        <span class="card-title">${s.scenario_name}</span>
+                        <span class="card-status" style="background:#e0e2e6;color:#041e42;">${s.assignment_count} assignments</span>
+                    </div>
+                    <div style="font-size:12px;color:#666;">Archived ${fmtDate(s.archived_at)}</div>
+                    <div class="archive-detail" style="display:none;margin-top:10px;"></div>
+                </div>
+            `).join('');
+        }
+
+        async function toggleArchiveDetail(scenarioId, card) {
+            const detail = card.querySelector('.archive-detail');
+            if (detail.style.display !== 'none') {
+                detail.style.display = 'none';
+                return;
+            }
+            detail.innerHTML = '<span style="color:#999;">Loading...</span>';
+            detail.style.display = 'block';
+            try {
+                const res = await fetch(`/api/archive/assignments?scenario_id=${scenarioId}`);
+                const assignments = await res.json();
+                const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '-';
+                detail.innerHTML = assignments.map(a =>
+                    `<div style="font-size:13px;padding:4px 0;border-bottom:1px solid #f0f0f0;">${a.personnel_name || 'Unknown'} &rarr; ${a.project_name || 'Unknown'} (${fmtDate(a.start_date)} &ndash; ${fmtDate(a.end_date)})</div>`
+                ).join('');
+                if (!assignments.length) detail.innerHTML = '<span style="color:#999;">No assignments found.</span>';
+            } catch (err) {
+                detail.innerHTML = '<span style="color:red;">Failed to load assignments.</span>';
+            }
+        }
+
         const viewLoaders = {
             schedule: loadScheduleData,
             resources: loadResourcesData,
             projects: loadProjectsData,
+            history: loadHistoryData,
         };
 
         // Refresh data (current view only)
@@ -2201,7 +2254,9 @@
                 const label = lastFirstName(a.personnel_name || 'Unknown');
                 const projectName = a.project_name || 'Unknown';
                 const isCurrent = a.sequence === 1 || a.sequence === '1';
-                const barColor = isCurrent ? '#041e42' : '#6b9fd4';
+                const startsAfterContract = a.contract_start_date && a.start_date > a.contract_start_date;
+                const barColor = startsAfterContract ? '#e8a0a0' : (isCurrent ? '#041e42' : '#6b9fd4');
+                const textColor = startsAfterContract ? '#5c1a1a' : '#ffffff';
 
                 return {
                     type: 'bar',
@@ -2214,7 +2269,7 @@
                     text: [projectName],
                     textposition: 'inside',
                     insidetextanchor: 'middle',
-                    textfont: { color: '#ffffff', size: 11, family: 'Montserrat, sans-serif' },
+                    textfont: { color: textColor, size: 11, family: 'Montserrat, sans-serif' },
                     hovertemplate: '<b>%{text}</b><br>%{y}<br>%{base|%b %d, %Y} \u2192 ' +
                         new Date(a.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
                         '<extra></extra>',
@@ -2304,6 +2359,7 @@
                 'schedule': 'Schedule',
                 'resources': 'Resources',
                 'projects': 'Projects',
+                'history': 'History',
             };
             document.getElementById('pageTitle').textContent = titles[viewName];
 
@@ -2338,6 +2394,7 @@
             if (path === '/' || path === '/schedule' || path === '/overview' || path === '/assignments') return 'schedule';
             if (path === '/resources' || path === '/personnel' || path === '/skills') return 'resources';
             if (path === '/projects') return 'projects';
+            if (path === '/history') return 'history';
             return 'schedule'; // default
         }
 
@@ -2426,7 +2483,8 @@
                         </div>` : ''}
                 </div>
             `).join('');
-            document.getElementById('draftCount').textContent = `${drafts.length} / 5 drafts`;
+            // Hide New Draft button when a draft already exists
+            document.getElementById('newDraftBtn').style.display = drafts.length > 0 ? 'none' : '';
         }
 
         function toggleScenarioPanel() {
@@ -2466,7 +2524,7 @@
         }
 
         async function promoteScenario(id) {
-            if (!confirm('Promote this draft to master? The current master will be archived.')) return;
+            if (!confirm('Promote this draft to master? The current master will be archived to History.')) return;
             try {
                 const res = await fetch(`/api/scenarios/${id}/promote`, { method: 'POST' });
                 if (!res.ok) throw new Error(await res.text());
