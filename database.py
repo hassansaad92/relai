@@ -244,6 +244,77 @@ def update_assignment(assignment_id: str, data: dict):
         return dict(row) if row else None
 
 
+def cascade_assignment_end_date(scenario_id: str, assignment_id: str, new_end_date: str):
+    from datetime import date, timedelta
+    new_end = date.fromisoformat(new_end_date)
+    shifted = []
+    with _cursor() as (_, cur):
+        # Fetch the target assignment
+        cur.execute("SELECT * FROM assignments WHERE id = %s", (assignment_id,))
+        target = cur.fetchone()
+        if not target:
+            return {"updated": None, "shifted": []}
+
+        personnel_id = target["personnel_id"]
+        old_end = target["end_date"]
+        delta_days = (new_end - old_end).days
+
+        # Update the target assignment's end_date
+        cur.execute(
+            "UPDATE assignments SET end_date = %s WHERE id = %s RETURNING *",
+            (new_end_date, assignment_id),
+        )
+        updated = dict(cur.fetchone())
+
+        if delta_days == 0:
+            return {"updated": updated, "shifted": []}
+
+        # Fetch all subsequent assignments for this person in this scenario, ordered by start_date
+        cur.execute(
+            """
+            SELECT * FROM assignments
+            WHERE scenario_id = %s AND personnel_id = %s AND start_date >= %s AND id != %s
+            ORDER BY start_date
+            """,
+            (scenario_id, personnel_id, target["start_date"], assignment_id),
+        )
+        subsequent = [dict(r) for r in cur.fetchall()]
+
+        prev_end = new_end
+        for assign in subsequent:
+            assign_start = assign["start_date"]
+            assign_duration = (assign["end_date"] - assign_start).days
+
+            if delta_days > 0 and prev_end > assign_start:
+                # Push forward: overlap exists, shift by overlap amount
+                shift = (prev_end - assign_start).days
+                new_start = assign_start + timedelta(days=shift)
+                new_a_end = new_start + timedelta(days=assign_duration)
+                cur.execute(
+                    "UPDATE assignments SET start_date = %s, end_date = %s WHERE id = %s RETURNING *",
+                    (new_start.isoformat(), new_a_end.isoformat(), assign["id"]),
+                )
+                shifted.append(dict(cur.fetchone()))
+                prev_end = new_a_end
+            elif delta_days < 0:
+                # Pull back: shift by the same delta, but don't start before prev_end
+                new_start = assign_start + timedelta(days=delta_days)
+                if new_start < prev_end:
+                    new_start = prev_end
+                new_a_end = new_start + timedelta(days=assign_duration)
+                if new_start != assign_start:
+                    cur.execute(
+                        "UPDATE assignments SET start_date = %s, end_date = %s WHERE id = %s RETURNING *",
+                        (new_start.isoformat(), new_a_end.isoformat(), assign["id"]),
+                    )
+                    shifted.append(dict(cur.fetchone()))
+                prev_end = new_a_end
+            else:
+                break  # No overlap and not pulling back, stop
+
+    return {"updated": updated, "shifted": shifted}
+
+
 def shift_project_assignments(scenario_id: str, project_id: str, new_start_date: str):
     from datetime import date, timedelta
     new_start = date.fromisoformat(new_start_date)
