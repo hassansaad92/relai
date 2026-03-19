@@ -25,6 +25,9 @@ from database import (
     fetch_active_drafts,
     fetch_ai_scheduling_context,
     fetch_ai_unscheduled_projects,
+    fetch_home_upcoming,
+    fetch_home_project_stats,
+    fetch_home_personnel_stats,
     insert_personnel,
     update_personnel,
     delete_personnel,
@@ -311,6 +314,53 @@ class ScenarioCreate(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[dict]
+
+
+class HomeAssessmentRequest(BaseModel):
+    upcoming: list[dict]
+    project_stats: dict
+    personnel_stats: dict
+
+
+# ── Home ──────────────────────────────────────────────────────────────────────
+
+@router.get("/api/home/stats")
+async def get_home_stats(scenario_id: Optional[str] = None):
+    sid = _get_scenario_id(scenario_id)
+    if not sid:
+        return {"upcoming": [], "project_stats": {}, "personnel_stats": {}}
+    return {
+        "upcoming": fetch_home_upcoming(sid),
+        "project_stats": fetch_home_project_stats(sid),
+        "personnel_stats": fetch_home_personnel_stats(sid),
+    }
+
+
+@router.post("/api/home/assessment")
+async def get_home_assessment(data: HomeAssessmentRequest):
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    system_prompt = f"""You are a scheduling health analyst for an elevator installation company.
+Today's date: {today}
+
+You will receive JSON with three fields:
+- "upcoming": each mechanic's current active assignment and their next assignment (by sequence). event_type is "active" (ongoing now), "upcoming" (starts in the future), or "ending_soon" (ends within 14 days).
+- "project_stats": awarded project counts — total, staffed (has >=1 assignment), unstaffed, and staffed percentage.
+- "personnel_stats": roster counts — total, currently_assigned (active today), has_future_assignment, and unassigned.
+
+Provide a balanced project health summary in 3-6 bullet points. Lead with what's going well, then note areas needing attention. Only flag something as urgent if it is genuinely time-sensitive. Do not speculate about data or system issues — treat the data as accurate. Be concise and direct. Do not use emoji."""
+    user_msg = json.dumps({
+        "upcoming": data.upcoming,
+        "project_stats": data.project_stats,
+        "personnel_stats": data.personnel_stats,
+    }, default=str)
+    response = anthropic_client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=512,
+        system=system_prompt,
+        messages=[{"role": "user", "content": user_msg}],
+    )
+    text = "\n".join(b.text for b in response.content if b.type == "text")
+    return {"assessment": text}
 
 
 # ── Personnel ──────────────────────────────────────────────────────────────────
