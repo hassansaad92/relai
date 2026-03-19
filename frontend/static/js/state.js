@@ -34,7 +34,7 @@ let allPersonnel = [];
 let allProjects = [];
 let allSkills = [];
 let allAssignments = [];
-let currentView = 'schedule';
+let currentView = 'home';
 
 // Scenario state
 let allScenarios = [];

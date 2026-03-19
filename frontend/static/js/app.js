@@ -18,6 +18,7 @@ function showView(viewName, updateHistory = true) {
 
     // Update page title
     const titles = {
+        'home': 'Home',
         'schedule': 'Schedule',
         'resources': 'Resources',
         'projects': 'Projects',
@@ -36,7 +37,7 @@ function showView(viewName, updateHistory = true) {
 
     // Update URL without page reload
     if (updateHistory) {
-        const url = viewName === 'schedule' ? '/' : `/${viewName}`;
+        const url = viewName === 'home' ? '/' : `/${viewName}`;
         history.pushState({ view: viewName }, '', url);
     }
 }
@@ -53,11 +54,12 @@ window.addEventListener('popstate', (event) => {
 // Get view name from current URL
 function getViewFromURL() {
     const path = window.location.pathname;
-    if (path === '/' || path === '/schedule' || path === '/overview' || path === '/assignments') return 'schedule';
+    if (path === '/' || path === '/home') return 'home';
+    if (path === '/schedule' || path === '/overview' || path === '/assignments') return 'schedule';
     if (path === '/resources' || path === '/personnel' || path === '/skills') return 'resources';
     if (path === '/projects') return 'projects';
     if (path === '/history') return 'history';
-    return 'schedule'; // default
+    return 'home'; // default
 }
 
 // Initialize navigation
@@ -85,7 +87,12 @@ async function refreshData() {
     button.disabled = true;
 
     try {
-        await viewLoaders[currentView]();
+        if (currentView === 'home') {
+            clearHomeCache();
+            await viewLoaders['home'](true);
+        } else {
+            await viewLoaders[currentView]();
+        }
     } catch (error) {
         console.error('Error refreshing data:', error);
         alert('Failed to refresh data. Please check your connection.');

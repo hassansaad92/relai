@@ -28,6 +28,11 @@ async def root():
     return FileResponse(FRONTEND_INDEX)
 
 
+@app.get("/home")
+async def home_page():
+    return FileResponse(FRONTEND_INDEX)
+
+
 @app.get("/overview")
 async def overview():
     return FileResponse(FRONTEND_INDEX)

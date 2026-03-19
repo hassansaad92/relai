@@ -48,6 +48,7 @@ document.addEventListener('click', (e) => {
 
 async function switchScenario(id) {
     currentScenarioId = id;
+    clearHomeCache();
     updateScenarioIndicator();
     renderScenarioPanel();
     document.getElementById('scenarioPanel').classList.remove('active');

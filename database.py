@@ -464,6 +464,28 @@ def fetch_archived_assignments(scenario_id: str):
         return [dict(r) for r in cur.fetchall()]
 
 
+# ── Home ──────────────────────────────────────────────────────────────────────
+
+def fetch_home_upcoming(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute(_load_sql("home_upcoming"), {"scenario_id": scenario_id})
+        return [dict(r) for r in cur.fetchall()]
+
+
+def fetch_home_project_stats(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute(_load_sql("home_project_stats"), {"scenario_id": scenario_id})
+        row = cur.fetchone()
+        return dict(row) if row else {}
+
+
+def fetch_home_personnel_stats(scenario_id: str):
+    with _cursor() as (_, cur):
+        cur.execute(_load_sql("home_personnel_stats"), {"scenario_id": scenario_id})
+        row = cur.fetchone()
+        return dict(row) if row else {}
+
+
 def fetch_ai_scheduling_context(scenario_id: str):
     with _cursor() as (_, cur):
         cur.execute(_load_sql("ai_scheduling_context"), {"scenario_id": scenario_id})

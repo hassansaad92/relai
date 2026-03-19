@@ -1499,3 +1499,119 @@ body.chat-collapsed .chat-reopen-btn {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
 }
+
+/* ── Home View ──────────────────────────────────────────────────────────────── */
+
+.home-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #041e42;
+    margin-bottom: 16px;
+}
+
+.home-title-date {
+    font-weight: 400;
+    color: #666;
+    font-size: 14px;
+    margin-left: 4px;
+}
+
+.home-assessment {
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    background: #ffffff;
+    line-height: 1.7;
+    font-size: 14px;
+    overflow-y: auto;
+}
+
+.home-assessment ul {
+    padding-left: 20px;
+    margin: 8px 0;
+}
+
+.home-assessment li {
+    margin-bottom: 6px;
+}
+
+.home-assessment-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #999;
+    font-size: 13px;
+    padding: 12px 0;
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--surface-border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.home-stats-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.home-stat-tile {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+.home-stat-tile-title {
+    font-weight: 600;
+    font-size: 15px;
+    color: #041e42;
+    margin-bottom: 14px;
+}
+
+.home-stat-pairs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.home-stat-pair {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.home-stat-label {
+    font-size: 13px;
+    color: #666;
+}
+
+.home-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #041e42;
+}
+
+.home-stat-pair.highlight .home-stat-value {
+    color: var(--accent);
+}
+
+.home-stat-empty {
+    font-size: 13px;
+    color: #999;
+}
+
+@media (max-width: 768px) {
+    .home-stats-row {
+        flex-direction: column;
+    }
+}
