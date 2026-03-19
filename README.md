@@ -302,6 +302,17 @@ Chronological record of major technical decisions and what shipped in each PR.
 
 ---
 
+### Sidebar hover-expand, assignment end-date cascade, and schedule/project tab separation
+**Branch:** `feature/assignment-end-date-cascade`
+
+- **Sidebar hover-expand**: Replaced toggle-button collapse with CSS hover. Sidebar starts at 56px (icons only) and expands to 250px on hover. Uses `opacity` transitions on labels so icons never shift position. Removed `toggleSidebar()`, all `.sidebar.collapsed` rules, and `body.sidebar-collapsed` classes
+- **Schedule tab — assignment-level editing only**: Removed contract start/end/duration editing from the schedule panel. Each assigned person now has an inline end-date editor that calls a cascade endpoint. Cascade pushes or pulls subsequent assignments for the same person, preserving each assignment's duration
+- **Projects tab — contract-level editing only**: Contract start date and duration are edited in the project modal. Added a Contract End Date field with bidirectional sync (changing duration updates end date and vice versa)
+- **Bidirectional cascade**: The `cascade_assignment_end_date` DB function now handles both directions — pushing assignments forward when end dates extend (overlap detection) and pulling them back when end dates shrink (delta-based shift with floor at previous assignment's end)
+- **API**: Added `contract_end_date` to `ProjectUpdate` model. PATCH handler calculates `duration_weeks` when only end date is provided. Cascade endpoint auto-extends project `contract_end_date` if any shifted assignment exceeds it
+
+---
+
 ## License
 
 _(License information to be added)_

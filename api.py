@@ -41,6 +41,7 @@ from database import (
     update_scenario,
     copy_assignments_to_scenario,
     shift_project_assignments,
+    cascade_assignment_end_date,
     bulk_insert_assignments,
     delete_assignments_by_scenario,
     delete_scenario as db_delete_scenario,
@@ -270,6 +271,7 @@ class ProjectUpdate(BaseModel):
     required_skills: Optional[str] = None
     num_elevators: Optional[int] = None
     contract_start_date: Optional[str] = None
+    contract_end_date: Optional[str] = None
     duration_weeks: Optional[int] = None
     award_status: Optional[str] = None
 
@@ -292,6 +294,11 @@ class AssignmentUpdate(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     assignment_type: Optional[str] = None
+
+
+class CascadeEndDateRequest(BaseModel):
+    new_end_date: str
+    scenario_id: str
 
 
 class ShiftScheduleRequest(BaseModel):
@@ -370,8 +377,16 @@ async def patch_project(project_id: str, data: ProjectUpdate):
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
     if not updates:
         raise HTTPException(400, "No fields to update")
-    # Recalculate end date if start or duration changed
-    if "contract_start_date" in updates or "duration_weeks" in updates:
+    # Recalculate dates based on what was provided
+    if "contract_end_date" in updates and "duration_weeks" not in updates and "contract_start_date" not in updates:
+        # End date provided alone — calculate duration from it
+        current = fetch_project_by_id(project_id)
+        if not current:
+            raise HTTPException(404, "Project not found")
+        start = datetime.strptime(str(current["contract_start_date"]), "%Y-%m-%d")
+        end = datetime.strptime(updates["contract_end_date"], "%Y-%m-%d")
+        updates["duration_weeks"] = max(1, (end - start).days + 6) // 7
+    elif "contract_start_date" in updates or "duration_weeks" in updates:
         start_str = updates.get("contract_start_date")
         weeks = updates.get("duration_weeks")
         if not start_str or not weeks:
@@ -450,6 +465,27 @@ async def patch_assignment(assignment_id: str, data: AssignmentUpdate):
     result = update_assignment(assignment_id, updates)
     if not result:
         raise HTTPException(status_code=404, detail="Assignment not found")
+    return result
+
+
+@router.post("/api/assignments/{assignment_id}/cascade")
+async def cascade_end_date(assignment_id: str, data: CascadeEndDateRequest):
+    result = cascade_assignment_end_date(data.scenario_id, assignment_id, data.new_end_date)
+    if not result["updated"]:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    # Check if any shifted assignment's end_date exceeds its project's contract_end_date
+    all_affected = [result["updated"]] + result["shifted"]
+    for assign in all_affected:
+        project = fetch_project_by_id(str(assign["project_id"]))
+        if project and str(assign["end_date"]) > str(project["contract_end_date"]):
+            new_end = assign["end_date"]
+            start = project["contract_start_date"]
+            delta_days = (new_end - start).days
+            new_weeks = (delta_days + 6) // 7  # round up
+            update_project(str(project["id"]), {
+                "contract_end_date": str(new_end),
+                "duration_weeks": new_weeks,
+            })
     return result
 
 
