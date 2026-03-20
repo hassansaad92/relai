@@ -14,8 +14,8 @@ Key rules:
 **MANDATORY**: When modifying `data/schema.sql`, follow the `/schema-rebuild` skill.
 
 Key rules:
-- Always review and update `drop_all_tables.py`, `clear_all_data.py`, and `repopulate_supabase_data.py` to stay in sync
-- The rebuild flow is: `drop_all_tables.py` → `schema.sql` → `repopulate_supabase_data.py`
+- Always review and update `drop_all_tables.sql`, `clear_all_data.py`, and `repopulate_supabase_data.py` to stay in sync
+- The rebuild flow is: `drop_all_tables.sql` → `schema.sql` → `repopulate_supabase_data.py`
 - See `.claude/skills/schema-rebuild/SKILL.md` for complete details
 
 ## Asana Workspace

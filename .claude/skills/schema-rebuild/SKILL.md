@@ -6,7 +6,7 @@
 
 The user's full rebuild flow is:
 
-1. `python data/drop_all_tables.py` — drops all tables, triggers, and functions
+1. Run `data/drop_all_tables.sql` in the Supabase SQL Editor — drops all tables, triggers, and functions
 2. Run `data/schema.sql` in the Supabase SQL Editor — recreates everything
 3. `python data/repopulate_supabase_data.py --seed small|large` — re-seeds data from CSVs
 
@@ -16,7 +16,7 @@ When `data/schema.sql` is modified, check and update each of these files:
 
 | File | What to check |
 |---|---|
-| `data/drop_all_tables.py` | Does the `DROP_SQL` block list all current tables and functions? Add any new ones, remove any deleted ones. |
+| `data/drop_all_tables.sql` | Does the `DROP_SQL` block list all current tables and functions? Add any new ones, remove any deleted ones. |
 | `data/clear_all_data.py` | Does the `TABLES` list include all current tables in the correct FK-safe deletion order? |
 | `data/clear_assignments.py` | Only if the `assignments` table itself changed (renamed, removed, PK changed). |
 | `data/repopulate_supabase_data.py` | If new tables were added or columns changed, update the CSV-to-Supabase insertion logic. |
@@ -26,7 +26,7 @@ When `data/schema.sql` is modified, check and update each of these files:
 
 Before committing schema changes, confirm:
 
-- [ ] `drop_all_tables.py` drops every table and function in the new schema
+- [ ] `drop_all_tables.sql` drops every table and function in the new schema
 - [ ] `clear_all_data.py` deletes from every table in FK-safe order
 - [ ] `repopulate_supabase_data.py` inserts into all required tables with correct columns
 - [ ] `data/README.md` reflects the current table creation order

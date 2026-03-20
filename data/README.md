@@ -26,7 +26,7 @@ The migration was performed via `repopulate_supabase_data.py` (in this directory
 |---|---|
 | `clear_assignments.py` | Deletes all rows from the `assignments` table only. Everything else (personnel, projects, scenarios, skills, history) is untouched. Useful for testing AI scheduling from scratch. |
 | `clear_all_data.py` | Deletes all rows from **every** table (including history tables) in FK-safe order. Schema (tables, triggers, functions) remains intact. Use this to start with empty tables without rebuilding the schema. |
-| `drop_all_tables.py` | Drops all tables **and** their dependent triggers/functions. Gives you a completely clean database so you can re-run `schema.sql` to rebuild from scratch. |
+| `drop_all_tables.sql` | Drops all tables **and** their dependent triggers/functions. Run in the Supabase SQL Editor to get a clean slate before re-running `schema.sql`. |
 | `schema.sql` | Full Supabase schema (tables, triggers, SCD2 history functions). Run in the SQL Editor to set up or rebuild a project. |
 | `repopulate_supabase_data.py` | Re-seeds all data from CSV files into Supabase. Accepts `--seed small` (default) or `--seed large` (~100 crew, ~200 projects — run `generate_large.py` first). |
 
