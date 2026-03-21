@@ -318,13 +318,6 @@ function renderScheduleAssignPanel(projectId) {
                     <option value="partial">Custom</option>
                 </select>
             </div>
-            <div class="form-group" style="margin-bottom:10px;">
-                <label style="font-size:12px;font-weight:600;color:#041e42;margin-bottom:4px;display:block;">Daily Allocation</label>
-                <select id="assignAlloc_${pid}" style="font-size:13px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-family:'Montserrat',sans-serif;">
-                    <option value="1.0">Full day (1.0)</option>
-                    <option value="0.5">Half day (0.5)</option>
-                </select>
-            </div>
             <div class="assign-date-defaults" id="assignDefaults_${pid}">Default: ${effStartFmt} – ${effEndFmt}</div>
             <label class="custom-date-toggle" id="customToggleLabel_${pid}" style="display:none;">
                 <input type="checkbox" id="customToggle_${pid}" onchange="toggleCustomDates('${pid}')"> Use custom dates
@@ -555,9 +548,11 @@ function toggleCustomDates(personnelId) {
 async function scheduleConfirmAssign(personnelId, defaultStart, defaultEnd) {
     const toggle = document.getElementById('customToggle_' + personnelId);
     const typeSelect = document.getElementById('assignType_' + personnelId);
-    const allocSelect = document.getElementById('assignAlloc_' + personnelId);
     const assignmentType = typeSelect ? typeSelect.value : 'full';
-    const allocatedDays = allocSelect ? parseFloat(allocSelect.value) : 1.0;
+    // Derive allocated_days from project duration: half-day projects get 0.5
+    const project = allProjects.find(p => p.id === selectedScheduleProjectId);
+    const projDuration = project ? parseFloat(project.duration_days) : 1;
+    const allocatedDays = projDuration <= 0.5 ? 0.5 : 1.0;
     let startDate = defaultStart;
     let endDate = defaultEnd;
     if (assignmentType === 'partial' || (toggle && toggle.checked)) {

@@ -675,7 +675,7 @@ When generating a schedule:
   - If a mechanic is unavailable until after contract_start_date, set start_date = mechanic's available date, and end_date = start_date + duration_days.
 - Number NEW assignments sequentially per person, continuing from their highest existing sequence number.
 - Default assignment_type to "full" and allocated_days to 1.0.
-- HALF-DAY ASSIGNMENTS: When a project has duration_days of 0.5 or when the user requests it, use allocated_days = 0.5. Two half-day assignments (0.5 each) can share the same person on the same day without conflict. Total allocated_days per person per day must not exceed 1.0.
+- HALF-DAY ASSIGNMENTS: Set allocated_days based on the project's duration_days — if duration_days <= 0.5 use allocated_days = 0.5, otherwise use 1.0. Two half-day assignments (0.5 each) can share the same person on the same day without conflict. Total allocated_days per person per day must not exceed 1.0.
 - PROCUREMENT DATE: Some projects have a procurement_date. Materials must be procured by this date. Factor this into scheduling — ideally start the project on or after the procurement date unless the user says otherwise.
 - Only schedule projects with award_status = 'awarded' unless the user explicitly asks otherwise.
 - Give the draft a descriptive name reflecting the strategy used.
