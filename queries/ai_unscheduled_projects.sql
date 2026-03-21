@@ -3,10 +3,9 @@ SELECT
     p.id,
     p.name,
     p.required_skills,
-    p.num_elevators,
     p.contract_start_date,
     p.contract_end_date,
-    p.duration_weeks
+    p.duration_days
 FROM projects p
 WHERE p.award_status = 'awarded'
   AND NOT EXISTS (
