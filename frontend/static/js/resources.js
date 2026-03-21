@@ -1,10 +1,16 @@
 async function loadResourcesData() {
+    document.getElementById('personnelLoading').style.display = 'flex';
+    document.getElementById('skillsLoading').style.display = 'flex';
+    document.getElementById('personnelListContainer').innerHTML = '';
+    document.getElementById('skillsListContainer').innerHTML = '';
     const [personnelRes, skillsRes] = await Promise.all([
         fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
         fetch('/api/skills')
     ]);
     allPersonnel = await personnelRes.json();
     allSkills = await skillsRes.json();
+    document.getElementById('personnelLoading').style.display = 'none';
+    document.getElementById('skillsLoading').style.display = 'none';
     renderPersonnelList(allPersonnel);
     populatePersonnelSkillTiles();
     renderSkillsList(allSkills);

@@ -11,6 +11,7 @@
             if (t === 'otis') {
                 var s = document.documentElement.style;
                 s.setProperty('--accent', '#f65275');
+                s.setProperty('--accent-text', '#f65275');
                 s.setProperty('--accent-hover-light', 'rgba(246, 82, 117, 0.1)');
                 s.setProperty('--accent-active-light', 'rgba(246, 82, 117, 0.2)');
                 s.setProperty('--page-bg', '#ffffff');
@@ -114,9 +115,10 @@
                     <div class="gantt-toggle">
                         <button class="gantt-toggle-btn active" data-mode="timeline" onclick="setGanttMode('timeline')">Timeline</button>
                         <button class="gantt-toggle-btn" data-mode="table" onclick="setGanttMode('table')">Table</button>
-                        <button class="gantt-collapse-btn" onclick="toggleGanttCollapse()" title="Collapse/Expand">▲</button>
+                        <button class="gantt-collapse-btn" onclick="toggleGanttCollapse()" title="Collapse/Expand"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
                     </div>
                 </h2>
+                <div class="view-loading" id="scheduleLoading"><div class="spinner"></div><span>Loading schedule...</span></div>
                 <div id="ganttContent">
                     <div id="ganttChart" style="width: 100%;"></div>
                     <div id="assignmentsTableContainer" style="display:none;"></div>
@@ -146,10 +148,12 @@
                         <button class="filter-clear" onclick="clearFilter(this)">&times;</button>
                     </div>
                 </div>
+                <div class="view-loading" id="personnelLoading"><div class="spinner"></div><span>Loading personnel...</span></div>
                 <div id="personnelListContainer" class="card-grid"></div>
             </div>
             <div class="section" style="margin-top: 24px;">
                 <h2>Skills <button class="header-add-button" onclick="openSkillModal()">+ Add Skill</button></h2>
+                <div class="view-loading" id="skillsLoading"><div class="spinner"></div><span>Loading skills...</span></div>
                 <div id="skillsListContainer"></div>
             </div>
         </div>
@@ -173,6 +177,7 @@
                         <button class="filter-clear" onclick="clearFilter(this)">&times;</button>
                     </div>
                 </div>
+                <div class="view-loading" id="projectsLoading"><div class="spinner"></div><span>Loading projects...</span></div>
                 <div id="projectsListContainer" class="card-grid"></div>
             </div>
         </div>
@@ -180,6 +185,7 @@
         <div id="history" class="view">
             <div class="section">
                 <h2>Archived Schedules</h2>
+                <div class="view-loading" id="historyLoading"><div class="spinner"></div><span>Loading history...</span></div>
                 <div id="historyListContainer"></div>
             </div>
         </div>
@@ -191,7 +197,7 @@
         <div class="chat-header">
             <span class="chat-status-dot"></span>
             RelAI Agent
-            <button class="chat-panel-toggle" onclick="toggleChatPanel()" title="Close panel">◀</button>
+            <button class="chat-panel-toggle" onclick="toggleChatPanel()" title="Close panel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
         <div class="chat-messages" id="chatMessages">
             <div class="chat-msg assistant">
@@ -307,10 +313,10 @@
             </div>
             <div style="margin-bottom: 8px; font-weight: 600; color: #041e42; font-size: 14px;">Theme</div>
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid var(--surface-border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;" id="themeOption-navy-amber">
-                    <input type="radio" name="theme" value="navy-amber" onchange="applyTheme('navy-amber')" style="accent-color: #041e42;">
-                    <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #E8A817; border: 2px solid #041e42; flex-shrink: 0;"></span>
-                    <span style="font-weight: 500; font-size: 14px;">Navy Amber</span>
+                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid var(--surface-border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;" id="themeOption-star">
+                    <input type="radio" name="theme" value="star" onchange="applyTheme('star')" style="accent-color: #041e42;">
+                    <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #06aeee; border: 2px solid #041e42; flex-shrink: 0;"></span>
+                    <span style="font-weight: 500; font-size: 14px;">Star</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid var(--surface-border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;" id="themeOption-otis">
                     <input type="radio" name="theme" value="otis" onchange="applyTheme('otis')" style="accent-color: #041e42;">

@@ -1,4 +1,5 @@
 async function loadScheduleData() {
+    document.getElementById('scheduleLoading').style.display = 'flex';
     const [overviewRes, personnelRes, projectsRes, schedProjectsRes, assignmentsRes] = await Promise.all([
         fetch(`/api/assignments/overview?scenario_id=${currentScenarioId}`),
         fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
@@ -11,6 +12,7 @@ async function loadScheduleData() {
     allProjects = await projectsRes.json();
     const schedProjects = await schedProjectsRes.json();
     allAssignments = await assignmentsRes.json();
+    document.getElementById('scheduleLoading').style.display = 'none';
     // Use schedule-projects for the project list (has assignment_count)
     allProjects = schedProjects;
     renderGantt(overviewAssignments, allPersonnel, allProjects);
@@ -89,15 +91,29 @@ function renderGantt(assignments, personnel, projects) {
         };
     });
 
+    // Compute date range for x-axis with padding
+    const allDates = assignments.flatMap(a => [new Date(a.start_date), new Date(a.end_date)]);
+    allDates.push(currentDate);
+    const minDate = new Date(Math.min(...allDates));
+    const maxDate = new Date(Math.max(...allDates));
+    const rangeSpanDays = (maxDate - minDate) / (1000 * 60 * 60 * 24);
+    // Pad range by 10% on each side, minimum 2 days
+    const padDays = Math.max(2, Math.ceil(rangeSpanDays * 0.1));
+    const xStart = new Date(minDate);
+    xStart.setDate(xStart.getDate() - padDays);
+    const xEnd = new Date(maxDate);
+    xEnd.setDate(xEnd.getDate() + padDays);
+
     const layout = {
         barmode: 'overlay',
         xaxis: {
             type: 'date',
             title: '',
+            showline: true,
+            linecolor: '#E0E2E6',
             gridcolor: getComputedStyle(document.documentElement).getPropertyValue('--surface-border').trim(),
-            dtick: 'M1',
-            tickformat: '%b %Y',
-            tickfont: { family: 'Montserrat, sans-serif', size: 12 },
+            tickfont: { family: 'Montserrat, sans-serif', size: 11 },
+            range: [xStart.toISOString().split('T')[0], xEnd.toISOString().split('T')[0]],
         },
         yaxis: {
             autorange: 'reversed',
@@ -106,17 +122,20 @@ function renderGantt(assignments, personnel, projects) {
         },
         bargap: 0.2,
         height: Math.max(250, assignments.length * 28 + 80),
-        margin: { l: 130, r: 20, t: 10, b: 30 },
+        margin: { l: 130, r: 20, t: 10, b: 40 },
         font: { family: 'Montserrat, sans-serif' },
         plot_bgcolor: '#ffffff',
         paper_bgcolor: '#ffffff',
         shapes: [{
             type: 'line',
+            xref: 'x',
+            yref: 'paper',
             x0: currentDate.toISOString().split('T')[0],
             x1: currentDate.toISOString().split('T')[0],
-            y0: -0.5,
-            y1: personnel.length - 0.5,
-            line: { color: '#000000', width: 1, dash: 'dash' },
+            y0: 0,
+            y1: 1,
+            line: { color: '#000000', width: 1.5, dash: 'dash' },
+            layer: 'above',
         }],
     };
 
@@ -351,7 +370,7 @@ function renderScheduleAssignPanel(projectId) {
         ? '<p class="no-assignments-msg">No one available during this period.</p>'
         : free.map(p => `<div class="schedule-person-row">
             <div class="schedule-person-name">${p.name}</div>
-            <div class="schedule-person-info">${p.availability_status === 'assigned' ? 'Available ' + fmtShort(p.next_available_date) : 'Available now'}</div>
+            <div class="schedule-person-info"></div>
             <button class="schedule-action-btn" onclick="scheduleShowAssignForm('${p.id}')">+ Assign</button>
         </div>${assignFormPersonnelId === p.id ? makeAssignForm(p.id) : ''}`).join('');
 
@@ -363,26 +382,18 @@ function renderScheduleAssignPanel(projectId) {
     const allPersonnelHTML = allOthers.length === 0
         ? '<p class="no-assignments-msg">No additional personnel.</p>'
         : allOthers.map(p => {
-            // Find their current assignments to show status
+            // Find overlapping assignments to explain why they're unavailable
             const theirAssignments = allAssignments.filter(a => a.personnel_id === p.id)
                 .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-            let statusText = 'No assignments';
-            if (theirAssignments.length > 0) {
-                const current = theirAssignments.find(a =>
-                    new Date(a.start_date) <= new Date() && new Date(a.end_date) >= new Date()
-                );
-                if (current) {
-                    const proj = allProjects.find(pr => pr.id === current.project_id);
-                    statusText = `On ${proj ? proj.name : 'project'} until ${fmtShort(current.end_date)}`;
-                } else {
-                    const next = theirAssignments.find(a => new Date(a.start_date) > new Date());
-                    if (next) {
-                        const proj = allProjects.find(pr => pr.id === next.project_id);
-                        statusText = `Next: ${proj ? proj.name : 'project'} from ${fmtShort(next.start_date)}`;
-                    } else {
-                        statusText = `Last ended ${fmtShort(theirAssignments[theirAssignments.length - 1].end_date)}`;
-                    }
-                }
+            const overlapping = theirAssignments.filter(a =>
+                new Date(a.start_date) < projectEnd && new Date(a.end_date) > projectStart
+            );
+            let statusText = '';
+            if (overlapping.length > 0) {
+                statusText = overlapping.map(a => {
+                    const proj = allProjects.find(pr => pr.id === a.project_id);
+                    return `${proj ? proj.name : 'project'} (${fmtShort(a.start_date)} – ${fmtShort(a.end_date)})`;
+                }).join(', ');
             }
             return `<div class="schedule-person-row force-assign-row">
                 <div class="schedule-person-name">${p.name}</div>

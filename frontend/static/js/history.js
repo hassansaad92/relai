@@ -1,6 +1,9 @@
 async function loadHistoryData() {
+    document.getElementById('historyLoading').style.display = 'flex';
+    document.getElementById('historyListContainer').innerHTML = '';
     const res = await fetch('/api/archive/scenarios');
     const scenarios = await res.json();
+    document.getElementById('historyLoading').style.display = 'none';
     const container = document.getElementById('historyListContainer');
     if (!scenarios.length) {
         container.innerHTML = '<p style="padding:16px;color:#666;">No archived schedules yet. Promote a draft to archive the previous master.</p>';

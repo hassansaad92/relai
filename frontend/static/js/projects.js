@@ -1,10 +1,13 @@
 async function loadProjectsData() {
+    document.getElementById('projectsLoading').style.display = 'flex';
+    document.getElementById('projectsListContainer').innerHTML = '';
     const [projectsRes, skillsRes] = await Promise.all([
         fetch(`/api/projects?scenario_id=${currentScenarioId}`),
         fetch('/api/skills')
     ]);
     allProjects = await projectsRes.json();
     allSkills = await skillsRes.json();
+    document.getElementById('projectsLoading').style.display = 'none';
     renderProjectsList(allProjects);
     populateSkillsDropdown();
 }
