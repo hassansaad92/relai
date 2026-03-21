@@ -1,3 +1,4 @@
+import math
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -82,6 +83,11 @@ SCHEDULE_TOOL = {
                         "sequence": {"type": "integer"},
                         "start_date": {"type": "string", "description": "YYYY-MM-DD"},
                         "end_date": {"type": "string", "description": "YYYY-MM-DD"},
+                        "allocated_days": {
+                            "type": "number",
+                            "description": "Daily allocation: 1.0 for full day, 0.5 for half day. Default 1.0.",
+                            "default": 1.0,
+                        },
                         "assignment_type": {
                             "type": "string",
                             "enum": ["full", "cascading", "partial"],
@@ -195,6 +201,7 @@ def _build_ai_context(scenario_id: str) -> str:
                 "start_date": str(r["start_date"]),
                 "end_date": str(r["end_date"]),
                 "sequence": r["sequence"],
+                "allocated_days": float(r["allocated_days"]) if r.get("allocated_days") is not None else 1.0,
                 "assignment_type": r["assignment_type"],
             })
 
@@ -206,9 +213,10 @@ def _build_ai_context(scenario_id: str) -> str:
         if assignments:
             lines.append("  Current assignments:")
             for a in assignments:
+                alloc_label = f", {a['allocated_days']} days/day" if a['allocated_days'] != 1.0 else ""
                 lines.append(
                     f"    seq {a['sequence']}: {a['project_name']} "
-                    f"({a['start_date']} to {a['end_date']}, {a['assignment_type']})"
+                    f"({a['start_date']} to {a['end_date']}, {a['assignment_type']}{alloc_label})"
                 )
             # Compute available windows (gaps between assignments)
             windows = []
@@ -229,10 +237,11 @@ def _build_ai_context(scenario_id: str) -> str:
     lines.append("\n\nUNSCHEDULED PROJECTS:")
     if unscheduled:
         for p in unscheduled:
+            procurement = f", procurement: {p['procurement_date']}" if p.get('procurement_date') else ""
             lines.append(
                 f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], "
                 f"contract {p['contract_start_date']} to {p['contract_end_date']}, "
-                f"{p['duration_days']} days"
+                f"{p['duration_days']} days{procurement}"
             )
     else:
         lines.append("(none)")
@@ -263,8 +272,9 @@ class ProjectCreate(BaseModel):
     name: str
     required_skills: str
     contract_start_date: str
-    duration_days: int
+    duration_days: float
     award_status: str
+    procurement_date: Optional[str] = None
 
 
 class ProjectUpdate(BaseModel):
@@ -272,8 +282,9 @@ class ProjectUpdate(BaseModel):
     required_skills: Optional[str] = None
     contract_start_date: Optional[str] = None
     contract_end_date: Optional[str] = None
-    duration_days: Optional[int] = None
+    duration_days: Optional[float] = None
     award_status: Optional[str] = None
+    procurement_date: Optional[str] = None
 
 
 class SkillCreate(BaseModel):
@@ -287,12 +298,14 @@ class AssignmentCreate(BaseModel):
     sequence: int
     start_date: str
     end_date: str
+    allocated_days: float = 1.0
     assignment_type: str = "full"
 
 
 class AssignmentUpdate(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+    allocated_days: Optional[float] = None
     assignment_type: Optional[str] = None
 
 
@@ -407,8 +420,10 @@ async def get_projects(scenario_id: Optional[str] = None):
 async def create_project(project: ProjectCreate):
     data = project.model_dump()
     start = datetime.strptime(data["contract_start_date"], "%Y-%m-%d")
-    end = start + timedelta(days=data["duration_days"])
+    end = start + timedelta(days=math.ceil(data["duration_days"]))
     data["contract_end_date"] = end.strftime("%Y-%m-%d")
+    if not data.get("procurement_date"):
+        data["procurement_date"] = None
     return insert_project(data)
 
 
@@ -422,6 +437,9 @@ async def remove_project(project_id: str):
 @router.patch("/api/projects/{project_id}")
 async def patch_project(project_id: str, data: ProjectUpdate):
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
+    # Allow explicitly setting procurement_date to empty string (clear it)
+    if data.procurement_date is not None:
+        updates["procurement_date"] = data.procurement_date if data.procurement_date else None
     if not updates:
         raise HTTPException(400, "No fields to update")
     # Recalculate dates based on what was provided
@@ -441,9 +459,9 @@ async def patch_project(project_id: str, data: ProjectUpdate):
             if not current:
                 raise HTTPException(404, "Project not found")
             start_str = start_str or str(current["contract_start_date"])
-            days = days or current["duration_days"]
+            days = days or float(current["duration_days"])
         start = datetime.strptime(start_str, "%Y-%m-%d")
-        updates["contract_end_date"] = (start + timedelta(days=days)).strftime("%Y-%m-%d")
+        updates["contract_end_date"] = (start + timedelta(days=math.ceil(days))).strftime("%Y-%m-%d")
     result = update_project(project_id, updates)
     if not result:
         raise HTTPException(404, "Project not found")
@@ -656,7 +674,9 @@ When generating a schedule:
   - contract_end_date is informational only — NEVER use it as an assignment end_date.
   - If a mechanic is unavailable until after contract_start_date, set start_date = mechanic's available date, and end_date = start_date + duration_days.
 - Number NEW assignments sequentially per person, continuing from their highest existing sequence number.
-- Default assignment_type to "full".
+- Default assignment_type to "full" and allocated_days to 1.0.
+- HALF-DAY ASSIGNMENTS: When a project has duration_days of 0.5 or when the user requests it, use allocated_days = 0.5. Two half-day assignments (0.5 each) can share the same person on the same day without conflict. Total allocated_days per person per day must not exceed 1.0.
+- PROCUREMENT DATE: Some projects have a procurement_date. Materials must be procured by this date. Factor this into scheduling — ideally start the project on or after the procurement date unless the user says otherwise.
 - Only schedule projects with award_status = 'awarded' unless the user explicitly asks otherwise.
 - Give the draft a descriptive name reflecting the strategy used.
 - Before calling the tool, briefly explain your scheduling strategy to the user.

@@ -5,7 +5,8 @@ SELECT
     p.required_skills,
     p.contract_start_date,
     p.contract_end_date,
-    p.duration_days
+    p.duration_days,
+    p.procurement_date
 FROM projects p
 WHERE p.award_status = 'awarded'
   AND NOT EXISTS (

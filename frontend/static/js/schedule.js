@@ -18,17 +18,38 @@ async function loadScheduleData() {
     renderScheduleProjects();
 }
 
+// Build daily allocation map: { personnelId: { 'YYYY-MM-DD': totalAllocated } }
+function buildDailyAllocationMap(assignments) {
+    const map = {};
+    for (const a of assignments) {
+        if (!map[a.personnel_id]) map[a.personnel_id] = {};
+        const personMap = map[a.personnel_id];
+        const start = new Date(a.start_date + 'T00:00:00');
+        const end = new Date(a.end_date + 'T00:00:00');
+        const alloc = parseFloat(a.allocated_days) || 1.0;
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            personMap[key] = (personMap[key] || 0) + alloc;
+        }
+    }
+    return map;
+}
+
 // Render Gantt chart with Plotly
 function renderGantt(assignments, personnel, projects) {
-    // Detect double-booked assignments (same person, overlapping date ranges)
+    // Detect overbooked assignments using daily allocation map
+    const allocMap = buildDailyAllocationMap(assignments);
     const doubleBookedIds = new Set();
     for (let i = 0; i < assignments.length; i++) {
-        for (let j = i + 1; j < assignments.length; j++) {
-            const a1 = assignments[i], a2 = assignments[j];
-            if (a1.personnel_id === a2.personnel_id &&
-                a1.start_date < a2.end_date && a2.start_date < a1.end_date) {
+        const a = assignments[i];
+        const personMap = allocMap[a.personnel_id] || {};
+        const start = new Date(a.start_date + 'T00:00:00');
+        const end = new Date(a.end_date + 'T00:00:00');
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            if ((personMap[key] || 0) > 1.0) {
                 doubleBookedIds.add(i);
-                doubleBookedIds.add(j);
+                break;
             }
         }
     }
@@ -41,6 +62,8 @@ function renderGantt(assignments, personnel, projects) {
         const startsAfterContract = a.contract_start_date && a.start_date > a.contract_start_date;
         const barColor = isDoubleBooked ? '#e8890a' : (startsAfterContract ? '#e8a0a0' : (isCurrent ? '#041e42' : '#6b9fd4'));
         const textColor = isDoubleBooked ? '#ffffff' : (startsAfterContract ? '#5c1a1a' : '#ffffff');
+        const alloc = parseFloat(a.allocated_days) || 1.0;
+        const barWidth = alloc < 1.0 ? 0.3 : 0.6;
 
         return {
             type: 'bar',
@@ -48,7 +71,7 @@ function renderGantt(assignments, personnel, projects) {
             y: [label],
             x: [new Date(a.end_date) - new Date(a.start_date)],
             base: [a.start_date],
-            width: [0.6],
+            width: [barWidth],
             name: projectName,
             text: [projectName],
             textposition: 'inside',
@@ -238,14 +261,20 @@ function renderScheduleAssignPanel(projectId) {
     const assignedIds = new Set(projectAssignments.map(a => a.personnel_id));
 
     const free = [];
+    const allocMap = buildDailyAllocationMap(allAssignments);
     allPersonnel.forEach(person => {
         if (assignedIds.has(person.id)) return;
-        const conflicts = allAssignments.filter(a =>
-            a.personnel_id === person.id &&
-            new Date(a.start_date) < projectEnd &&
-            new Date(a.end_date) > projectStart
-        );
-        if (conflicts.length === 0) free.push(person);
+        // Capacity-based: person is available if any day in window has totalAllocated < 1.0
+        const personMap = allocMap[person.id] || {};
+        let hasCapacity = false;
+        for (let d = new Date(projectStart); d < projectEnd; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            if ((personMap[key] || 0) < 1.0) {
+                hasCapacity = true;
+                break;
+            }
+        }
+        if (hasCapacity || Object.keys(personMap).length === 0) free.push(person);
     });
     free.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -253,7 +282,9 @@ function renderScheduleAssignPanel(projectId) {
         ? '<p class="no-assignments-msg">No one assigned yet.</p>'
         : projectAssignments.map(a => {
             const pName = a.personnel_name || a.personnel_id;
-            const typeLabel = a.assignment_type && a.assignment_type !== 'full' ? ` (${a.assignment_type})` : '';
+            const alloc = parseFloat(a.allocated_days) || 1.0;
+            const allocLabel = alloc !== 1.0 ? ` [${alloc} day]` : '';
+            const typeLabel = (a.assignment_type && a.assignment_type !== 'full' ? ` (${a.assignment_type})` : '') + allocLabel;
             return `<div class="schedule-person-row" style="flex-wrap:wrap;">
                 <div class="schedule-person-name">${pName}</div>
                 <div class="schedule-person-info">${fmtShort(a.start_date)} – ${fmtShort(a.end_date)}${typeLabel}</div>
@@ -285,6 +316,13 @@ function renderScheduleAssignPanel(projectId) {
                     <option value="full">Full alignment</option>
                     <option value="cascading">Cascading</option>
                     <option value="partial">Custom</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <label style="font-size:12px;font-weight:600;color:#041e42;margin-bottom:4px;display:block;">Daily Allocation</label>
+                <select id="assignAlloc_${pid}" style="font-size:13px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-family:'Montserrat',sans-serif;">
+                    <option value="1.0">Full day (1.0)</option>
+                    <option value="0.5">Half day (0.5)</option>
                 </select>
             </div>
             <div class="assign-date-defaults" id="assignDefaults_${pid}">Default: ${effStartFmt} – ${effEndFmt}</div>
@@ -416,23 +454,34 @@ function checkScheduleConflicts(projectId) {
     const conflicts = [];
     const gaps = [];
 
+    const allocMap = buildDailyAllocationMap(allAssignments);
     projectAssignments.forEach(pa => {
         const paStart = new Date(pa.start_date);
         const paEnd = new Date(pa.end_date);
         const personName = pa.personnel_name || pa.personnel_id;
 
-        // Check for overlapping assignments
-        allAssignments.forEach(other => {
-            if (other.id === pa.id) return;
-            if (other.personnel_id !== pa.personnel_id) return;
-            const otherStart = new Date(other.start_date);
-            const otherEnd = new Date(other.end_date);
-            if (otherStart < paEnd && otherEnd > paStart) {
-                const otherProject = allProjects.find(p => p.id === other.project_id);
-                const otherName = otherProject ? otherProject.name : other.project_id;
-                conflicts.push(`${personName} is also assigned to ${otherName} from ${fmtShort(other.start_date)} to ${fmtShort(other.end_date)}`);
+        // Check for capacity overflows (combined allocated_days > 1.0 on any day)
+        const personMap = allocMap[pa.personnel_id] || {};
+        const overbookedDays = [];
+        for (let d = new Date(paStart); d < paEnd; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            if ((personMap[key] || 0) > 1.0) {
+                overbookedDays.push(key);
             }
-        });
+        }
+        if (overbookedDays.length > 0) {
+            // Find what other assignments overlap on those days
+            allAssignments.forEach(other => {
+                if (other.id === pa.id || other.personnel_id !== pa.personnel_id) return;
+                const otherStart = new Date(other.start_date);
+                const otherEnd = new Date(other.end_date);
+                if (otherStart < paEnd && otherEnd > paStart) {
+                    const otherProject = allProjects.find(p => p.id === other.project_id);
+                    const otherName = otherProject ? otherProject.name : other.project_id;
+                    conflicts.push(`${personName} is overbooked with ${otherName} (${overbookedDays.length} days over capacity)`);
+                }
+            });
+        }
 
         // Check for gaps between this person's current assignment end and contract start
         if (project.contract_start_date) {
@@ -463,7 +512,7 @@ function checkScheduleConflicts(projectId) {
     container.innerHTML = html;
 }
 
-async function scheduleAssign(personnelId, startDate, endDate, assignmentType = 'full') {
+async function scheduleAssign(personnelId, startDate, endDate, assignmentType = 'full', allocatedDays = 1.0) {
     const existing = allAssignments
         .filter(a => a.personnel_id === personnelId)
         .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
@@ -482,6 +531,7 @@ async function scheduleAssign(personnelId, startDate, endDate, assignmentType = 
                 sequence,
                 start_date: startDate,
                 end_date: endDate,
+                allocated_days: allocatedDays,
                 assignment_type: assignmentType,
             })
         });
@@ -505,7 +555,9 @@ function toggleCustomDates(personnelId) {
 async function scheduleConfirmAssign(personnelId, defaultStart, defaultEnd) {
     const toggle = document.getElementById('customToggle_' + personnelId);
     const typeSelect = document.getElementById('assignType_' + personnelId);
+    const allocSelect = document.getElementById('assignAlloc_' + personnelId);
     const assignmentType = typeSelect ? typeSelect.value : 'full';
+    const allocatedDays = allocSelect ? parseFloat(allocSelect.value) : 1.0;
     let startDate = defaultStart;
     let endDate = defaultEnd;
     if (assignmentType === 'partial' || (toggle && toggle.checked)) {
@@ -513,7 +565,7 @@ async function scheduleConfirmAssign(personnelId, defaultStart, defaultEnd) {
         endDate = document.getElementById('customEnd_' + personnelId).value || defaultEnd;
     }
     assignFormPersonnelId = null;
-    await scheduleAssign(personnelId, startDate, endDate, assignmentType);
+    await scheduleAssign(personnelId, startDate, endDate, assignmentType, allocatedDays);
 }
 
 function updateAssignDefaults(pid, projectStart, projectEnd, personAvail, durationDays) {

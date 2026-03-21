@@ -4,6 +4,7 @@ SELECT
     p.contract_start_date,
     p.contract_end_date,
     p.duration_days,
+    p.procurement_date,
     p.required_skills,
     p.award_status,
     p.created_at,

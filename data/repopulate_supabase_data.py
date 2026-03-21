@@ -16,7 +16,7 @@ from supabase import create_client, Client
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--seed",
-    choices=["small", "large"],
+    choices=["small", "large", "service"],
     default="small",
     help="Which seed dataset to load (default: small)",
 )
@@ -109,11 +109,13 @@ projects_csv = read_csv("projects.csv")
 old_project_id_to_uuid = {}
 
 for row in projects_csv:
+    procurement_date = row.get("procurement_date") or None
     payload = {
         "name": row["name"],
         "contract_start_date": row["contract_start_date"],
         "contract_end_date": row["contract_end_date"],
-        "duration_days": int(row["duration_weeks"]) * 7,
+        "duration_days": float(row["duration_weeks"]) * 7,
+        "procurement_date": procurement_date,
         "required_skills": row["required_skills"],
         "award_status": row["award_status"],
     }
@@ -167,6 +169,7 @@ for row in assignments_csv:
         "start_date": row["start_date"],
         "end_date": row["end_date"],
         "assignment_type": row.get("assignment_type", "full"),
+        "allocated_days": float(row.get("allocated_days", 1.0)),
     }
     response = supabase.table("assignments").insert(payload).execute()
     if not response.data:

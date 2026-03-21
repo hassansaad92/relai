@@ -1,4 +1,4 @@
-id,name,contract_start_date,contract_end_date,duration_weeks,num_elevators,required_skills,award_status
+id,name,contract_start_date,contract_end_date,duration_weeks,num_elevators,required_skills,award_status,procurement_date
 1,Pyramid Building,2026-08-30,2027-10-24,60,6,"Gen2,Compass",awarded
 2,Metropolitan Medical Center,2026-03-08,2026-07-26,20,2,Geared,awarded
 3,Gateway Shopping Plaza,2026-06-22,2026-11-22,20,2,"Gearless,Compass",awarded

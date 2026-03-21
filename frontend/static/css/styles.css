@@ -100,7 +100,7 @@ body.chat-collapsed .main-content {
 
 .main-content {
     margin-left: 56px;
-    margin-right: 400px;
+    margin-right: 480px;
     flex: 1;
     padding: 20px;
     transition: margin-right 0.25s ease;
@@ -1311,9 +1311,9 @@ body.chat-collapsed .main-content {
 
 .gantt-section #ganttContent.collapsed { display: none; }
 
-/* AI Assistant right panel */
+/* RelAI Agent right panel */
 .chat-panel {
-    width: 400px;
+    width: 480px;
     height: 100vh;
     position: fixed;
     top: 0;
@@ -1329,7 +1329,7 @@ body.chat-collapsed .main-content {
 .chat-panel.collapsed {
     width: 0;
     overflow: hidden;
-    transform: translateX(400px);
+    transform: translateX(480px);
 }
 
 .chat-panel .chat-header {

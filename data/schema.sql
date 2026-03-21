@@ -68,7 +68,8 @@ CREATE TABLE projects (
     name TEXT NOT NULL,
     contract_start_date DATE NOT NULL,
     contract_end_date DATE NOT NULL,
-    duration_days INTEGER NOT NULL,
+    duration_days NUMERIC(5,1) NOT NULL,
+    procurement_date DATE,
     required_skills TEXT NOT NULL,
     award_status TEXT NOT NULL DEFAULT 'awarded',
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -83,7 +84,8 @@ CREATE TABLE projects_history (
     name TEXT,
     contract_start_date DATE,
     contract_end_date DATE,
-    duration_days INTEGER,
+    duration_days NUMERIC(5,1),
+    procurement_date DATE,
     required_skills TEXT,
     award_status TEXT,
     valid_from TIMESTAMPTZ NOT NULL,
@@ -108,11 +110,11 @@ BEGIN
     IF (TG_OP = 'UPDATE') THEN
         UPDATE projects_history SET valid_to = NEW.updated_at, is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
-        INSERT INTO projects_history (project_id, name, contract_start_date, contract_end_date, duration_days, required_skills, award_status, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.contract_start_date, NEW.contract_end_date, NEW.duration_days, NEW.required_skills, NEW.award_status, NEW.updated_at, TRUE);
+        INSERT INTO projects_history (project_id, name, contract_start_date, contract_end_date, duration_days, procurement_date, required_skills, award_status, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.contract_start_date, NEW.contract_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO projects_history (project_id, name, contract_start_date, contract_end_date, duration_days, required_skills, award_status, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.contract_start_date, NEW.contract_end_date, NEW.duration_days, NEW.required_skills, NEW.award_status, NEW.created_at, TRUE);
+        INSERT INTO projects_history (project_id, name, contract_start_date, contract_end_date, duration_days, procurement_date, required_skills, award_status, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.contract_start_date, NEW.contract_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
         UPDATE projects_history SET valid_to = NOW(), is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
@@ -210,6 +212,7 @@ CREATE TABLE assignments (
     sequence INTEGER NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
+    allocated_days NUMERIC(5,1) NOT NULL DEFAULT 1.0,
     assignment_type TEXT NOT NULL DEFAULT 'full' CHECK (assignment_type IN ('full', 'cascading', 'partial')),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -231,6 +234,7 @@ CREATE TABLE assignments_archive (
     sequence INTEGER NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
+    allocated_days NUMERIC(5,1) NOT NULL DEFAULT 1.0,
     assignment_type TEXT NOT NULL DEFAULT 'full',
     archived_at TIMESTAMPTZ DEFAULT NOW()
 );

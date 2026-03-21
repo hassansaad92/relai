@@ -43,7 +43,7 @@ function renderProjectsList(projects) {
                     <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                 </div>
             </div>
-            <div class="card-detail"><strong>Contract:</strong> <span class="editable-date" onclick="editProject('${project.id}')">${contractDates}</span> · <strong>Scheduled:</strong> ${actualDates}</div>
+            <div class="card-detail"><strong>Contract:</strong> <span class="editable-date" onclick="editProject('${project.id}')">${contractDates}</span> · <strong>Scheduled:</strong> ${actualDates}${project.procurement_date ? ` · <strong>Procurement:</strong> ${fmtDate(project.procurement_date)}` : ''}</div>
             <button class="card-edit-btn" onclick="editProject('${project.id}')" title="Edit">✎</button>
         </div>`;
     }).join('');
@@ -86,6 +86,7 @@ function editProject(id) {
     form.querySelector('[name="contract_start_date"]').value = project.contract_start_date;
     form.querySelector('[name="duration_days"]').value = project.duration_days;
     form.querySelector('[name="contract_end_date"]').value = project.contract_end_date || '';
+    form.querySelector('[name="procurement_date"]').value = project.procurement_date || '';
     form.querySelector('[name="award_status"]').value = project.award_status;
     lastEndDateSource = null;
     // Select matching skills in dropdown
@@ -127,10 +128,10 @@ function updateContractEndPreview(source) {
     const start = new Date(startStr + 'T00:00:00');
 
     if (source === 'duration') {
-        const days = parseInt(form.querySelector('[name="duration_days"]').value);
-        if (!days || days < 1) return;
+        const days = parseFloat(form.querySelector('[name="duration_days"]').value);
+        if (!days || days < 0.5) return;
         const end = new Date(start);
-        end.setDate(end.getDate() + days);
+        end.setDate(end.getDate() + Math.ceil(days));
         form.querySelector('[name="contract_end_date"]').value = end.toISOString().split('T')[0];
     } else if (source === 'end_date') {
         const endStr = form.querySelector('[name="contract_end_date"]').value;
@@ -150,9 +151,12 @@ async function submitProject(event) {
         name: formData.get('name'),
         required_skills: Array.from(select.selectedOptions).map(o => o.value).join(','),
         contract_start_date: formData.get('contract_start_date'),
-        duration_days: parseInt(formData.get('duration_days')),
+        duration_days: parseFloat(formData.get('duration_days')),
         award_status: formData.get('award_status'),
     };
+    // Include procurement_date if set
+    const procDate = formData.get('procurement_date');
+    if (procDate) project.procurement_date = procDate;
     // If end date was explicitly changed, include it
     if (lastEndDateSource === 'end_date' && formData.get('contract_end_date')) {
         project.contract_end_date = formData.get('contract_end_date');

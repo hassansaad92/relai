@@ -6,6 +6,7 @@ SELECT
     a.sequence,
     a.start_date,
     a.end_date,
+    a.allocated_days,
     a.assignment_type,
     per.name AS personnel_name,
     proj.name AS project_name,

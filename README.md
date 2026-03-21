@@ -313,6 +313,36 @@ Chronological record of major technical decisions and what shipped in each PR.
 
 ---
 
+## Roadmap
+
+### Phase 1: Service Work Pivot (Current)
+- Fractional-day durations (0.5, 1.0, 1.5, etc.)
+- Half-day assignments with capacity-based conflict detection
+- Procurement date tracking per project
+- Dual mechanic assignments within a single day
+
+### Phase 2: Authentication & User Accounts
+- User sign-in (OAuth or email/password)
+- Role-based access control (admin, scheduler, viewer)
+- Session management and API auth
+
+### Phase 3: Multi-Tenancy
+- Per-company databases or isolated table sets
+- Company onboarding and provisioning
+- Data isolation between tenants
+
+### Phase 4: GPS-Based Proximity Optimization
+- Geocoding project addresses
+- Proximity-aware scheduling suggestions
+- Travel time estimation between job sites
+
+### Phase 5: Contract Management
+- Contract document storage via AWS S3
+- Link contracts to projects
+- Document versioning and access control
+
+---
+
 ## License
 
 _(License information to be added)_
