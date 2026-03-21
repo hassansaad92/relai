@@ -1,4 +1,5 @@
 async function loadScheduleData() {
+    document.getElementById('scheduleLoading').style.display = 'flex';
     const [overviewRes, personnelRes, projectsRes, schedProjectsRes, assignmentsRes] = await Promise.all([
         fetch(`/api/assignments/overview?scenario_id=${currentScenarioId}`),
         fetch(`/api/personnel?scenario_id=${currentScenarioId}`),
@@ -11,6 +12,7 @@ async function loadScheduleData() {
     allProjects = await projectsRes.json();
     const schedProjects = await schedProjectsRes.json();
     allAssignments = await assignmentsRes.json();
+    document.getElementById('scheduleLoading').style.display = 'none';
     // Use schedule-projects for the project list (has assignment_count)
     allProjects = schedProjects;
     renderGantt(overviewAssignments, allPersonnel, allProjects);
@@ -18,17 +20,38 @@ async function loadScheduleData() {
     renderScheduleProjects();
 }
 
+// Build daily allocation map: { personnelId: { 'YYYY-MM-DD': totalAllocated } }
+function buildDailyAllocationMap(assignments) {
+    const map = {};
+    for (const a of assignments) {
+        if (!map[a.personnel_id]) map[a.personnel_id] = {};
+        const personMap = map[a.personnel_id];
+        const start = new Date(a.start_date + 'T00:00:00');
+        const end = new Date(a.end_date + 'T00:00:00');
+        const alloc = parseFloat(a.allocated_days) || 1.0;
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            personMap[key] = (personMap[key] || 0) + alloc;
+        }
+    }
+    return map;
+}
+
 // Render Gantt chart with Plotly
 function renderGantt(assignments, personnel, projects) {
-    // Detect double-booked assignments (same person, overlapping date ranges)
+    // Detect overbooked assignments using daily allocation map
+    const allocMap = buildDailyAllocationMap(assignments);
     const doubleBookedIds = new Set();
     for (let i = 0; i < assignments.length; i++) {
-        for (let j = i + 1; j < assignments.length; j++) {
-            const a1 = assignments[i], a2 = assignments[j];
-            if (a1.personnel_id === a2.personnel_id &&
-                a1.start_date < a2.end_date && a2.start_date < a1.end_date) {
+        const a = assignments[i];
+        const personMap = allocMap[a.personnel_id] || {};
+        const start = new Date(a.start_date + 'T00:00:00');
+        const end = new Date(a.end_date + 'T00:00:00');
+        for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            if ((personMap[key] || 0) > 1.0) {
                 doubleBookedIds.add(i);
-                doubleBookedIds.add(j);
+                break;
             }
         }
     }
@@ -38,9 +61,12 @@ function renderGantt(assignments, personnel, projects) {
         const projectName = a.project_name || 'Unknown';
         const isCurrent = a.sequence === 1 || a.sequence === '1';
         const isDoubleBooked = doubleBookedIds.has(idx);
-        const startsAfterContract = a.contract_start_date && a.start_date > a.contract_start_date;
-        const barColor = isDoubleBooked ? '#e8890a' : (startsAfterContract ? '#e8a0a0' : (isCurrent ? '#041e42' : '#6b9fd4'));
-        const textColor = isDoubleBooked ? '#ffffff' : (startsAfterContract ? '#5c1a1a' : '#ffffff');
+        const exceedsCommitted = (a.committed_start_date && a.start_date > a.committed_start_date) ||
+            (a.committed_end_date && a.end_date > a.committed_end_date);
+        const barColor = isDoubleBooked ? '#e8890a' : (exceedsCommitted ? '#c0392b' : (isCurrent ? '#041e42' : '#6b9fd4'));
+        const textColor = '#ffffff';
+        const alloc = parseFloat(a.allocated_days) || 1.0;
+        const barWidth = alloc < 1.0 ? 0.3 : 0.6;
 
         return {
             type: 'bar',
@@ -48,7 +74,7 @@ function renderGantt(assignments, personnel, projects) {
             y: [label],
             x: [new Date(a.end_date) - new Date(a.start_date)],
             base: [a.start_date],
-            width: [0.6],
+            width: [barWidth],
             name: projectName,
             text: [projectName],
             textposition: 'inside',
@@ -65,15 +91,29 @@ function renderGantt(assignments, personnel, projects) {
         };
     });
 
+    // Compute date range for x-axis with padding
+    const allDates = assignments.flatMap(a => [new Date(a.start_date), new Date(a.end_date)]);
+    allDates.push(currentDate);
+    const minDate = new Date(Math.min(...allDates));
+    const maxDate = new Date(Math.max(...allDates));
+    const rangeSpanDays = (maxDate - minDate) / (1000 * 60 * 60 * 24);
+    // Pad range by 10% on each side, minimum 2 days
+    const padDays = Math.max(2, Math.ceil(rangeSpanDays * 0.1));
+    const xStart = new Date(minDate);
+    xStart.setDate(xStart.getDate() - padDays);
+    const xEnd = new Date(maxDate);
+    xEnd.setDate(xEnd.getDate() + padDays);
+
     const layout = {
         barmode: 'overlay',
         xaxis: {
             type: 'date',
             title: '',
+            showline: true,
+            linecolor: '#E0E2E6',
             gridcolor: getComputedStyle(document.documentElement).getPropertyValue('--surface-border').trim(),
-            dtick: 'M1',
-            tickformat: '%b %Y',
-            tickfont: { family: 'Montserrat, sans-serif', size: 12 },
+            tickfont: { family: 'Montserrat, sans-serif', size: 11 },
+            range: [xStart.toISOString().split('T')[0], xEnd.toISOString().split('T')[0]],
         },
         yaxis: {
             autorange: 'reversed',
@@ -82,17 +122,20 @@ function renderGantt(assignments, personnel, projects) {
         },
         bargap: 0.2,
         height: Math.max(250, assignments.length * 28 + 80),
-        margin: { l: 130, r: 20, t: 10, b: 30 },
+        margin: { l: 130, r: 20, t: 10, b: 40 },
         font: { family: 'Montserrat, sans-serif' },
         plot_bgcolor: '#ffffff',
         paper_bgcolor: '#ffffff',
         shapes: [{
             type: 'line',
+            xref: 'x',
+            yref: 'paper',
             x0: currentDate.toISOString().split('T')[0],
             x1: currentDate.toISOString().split('T')[0],
-            y0: -0.5,
-            y1: personnel.length - 0.5,
-            line: { color: '#000000', width: 1, dash: 'dash' },
+            y0: 0,
+            y1: 1,
+            line: { color: '#000000', width: 1.5, dash: 'dash' },
+            layer: 'above',
         }],
     };
 
@@ -129,12 +172,12 @@ function renderAssignmentsList() {
         const currentProject = person.current_project_name || '-';
         const completion = person.current_assignment_end ? fmtDate(person.current_assignment_end) : '-';
         const nextProject = person.next_project_name || '-';
-        const reqStart = person.next_project_contract_start ? fmtDate(person.next_project_contract_start) : '-';
+        const reqStart = person.next_project_committed_start ? fmtDate(person.next_project_committed_start) : '-';
 
         let gapCell = '-';
-        if (person.current_assignment_end && person.next_project_contract_start) {
+        if (person.current_assignment_end && person.next_project_committed_start) {
             const endMs = new Date(person.current_assignment_end + 'T00:00:00');
-            const startMs = new Date(person.next_project_contract_start + 'T00:00:00');
+            const startMs = new Date(person.next_project_committed_start + 'T00:00:00');
             const days = Math.round((endMs - startMs) / 86400000);
             if (days > 0) {
                 gapCell = `<span style="color:#C20000;font-weight:600">+${days}d late</span>`;
@@ -175,7 +218,11 @@ function renderAssignmentsList() {
 function renderScheduleProjects() {
     const container = document.getElementById('scheduleProjectsList');
     const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
-    const sorted = [...allProjects].sort((a, b) => new Date(a.contract_start_date) - new Date(b.contract_start_date));
+    const sorted = [...allProjects].sort((a, b) => {
+        const aDate = a.committed_start_date || '9999-12-31';
+        const bDate = b.committed_start_date || '9999-12-31';
+        return aDate.localeCompare(bDate);
+    });
     container.innerHTML = sorted.map(p => {
         const schedStatus = p.schedule_status || 'not_scheduled';
         const count = p.assignment_count != null ? p.assignment_count : allAssignments.filter(a => a.project_id === p.id).length;
@@ -183,7 +230,9 @@ function renderScheduleProjects() {
         const skillTags = p.required_skills ? p.required_skills.split(',').map(s =>
             `<span class="skills-tag-light">${s.trim()}</span>`
         ).join('') : '';
-        const contractDates = `${fmtDate(p.contract_start_date)} – ${fmtDate(p.contract_end_date)}`;
+        const committedDates = p.committed_start_date
+            ? `${fmtDate(p.committed_start_date)} – ${fmtDate(p.committed_end_date)}`
+            : 'Not set';
         const actualDates = p.actual_start_date
             ? `${fmtDate(p.actual_start_date)} – ${fmtDate(p.actual_end_date)}`
             : '--';
@@ -201,7 +250,7 @@ function renderScheduleProjects() {
                         <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                     </div>
                 </div>
-                <div class="card-detail"><strong>Contract:</strong> ${contractDates} · <strong>Scheduled:</strong> ${actualDates}</div>
+                <div class="card-detail"><strong>Committed:</strong> ${committedDates} · <strong>Scheduled:</strong> ${actualDates}</div>
             </div>`;
         if (isSelected) {
             html += `<div class="schedule-assign-inline" id="scheduleAssignPanel"></div>`;
@@ -224,8 +273,14 @@ function renderScheduleAssignPanel(projectId) {
     const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
 
-    const projectStartStr = project.contract_start_date;
-    const projectEndStr = project.contract_end_date;
+    // Use committed dates if available, else default to today + duration
+    const today = new Date().toISOString().split('T')[0];
+    const projectStartStr = project.committed_start_date || today;
+    const projectEndStr = project.committed_end_date || (() => {
+        const d = new Date(projectStartStr + 'T00:00:00');
+        d.setDate(d.getDate() + Math.ceil(parseFloat(project.duration_days) || 1));
+        return d.toISOString().split('T')[0];
+    })();
     const projectStart = new Date(projectStartStr + 'T00:00:00');
     const projectEnd = new Date(projectEndStr + 'T00:00:00');
 
@@ -238,14 +293,20 @@ function renderScheduleAssignPanel(projectId) {
     const assignedIds = new Set(projectAssignments.map(a => a.personnel_id));
 
     const free = [];
+    const allocMap = buildDailyAllocationMap(allAssignments);
     allPersonnel.forEach(person => {
         if (assignedIds.has(person.id)) return;
-        const conflicts = allAssignments.filter(a =>
-            a.personnel_id === person.id &&
-            new Date(a.start_date) < projectEnd &&
-            new Date(a.end_date) > projectStart
-        );
-        if (conflicts.length === 0) free.push(person);
+        // Capacity-based: person is available if any day in window has totalAllocated < 1.0
+        const personMap = allocMap[person.id] || {};
+        let hasCapacity = false;
+        for (let d = new Date(projectStart); d < projectEnd; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            if ((personMap[key] || 0) < 1.0) {
+                hasCapacity = true;
+                break;
+            }
+        }
+        if (hasCapacity || Object.keys(personMap).length === 0) free.push(person);
     });
     free.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -253,7 +314,9 @@ function renderScheduleAssignPanel(projectId) {
         ? '<p class="no-assignments-msg">No one assigned yet.</p>'
         : projectAssignments.map(a => {
             const pName = a.personnel_name || a.personnel_id;
-            const typeLabel = a.assignment_type && a.assignment_type !== 'full' ? ` (${a.assignment_type})` : '';
+            const alloc = parseFloat(a.allocated_days) || 1.0;
+            const allocLabel = alloc !== 1.0 ? ` [${alloc} day]` : '';
+            const typeLabel = (a.assignment_type && a.assignment_type !== 'full' ? ` (${a.assignment_type})` : '') + allocLabel;
             return `<div class="schedule-person-row" style="flex-wrap:wrap;">
                 <div class="schedule-person-name">${pName}</div>
                 <div class="schedule-person-info">${fmtShort(a.start_date)} – ${fmtShort(a.end_date)}${typeLabel}</div>
@@ -307,7 +370,7 @@ function renderScheduleAssignPanel(projectId) {
         ? '<p class="no-assignments-msg">No one available during this period.</p>'
         : free.map(p => `<div class="schedule-person-row">
             <div class="schedule-person-name">${p.name}</div>
-            <div class="schedule-person-info">${p.availability_status === 'assigned' ? 'Available ' + fmtShort(p.next_available_date) : 'Available now'}</div>
+            <div class="schedule-person-info"></div>
             <button class="schedule-action-btn" onclick="scheduleShowAssignForm('${p.id}')">+ Assign</button>
         </div>${assignFormPersonnelId === p.id ? makeAssignForm(p.id) : ''}`).join('');
 
@@ -319,26 +382,18 @@ function renderScheduleAssignPanel(projectId) {
     const allPersonnelHTML = allOthers.length === 0
         ? '<p class="no-assignments-msg">No additional personnel.</p>'
         : allOthers.map(p => {
-            // Find their current assignments to show status
+            // Find overlapping assignments to explain why they're unavailable
             const theirAssignments = allAssignments.filter(a => a.personnel_id === p.id)
                 .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
-            let statusText = 'No assignments';
-            if (theirAssignments.length > 0) {
-                const current = theirAssignments.find(a =>
-                    new Date(a.start_date) <= new Date() && new Date(a.end_date) >= new Date()
-                );
-                if (current) {
-                    const proj = allProjects.find(pr => pr.id === current.project_id);
-                    statusText = `On ${proj ? proj.name : 'project'} until ${fmtShort(current.end_date)}`;
-                } else {
-                    const next = theirAssignments.find(a => new Date(a.start_date) > new Date());
-                    if (next) {
-                        const proj = allProjects.find(pr => pr.id === next.project_id);
-                        statusText = `Next: ${proj ? proj.name : 'project'} from ${fmtShort(next.start_date)}`;
-                    } else {
-                        statusText = `Last ended ${fmtShort(theirAssignments[theirAssignments.length - 1].end_date)}`;
-                    }
-                }
+            const overlapping = theirAssignments.filter(a =>
+                new Date(a.start_date) < projectEnd && new Date(a.end_date) > projectStart
+            );
+            let statusText = '';
+            if (overlapping.length > 0) {
+                statusText = overlapping.map(a => {
+                    const proj = allProjects.find(pr => pr.id === a.project_id);
+                    return `${proj ? proj.name : 'project'} (${fmtShort(a.start_date)} – ${fmtShort(a.end_date)})`;
+                }).join(', ');
             }
             return `<div class="schedule-person-row force-assign-row">
                 <div class="schedule-person-name">${p.name}</div>
@@ -416,27 +471,38 @@ function checkScheduleConflicts(projectId) {
     const conflicts = [];
     const gaps = [];
 
+    const allocMap = buildDailyAllocationMap(allAssignments);
     projectAssignments.forEach(pa => {
         const paStart = new Date(pa.start_date);
         const paEnd = new Date(pa.end_date);
         const personName = pa.personnel_name || pa.personnel_id;
 
-        // Check for overlapping assignments
-        allAssignments.forEach(other => {
-            if (other.id === pa.id) return;
-            if (other.personnel_id !== pa.personnel_id) return;
-            const otherStart = new Date(other.start_date);
-            const otherEnd = new Date(other.end_date);
-            if (otherStart < paEnd && otherEnd > paStart) {
-                const otherProject = allProjects.find(p => p.id === other.project_id);
-                const otherName = otherProject ? otherProject.name : other.project_id;
-                conflicts.push(`${personName} is also assigned to ${otherName} from ${fmtShort(other.start_date)} to ${fmtShort(other.end_date)}`);
+        // Check for capacity overflows (combined allocated_days > 1.0 on any day)
+        const personMap = allocMap[pa.personnel_id] || {};
+        const overbookedDays = [];
+        for (let d = new Date(paStart); d < paEnd; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            if ((personMap[key] || 0) > 1.0) {
+                overbookedDays.push(key);
             }
-        });
+        }
+        if (overbookedDays.length > 0) {
+            // Find what other assignments overlap on those days
+            allAssignments.forEach(other => {
+                if (other.id === pa.id || other.personnel_id !== pa.personnel_id) return;
+                const otherStart = new Date(other.start_date);
+                const otherEnd = new Date(other.end_date);
+                if (otherStart < paEnd && otherEnd > paStart) {
+                    const otherProject = allProjects.find(p => p.id === other.project_id);
+                    const otherName = otherProject ? otherProject.name : other.project_id;
+                    conflicts.push(`${personName} is overbooked with ${otherName} (${overbookedDays.length} days over capacity)`);
+                }
+            });
+        }
 
         // Check for gaps between this person's current assignment end and contract start
-        if (project.contract_start_date) {
-            const contractStart = new Date(project.contract_start_date + 'T00:00:00');
+        if (project.committed_start_date) {
+            const contractStart = new Date(project.committed_start_date + 'T00:00:00');
             const otherAssignments = allAssignments.filter(a =>
                 a.personnel_id === pa.personnel_id && a.id !== pa.id && new Date(a.end_date) <= contractStart
             ).sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
@@ -447,7 +513,7 @@ function checkScheduleConflicts(projectId) {
                 if (gapDays > 14) {
                     const prevProject = allProjects.find(p => p.id === otherAssignments[0].project_id);
                     const prevName = prevProject ? prevProject.name : 'previous project';
-                    gaps.push(`${personName} has a ${gapDays}-day gap between ${prevName} (ends ${fmtShort(otherAssignments[0].end_date)}) and this project (contract start ${fmtShort(project.contract_start_date)})`);
+                    gaps.push(`${personName} has a ${gapDays}-day gap between ${prevName} (ends ${fmtShort(otherAssignments[0].end_date)}) and this project (contract start ${fmtShort(project.committed_start_date)})`);
                 }
             }
         }
@@ -463,7 +529,7 @@ function checkScheduleConflicts(projectId) {
     container.innerHTML = html;
 }
 
-async function scheduleAssign(personnelId, startDate, endDate, assignmentType = 'full') {
+async function scheduleAssign(personnelId, startDate, endDate, assignmentType = 'full', allocatedDays = 1.0) {
     const existing = allAssignments
         .filter(a => a.personnel_id === personnelId)
         .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
@@ -482,6 +548,7 @@ async function scheduleAssign(personnelId, startDate, endDate, assignmentType = 
                 sequence,
                 start_date: startDate,
                 end_date: endDate,
+                allocated_days: allocatedDays,
                 assignment_type: assignmentType,
             })
         });
@@ -506,6 +573,10 @@ async function scheduleConfirmAssign(personnelId, defaultStart, defaultEnd) {
     const toggle = document.getElementById('customToggle_' + personnelId);
     const typeSelect = document.getElementById('assignType_' + personnelId);
     const assignmentType = typeSelect ? typeSelect.value : 'full';
+    // Derive allocated_days from project duration: half-day projects get 0.5
+    const project = allProjects.find(p => p.id === selectedScheduleProjectId);
+    const projDuration = project ? parseFloat(project.duration_days) : 1;
+    const allocatedDays = projDuration <= 0.5 ? 0.5 : 1.0;
     let startDate = defaultStart;
     let endDate = defaultEnd;
     if (assignmentType === 'partial' || (toggle && toggle.checked)) {
@@ -513,7 +584,7 @@ async function scheduleConfirmAssign(personnelId, defaultStart, defaultEnd) {
         endDate = document.getElementById('customEnd_' + personnelId).value || defaultEnd;
     }
     assignFormPersonnelId = null;
-    await scheduleAssign(personnelId, startDate, endDate, assignmentType);
+    await scheduleAssign(personnelId, startDate, endDate, assignmentType, allocatedDays);
 }
 
 function updateAssignDefaults(pid, projectStart, projectEnd, personAvail, durationDays) {

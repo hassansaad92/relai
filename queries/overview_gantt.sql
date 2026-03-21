@@ -6,10 +6,12 @@ SELECT
     a.sequence,
     a.start_date,
     a.end_date,
+    a.allocated_days,
     a.assignment_type,
     per.name AS personnel_name,
     proj.name AS project_name,
-    proj.contract_start_date
+    proj.committed_start_date,
+    proj.committed_end_date
 FROM assignments a
 JOIN personnel per ON per.id = a.personnel_id
 JOIN projects proj ON proj.id = a.project_id

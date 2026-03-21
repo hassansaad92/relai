@@ -1,9 +1,10 @@
 SELECT
     p.id,
     p.name,
-    p.contract_start_date,
-    p.contract_end_date,
+    p.committed_start_date,
+    p.committed_end_date,
     p.duration_days,
+    p.procurement_date,
     p.required_skills,
     p.award_status,
     COUNT(a.id) AS assignment_count,
@@ -17,4 +18,4 @@ SELECT
 FROM projects p
 LEFT JOIN assignments a ON a.project_id = p.id AND a.scenario_id = %(scenario_id)s
 GROUP BY p.id
-ORDER BY p.contract_start_date
+ORDER BY p.committed_start_date NULLS LAST

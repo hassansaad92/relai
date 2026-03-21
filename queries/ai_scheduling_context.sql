@@ -10,6 +10,7 @@ SELECT
     a.start_date,
     a.end_date,
     a.sequence,
+    a.allocated_days,
     a.assignment_type
 FROM personnel p
 LEFT JOIN assignments a

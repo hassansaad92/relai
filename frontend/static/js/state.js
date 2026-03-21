@@ -1,15 +1,17 @@
 // Theme definitions
 const themes = {
-    'navy-amber': {
-        '--accent': '#E8A817',
-        '--accent-hover-light': 'rgba(232, 168, 23, 0.1)',
-        '--accent-active-light': 'rgba(232, 168, 23, 0.2)',
+    'star': {
+        '--accent': '#06aeee',
+        '--accent-text': '#333333',
+        '--accent-hover-light': 'rgba(6, 174, 238, 0.1)',
+        '--accent-active-light': 'rgba(6, 174, 238, 0.2)',
         '--page-bg': '#F4F5F7',
         '--surface-border': '#E0E2E6',
         '--mid-blue': '#2b69ac',
     },
     'otis': {
         '--accent': '#f65275',
+        '--accent-text': '#f65275',
         '--accent-hover-light': 'rgba(246, 82, 117, 0.1)',
         '--accent-active-light': 'rgba(246, 82, 117, 0.2)',
         '--page-bg': '#ffffff',
@@ -21,7 +23,7 @@ const themes = {
 // Status options (single source of truth)
 const AWARD_STATUSES = [
     { value: 'awarded', label: 'Awarded' },
-    { value: 'pending_award', label: 'Pending Award' },
+    { value: 'prospect', label: 'Prospect' },
 ];
 const SCHEDULE_STATUSES = [
     { value: 'scheduled', label: 'Scheduled' },

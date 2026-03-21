@@ -1,7 +1,8 @@
 :root {
-    --accent: #E8A817;
-    --accent-hover-light: rgba(232, 168, 23, 0.1);
-    --accent-active-light: rgba(232, 168, 23, 0.2);
+    --accent: #06aeee;
+    --accent-text: #333333;
+    --accent-hover-light: rgba(6, 174, 238, 0.1);
+    --accent-active-light: rgba(6, 174, 238, 0.2);
     --page-bg: #F4F5F7;
     --surface-border: #E0E2E6;
     --mid-blue: #2b69ac;
@@ -100,7 +101,7 @@ body.chat-collapsed .main-content {
 
 .main-content {
     margin-left: 56px;
-    margin-right: 400px;
+    margin-right: 480px;
     flex: 1;
     padding: 20px;
     transition: margin-right 0.25s ease;
@@ -125,7 +126,7 @@ body.chat-collapsed .main-content {
 
 .header h1 {
     font-size: 32px;
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .current-date {
@@ -255,7 +256,7 @@ body.chat-collapsed .main-content {
     color: #ffffff;
 }
 
-.card-status.pending_award {
+.card-status.prospect {
     background: #e67e22;
     color: #ffffff;
 }
@@ -764,9 +765,13 @@ body.chat-collapsed .main-content {
     cursor: not-allowed;
 }
 
+.sidebar-settings {
+    margin-top: auto;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
 /* Scenario indicator */
 .scenario-indicator {
-    margin-top: auto;
     padding: 14px 14px 14px 24px;
     border-top: 1px solid rgba(255,255,255,0.1);
     cursor: pointer;
@@ -1293,8 +1298,9 @@ body.chat-collapsed .main-content {
     background: none;
     border: none;
     color: #ffffff;
-    font-size: 14px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
     padding: 4px 8px;
     margin-left: 8px;
     opacity: 0.7;
@@ -1304,6 +1310,15 @@ body.chat-collapsed .main-content {
 .gantt-collapse-btn:hover { opacity: 1; }
 .gantt-collapse-btn.collapsed { transform: rotate(180deg); }
 
+.gantt-section {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--page-bg);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--surface-border);
+}
+
 .gantt-section #ganttContent {
     max-height: 45vh;
     overflow-y: auto;
@@ -1311,9 +1326,9 @@ body.chat-collapsed .main-content {
 
 .gantt-section #ganttContent.collapsed { display: none; }
 
-/* AI Assistant right panel */
+/* RelAI Agent right panel */
 .chat-panel {
-    width: 400px;
+    width: 480px;
     height: 100vh;
     position: fixed;
     top: 0;
@@ -1329,7 +1344,7 @@ body.chat-collapsed .main-content {
 .chat-panel.collapsed {
     width: 0;
     overflow: hidden;
-    transform: translateX(400px);
+    transform: translateX(480px);
 }
 
 .chat-panel .chat-header {
@@ -1342,12 +1357,13 @@ body.chat-collapsed .main-content {
     background: none;
     border: none;
     color: #ffffff;
-    font-size: 16px;
     cursor: pointer;
     margin-left: auto;
-    padding: 0 4px;
+    padding: 2px 4px;
     opacity: 0.8;
     transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
 }
 
 .chat-panel-toggle:hover { opacity: 1; }
@@ -1369,6 +1385,7 @@ body.chat-collapsed .main-content {
     writing-mode: vertical-rl;
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
+    display: none;
     letter-spacing: 0.5px;
     box-shadow: -2px 0 8px rgba(0,0,0,0.1);
     transition: background 0.15s;
@@ -1535,6 +1552,15 @@ body.chat-collapsed .chat-reopen-btn {
     margin-bottom: 6px;
 }
 
+.view-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #999;
+    font-size: 13px;
+    padding: 24px 0;
+}
+
 .home-assessment-loading {
     display: flex;
     align-items: center;
@@ -1602,7 +1628,7 @@ body.chat-collapsed .chat-reopen-btn {
 }
 
 .home-stat-pair.highlight .home-stat-value {
-    color: var(--accent);
+    color: var(--accent-text);
 }
 
 .home-stat-empty {

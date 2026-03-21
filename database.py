@@ -105,7 +105,7 @@ def update_personnel(personnel_id: str, data: dict):
 
 def fetch_projects():
     with _cursor() as (_, cur):
-        cur.execute("SELECT * FROM projects ORDER BY contract_start_date")
+        cur.execute("SELECT * FROM projects ORDER BY committed_start_date NULLS LAST")
         return [dict(r) for r in cur.fetchall()]
 
 
@@ -142,8 +142,8 @@ def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO projects (name, contract_start_date, contract_end_date, duration_days, required_skills, award_status)
-            VALUES (%(name)s, %(contract_start_date)s, %(contract_end_date)s, %(duration_days)s, %(required_skills)s, %(award_status)s)
+            INSERT INTO projects (name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status)
+            VALUES (%(name)s, %(committed_start_date)s, %(committed_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s)
             RETURNING *
             """,
             data,
@@ -209,8 +209,8 @@ def insert_assignment(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date, assignment_type)
-            VALUES (%(personnel_id)s, %(project_id)s, %(scenario_id)s, %(sequence)s, %(start_date)s, %(end_date)s, %(assignment_type)s)
+            INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date, allocated_days, assignment_type)
+            VALUES (%(personnel_id)s, %(project_id)s, %(scenario_id)s, %(sequence)s, %(start_date)s, %(end_date)s, %(allocated_days)s, %(assignment_type)s)
             RETURNING *
             """,
             data,
@@ -346,10 +346,10 @@ def bulk_insert_assignments(scenario_id: str, assignments_list: list[dict]):
         for a in assignments_list:
             cur.execute(
                 """
-                INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date, assignment_type)
-                VALUES (%(personnel_id)s, %(project_id)s, %(scenario_id)s, %(sequence)s, %(start_date)s, %(end_date)s, %(assignment_type)s)
+                INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date, allocated_days, assignment_type)
+                VALUES (%(personnel_id)s, %(project_id)s, %(scenario_id)s, %(sequence)s, %(start_date)s, %(end_date)s, %(allocated_days)s, %(assignment_type)s)
                 """,
-                {**a, "scenario_id": scenario_id},
+                {**a, "scenario_id": scenario_id, "allocated_days": a.get("allocated_days", 1.0)},
             )
         return {"inserted": len(assignments_list)}
 
@@ -364,8 +364,8 @@ def copy_assignments_to_scenario(from_scenario_id: str, to_scenario_id: str):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date, assignment_type)
-            SELECT personnel_id, project_id, %s, sequence, start_date, end_date, assignment_type
+            INSERT INTO assignments (personnel_id, project_id, scenario_id, sequence, start_date, end_date, allocated_days, assignment_type)
+            SELECT personnel_id, project_id, %s, sequence, start_date, end_date, allocated_days, assignment_type
             FROM assignments
             WHERE scenario_id = %s
             """,
@@ -422,8 +422,8 @@ def archive_scenario_assignments(scenario_id: str, scenario_name: str):
         cur.execute(
             """
             INSERT INTO assignments_archive
-                (original_assignment_id, personnel_id, project_id, scenario_id, scenario_name, sequence, start_date, end_date, assignment_type)
-            SELECT id, personnel_id, project_id, scenario_id, %s, sequence, start_date, end_date, assignment_type
+                (original_assignment_id, personnel_id, project_id, scenario_id, scenario_name, sequence, start_date, end_date, allocated_days, assignment_type)
+            SELECT id, personnel_id, project_id, scenario_id, %s, sequence, start_date, end_date, allocated_days, assignment_type
             FROM assignments
             WHERE scenario_id = %s
             """,

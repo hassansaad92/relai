@@ -32,7 +32,7 @@ document.addEventListener('click', function(e) {
 });
 
 // Apply saved theme on load
-applyTheme(localStorage.getItem('relai-theme') || 'navy-amber');
+applyTheme(localStorage.getItem('relai-theme') || 'star');
 
 // Set current date
 document.getElementById('currentDate').textContent = currentDate.toLocaleDateString('en-US', {

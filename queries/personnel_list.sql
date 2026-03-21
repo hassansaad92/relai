@@ -13,7 +13,7 @@ SELECT
     ca.end_date AS current_assignment_end,
     na_proj.name AS next_project_name,
     na.start_date AS next_assignment_start,
-    na_proj.contract_start_date AS next_project_contract_start
+    na_proj.committed_start_date AS next_project_committed_start
 FROM personnel p
 LEFT JOIN LATERAL (
     SELECT a.id, a.end_date, a.project_id
