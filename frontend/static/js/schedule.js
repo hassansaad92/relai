@@ -20,13 +20,27 @@ async function loadScheduleData() {
 
 // Render Gantt chart with Plotly
 function renderGantt(assignments, personnel, projects) {
-    const traces = assignments.map((a) => {
+    // Detect double-booked assignments (same person, overlapping date ranges)
+    const doubleBookedIds = new Set();
+    for (let i = 0; i < assignments.length; i++) {
+        for (let j = i + 1; j < assignments.length; j++) {
+            const a1 = assignments[i], a2 = assignments[j];
+            if (a1.personnel_id === a2.personnel_id &&
+                a1.start_date < a2.end_date && a2.start_date < a1.end_date) {
+                doubleBookedIds.add(i);
+                doubleBookedIds.add(j);
+            }
+        }
+    }
+
+    const traces = assignments.map((a, idx) => {
         const label = lastFirstName(a.personnel_name || 'Unknown');
         const projectName = a.project_name || 'Unknown';
         const isCurrent = a.sequence === 1 || a.sequence === '1';
+        const isDoubleBooked = doubleBookedIds.has(idx);
         const startsAfterContract = a.contract_start_date && a.start_date > a.contract_start_date;
-        const barColor = startsAfterContract ? '#e8a0a0' : (isCurrent ? '#041e42' : '#6b9fd4');
-        const textColor = startsAfterContract ? '#5c1a1a' : '#ffffff';
+        const barColor = isDoubleBooked ? '#e8890a' : (startsAfterContract ? '#e8a0a0' : (isCurrent ? '#041e42' : '#6b9fd4'));
+        const textColor = isDoubleBooked ? '#ffffff' : (startsAfterContract ? '#5c1a1a' : '#ffffff');
 
         return {
             type: 'bar',
@@ -179,7 +193,7 @@ function renderScheduleProjects() {
                 <div class="card-header">
                     <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
                         <div class="card-title">${p.name}</div>
-                        <span class="card-meta">${p.num_elevators} elevs · ${p.duration_weeks}w · ${count} assigned</span>
+                        <span class="card-meta">${p.duration_days}d · ${count} assigned</span>
                         ${skillTags}
                     </div>
                     <div class="status-badges">
@@ -245,9 +259,11 @@ function renderScheduleAssignPanel(projectId) {
                 <div class="schedule-person-info">${fmtShort(a.start_date)} – ${fmtShort(a.end_date)}${typeLabel}</div>
                 <button class="schedule-remove-btn" onclick="scheduleRemove('${a.id}')">×</button>
                 <div class="schedule-date-edit-row" style="width:100%;margin-top:4px;margin-bottom:4px;">
+                    <label>Start</label>
+                    <input type="date" value="${a.start_date}" id="editAssignStart_${a.id}">
                     <label>End</label>
                     <input type="date" value="${a.end_date}" id="editAssignEnd_${a.id}">
-                    <button onclick="saveAssignmentEndDate('${a.id}')">Update</button>
+                    <button onclick="saveAssignmentDates('${a.id}')">Update</button>
                 </div>
             </div>`;
         }).join('');
@@ -257,7 +273,7 @@ function renderScheduleAssignPanel(projectId) {
         const personAvail = person?.next_available_date || '';
         const effStart = personAvail > projectStartStr ? personAvail : projectStartStr;
         const effEnd = new Date(effStart + 'T00:00:00');
-        effEnd.setDate(effEnd.getDate() + project.duration_weeks * 7);
+        effEnd.setDate(effEnd.getDate() + project.duration_days);
         const effEndStr = effEnd.toISOString().split('T')[0];
         const effStartFmt = fmtShort(effStart);
         const effEndFmt = effEnd.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
@@ -265,7 +281,7 @@ function renderScheduleAssignPanel(projectId) {
         <div class="assign-date-form">
             <div class="form-group" style="margin-bottom:10px;">
                 <label style="font-size:12px;font-weight:600;color:#041e42;margin-bottom:4px;display:block;">Assignment Type</label>
-                <select id="assignType_${pid}" style="font-size:13px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-family:'Montserrat',sans-serif;" onchange="updateAssignDefaults('${pid}', '${projectStartStr}', '${projectEndStr}', '${personAvail}', ${project.duration_weeks})">
+                <select id="assignType_${pid}" style="font-size:13px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-family:'Montserrat',sans-serif;" onchange="updateAssignDefaults('${pid}', '${projectStartStr}', '${projectEndStr}', '${personAvail}', ${project.duration_days})">
                     <option value="full">Full alignment</option>
                     <option value="cascading">Cascading</option>
                     <option value="partial">Custom</option>
@@ -295,54 +311,98 @@ function renderScheduleAssignPanel(projectId) {
             <button class="schedule-action-btn" onclick="scheduleShowAssignForm('${p.id}')">+ Assign</button>
         </div>${assignFormPersonnelId === p.id ? makeAssignForm(p.id) : ''}`).join('');
 
-    const scheduledStartRow = projectAssignments.length > 0 ? `
-        <div class="schedule-date-edit-row">
-            <label>Scheduled Start</label>
-            <input type="date" value="${project.actual_start_date || ''}" id="editScheduledStart_${projectId}">
-            <button onclick="shiftScheduledDate('${projectId}')">Shift</button>
-        </div>` : '';
+    // Build "All Personnel" section (everyone not already assigned or listed as available)
+    const availableIds = new Set(free.map(p => p.id));
+    const allOthers = allPersonnel.filter(p => !assignedIds.has(p.id) && !availableIds.has(p.id));
+    allOthers.sort((a, b) => a.name.localeCompare(b.name));
+
+    const allPersonnelHTML = allOthers.length === 0
+        ? '<p class="no-assignments-msg">No additional personnel.</p>'
+        : allOthers.map(p => {
+            // Find their current assignments to show status
+            const theirAssignments = allAssignments.filter(a => a.personnel_id === p.id)
+                .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+            let statusText = 'No assignments';
+            if (theirAssignments.length > 0) {
+                const current = theirAssignments.find(a =>
+                    new Date(a.start_date) <= new Date() && new Date(a.end_date) >= new Date()
+                );
+                if (current) {
+                    const proj = allProjects.find(pr => pr.id === current.project_id);
+                    statusText = `On ${proj ? proj.name : 'project'} until ${fmtShort(current.end_date)}`;
+                } else {
+                    const next = theirAssignments.find(a => new Date(a.start_date) > new Date());
+                    if (next) {
+                        const proj = allProjects.find(pr => pr.id === next.project_id);
+                        statusText = `Next: ${proj ? proj.name : 'project'} from ${fmtShort(next.start_date)}`;
+                    } else {
+                        statusText = `Last ended ${fmtShort(theirAssignments[theirAssignments.length - 1].end_date)}`;
+                    }
+                }
+            }
+            return `<div class="schedule-person-row force-assign-row">
+                <div class="schedule-person-name">${p.name}</div>
+                <div class="schedule-person-info" style="color:#b35900;">${statusText}</div>
+                <button class="schedule-action-btn" style="background:#b35900;" onclick="scheduleShowAssignForm('${p.id}')">+ Force Assign</button>
+            </div>${assignFormPersonnelId === p.id ? makeAssignForm(p.id) : ''}`;
+        }).join('');
 
     panel.innerHTML = `
         <div id="scheduleConflictAlerts_${projectId}"></div>
-        ${scheduledStartRow}
         <div class="schedule-section-label" style="margin-top:0;">Assigned</div>
         ${assignedHTML}
         <div class="schedule-section-label">Available</div>
-        ${freeHTML}`;
+        ${freeHTML}
+        <div class="schedule-section-label">All Personnel</div>
+        <input type="text" class="filter-search" id="forceAssignSearch_${projectId}" placeholder="Search personnel..." oninput="filterForceAssign('${projectId}')" style="margin-bottom:8px;">
+        <div id="forceAssignList_${projectId}">${allPersonnelHTML}</div>`;
 }
 
-async function shiftScheduledDate(projectId) {
-    const input = document.getElementById('editScheduledStart_' + projectId);
-    if (!input || !input.value) return;
+async function saveAssignmentDates(assignmentId) {
+    const startInput = document.getElementById('editAssignStart_' + assignmentId);
+    const endInput = document.getElementById('editAssignEnd_' + assignmentId);
+    if (!startInput || !endInput) return;
     try {
-        const res = await fetch(`/api/projects/${projectId}/shift-schedule?scenario_id=${currentScenarioId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ new_start_date: input.value })
-        });
-        if (!res.ok) throw new Error(await res.text());
-        await loadScheduleData();
-        checkScheduleConflicts(projectId);
-    } catch (err) {
-        alert('Failed to shift schedule: ' + err.message);
-    }
-}
-
-async function saveAssignmentEndDate(assignmentId) {
-    const input = document.getElementById('editAssignEnd_' + assignmentId);
-    if (!input || !input.value) return;
-    try {
-        const res = await fetch(`/api/assignments/${assignmentId}/cascade`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ new_end_date: input.value, scenario_id: currentScenarioId })
-        });
-        if (!res.ok) throw new Error(await res.text());
+        // Update start date via PATCH if changed
+        if (startInput.value) {
+            const assignment = allAssignments.find(a => a.id === assignmentId);
+            if (assignment && startInput.value !== assignment.start_date) {
+                const res = await fetch(`/api/assignments/${assignmentId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start_date: startInput.value })
+                });
+                if (!res.ok) throw new Error(await res.text());
+            }
+        }
+        // Update end date via cascade endpoint (pushes subsequent assignments)
+        if (endInput.value) {
+            const assignment = allAssignments.find(a => a.id === assignmentId);
+            if (assignment && endInput.value !== assignment.end_date) {
+                const res = await fetch(`/api/assignments/${assignmentId}/cascade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_end_date: endInput.value, scenario_id: currentScenarioId })
+                });
+                if (!res.ok) throw new Error(await res.text());
+            }
+        }
         await loadScheduleData();
         if (selectedScheduleProjectId) checkScheduleConflicts(selectedScheduleProjectId);
     } catch (err) {
-        alert('Failed to update assignment end date: ' + err.message);
+        alert('Failed to update assignment dates: ' + err.message);
     }
+}
+
+function filterForceAssign(projectId) {
+    const search = (document.getElementById('forceAssignSearch_' + projectId)?.value || '').toLowerCase();
+    const container = document.getElementById('forceAssignList_' + projectId);
+    if (!container) return;
+    const rows = container.querySelectorAll('.force-assign-row');
+    rows.forEach(row => {
+        const name = row.querySelector('.schedule-person-name')?.textContent?.toLowerCase() || '';
+        row.style.display = name.includes(search) ? '' : 'none';
+    });
 }
 
 function checkScheduleConflicts(projectId) {
@@ -456,7 +516,7 @@ async function scheduleConfirmAssign(personnelId, defaultStart, defaultEnd) {
     await scheduleAssign(personnelId, startDate, endDate, assignmentType);
 }
 
-function updateAssignDefaults(pid, projectStart, projectEnd, personAvail, durationWeeks) {
+function updateAssignDefaults(pid, projectStart, projectEnd, personAvail, durationDays) {
     const typeSelect = document.getElementById('assignType_' + pid);
     const type = typeSelect.value;
     const defaultsEl = document.getElementById('assignDefaults_' + pid);
@@ -468,12 +528,12 @@ function updateAssignDefaults(pid, projectStart, projectEnd, personAvail, durati
     if (type === 'full') {
         effStart = projectStart;
         const effEnd = new Date(projectStart + 'T00:00:00');
-        effEnd.setDate(effEnd.getDate() + durationWeeks * 7);
+        effEnd.setDate(effEnd.getDate() + durationDays);
         effEndStr = effEnd.toISOString().split('T')[0];
     } else if (type === 'cascading') {
         effStart = personAvail > projectStart ? personAvail : projectStart;
         const effEnd = new Date(effStart + 'T00:00:00');
-        effEnd.setDate(effEnd.getDate() + durationWeeks * 7);
+        effEnd.setDate(effEnd.getDate() + durationDays);
         effEndStr = effEnd.toISOString().split('T')[0];
     } else {
         effStart = projectStart;

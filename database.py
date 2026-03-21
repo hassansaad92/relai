@@ -142,8 +142,8 @@ def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO projects (name, contract_start_date, contract_end_date, duration_weeks, num_elevators, required_skills, award_status)
-            VALUES (%(name)s, %(contract_start_date)s, %(contract_end_date)s, %(duration_weeks)s, %(num_elevators)s, %(required_skills)s, %(award_status)s)
+            INSERT INTO projects (name, contract_start_date, contract_end_date, duration_days, required_skills, award_status)
+            VALUES (%(name)s, %(contract_start_date)s, %(contract_end_date)s, %(duration_days)s, %(required_skills)s, %(award_status)s)
             RETURNING *
             """,
             data,
@@ -285,10 +285,9 @@ def cascade_assignment_end_date(scenario_id: str, assignment_id: str, new_end_da
             assign_start = assign["start_date"]
             assign_duration = (assign["end_date"] - assign_start).days
 
-            if delta_days > 0 and prev_end > assign_start:
-                # Push forward: overlap exists, shift by overlap amount
-                shift = (prev_end - assign_start).days
-                new_start = assign_start + timedelta(days=shift)
+            if delta_days > 0 and prev_end >= assign_start:
+                # Push forward: overlap exists, start day after prev_end
+                new_start = prev_end + timedelta(days=1)
                 new_a_end = new_start + timedelta(days=assign_duration)
                 cur.execute(
                     "UPDATE assignments SET start_date = %s, end_date = %s WHERE id = %s RETURNING *",
@@ -297,10 +296,10 @@ def cascade_assignment_end_date(scenario_id: str, assignment_id: str, new_end_da
                 shifted.append(dict(cur.fetchone()))
                 prev_end = new_a_end
             elif delta_days < 0:
-                # Pull back: shift by the same delta, but don't start before prev_end
+                # Pull back: shift by the same delta, but don't start before day after prev_end
                 new_start = assign_start + timedelta(days=delta_days)
-                if new_start < prev_end:
-                    new_start = prev_end
+                if new_start <= prev_end:
+                    new_start = prev_end + timedelta(days=1)
                 new_a_end = new_start + timedelta(days=assign_duration)
                 if new_start != assign_start:
                     cur.execute(

@@ -113,8 +113,7 @@ for row in projects_csv:
         "name": row["name"],
         "contract_start_date": row["contract_start_date"],
         "contract_end_date": row["contract_end_date"],
-        "duration_weeks": int(row["duration_weeks"]),
-        "num_elevators": int(row["num_elevators"]),
+        "duration_days": int(row["duration_weeks"]) * 7,
         "required_skills": row["required_skills"],
         "award_status": row["award_status"],
     }

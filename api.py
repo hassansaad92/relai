@@ -231,9 +231,8 @@ def _build_ai_context(scenario_id: str) -> str:
         for p in unscheduled:
             lines.append(
                 f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], "
-                f"{p['num_elevators']} elevators, "
                 f"contract {p['contract_start_date']} to {p['contract_end_date']}, "
-                f"{p['duration_weeks']} weeks"
+                f"{p['duration_days']} days"
             )
     else:
         lines.append("(none)")
@@ -263,19 +262,17 @@ class PersonnelUpdate(BaseModel):
 class ProjectCreate(BaseModel):
     name: str
     required_skills: str
-    num_elevators: int
     contract_start_date: str
-    duration_weeks: int
+    duration_days: int
     award_status: str
 
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     required_skills: Optional[str] = None
-    num_elevators: Optional[int] = None
     contract_start_date: Optional[str] = None
     contract_end_date: Optional[str] = None
-    duration_weeks: Optional[int] = None
+    duration_days: Optional[int] = None
     award_status: Optional[str] = None
 
 
@@ -410,7 +407,7 @@ async def get_projects(scenario_id: Optional[str] = None):
 async def create_project(project: ProjectCreate):
     data = project.model_dump()
     start = datetime.strptime(data["contract_start_date"], "%Y-%m-%d")
-    end = start + timedelta(weeks=data["duration_weeks"])
+    end = start + timedelta(days=data["duration_days"])
     data["contract_end_date"] = end.strftime("%Y-%m-%d")
     return insert_project(data)
 
@@ -428,25 +425,25 @@ async def patch_project(project_id: str, data: ProjectUpdate):
     if not updates:
         raise HTTPException(400, "No fields to update")
     # Recalculate dates based on what was provided
-    if "contract_end_date" in updates and "duration_weeks" not in updates and "contract_start_date" not in updates:
+    if "contract_end_date" in updates and "duration_days" not in updates and "contract_start_date" not in updates:
         # End date provided alone — calculate duration from it
         current = fetch_project_by_id(project_id)
         if not current:
             raise HTTPException(404, "Project not found")
         start = datetime.strptime(str(current["contract_start_date"]), "%Y-%m-%d")
         end = datetime.strptime(updates["contract_end_date"], "%Y-%m-%d")
-        updates["duration_weeks"] = max(1, (end - start).days + 6) // 7
-    elif "contract_start_date" in updates or "duration_weeks" in updates:
+        updates["duration_days"] = max(1, (end - start).days)
+    elif "contract_start_date" in updates or "duration_days" in updates:
         start_str = updates.get("contract_start_date")
-        weeks = updates.get("duration_weeks")
-        if not start_str or not weeks:
+        days = updates.get("duration_days")
+        if not start_str or not days:
             current = fetch_project_by_id(project_id)
             if not current:
                 raise HTTPException(404, "Project not found")
             start_str = start_str or str(current["contract_start_date"])
-            weeks = weeks or current["duration_weeks"]
+            days = days or current["duration_days"]
         start = datetime.strptime(start_str, "%Y-%m-%d")
-        updates["contract_end_date"] = (start + timedelta(weeks=weeks)).strftime("%Y-%m-%d")
+        updates["contract_end_date"] = (start + timedelta(days=days)).strftime("%Y-%m-%d")
     result = update_project(project_id, updates)
     if not result:
         raise HTTPException(404, "Project not found")
@@ -523,19 +520,6 @@ async def cascade_end_date(assignment_id: str, data: CascadeEndDateRequest):
     result = cascade_assignment_end_date(data.scenario_id, assignment_id, data.new_end_date)
     if not result["updated"]:
         raise HTTPException(status_code=404, detail="Assignment not found")
-    # Check if any shifted assignment's end_date exceeds its project's contract_end_date
-    all_affected = [result["updated"]] + result["shifted"]
-    for assign in all_affected:
-        project = fetch_project_by_id(str(assign["project_id"]))
-        if project and str(assign["end_date"]) > str(project["contract_end_date"]):
-            new_end = assign["end_date"]
-            start = project["contract_start_date"]
-            delta_days = (new_end - start).days
-            new_weeks = (delta_days + 6) // 7  # round up
-            update_project(str(project["id"]), {
-                "contract_end_date": str(new_end),
-                "duration_weeks": new_weeks,
-            })
     return result
 
 
@@ -667,10 +651,10 @@ When generating a schedule:
 - IMPORTANT: Only schedule projects listed under UNSCHEDULED PROJECTS above. Projects that already have assignments are preserved automatically — do NOT re-schedule them.
 - Use the PERSONNEL & AVAILABILITY section above to find available windows. Do not create overlapping date ranges for the same person.
 - Match personnel skills to project required_skills. If a person's skills overlap with the project's required skills, they are a candidate.
-- CRITICAL DATE RULE: end_date = start_date + duration_weeks. This is the ONLY way to compute end_date.
+- CRITICAL DATE RULE: end_date = start_date + duration_days. This is the ONLY way to compute end_date.
   - contract_start_date is the EARLIEST a project can start. If a mechanic is not available until later, the project starts later.
   - contract_end_date is informational only — NEVER use it as an assignment end_date.
-  - If a mechanic is unavailable until after contract_start_date, set start_date = mechanic's available date, and end_date = start_date + duration_weeks.
+  - If a mechanic is unavailable until after contract_start_date, set start_date = mechanic's available date, and end_date = start_date + duration_days.
 - Number NEW assignments sequentially per person, continuing from their highest existing sequence number.
 - Default assignment_type to "full".
 - Only schedule projects with award_status = 'awarded' unless the user explicitly asks otherwise.

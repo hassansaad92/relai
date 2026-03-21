@@ -33,7 +33,7 @@ function renderProjectsList(projects) {
             <div class="card-header">
                 <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
                     <div class="card-title">${project.name}</div>
-                    <span class="card-meta">${project.num_elevators} elevs · ${project.duration_weeks}w</span>
+                    <span class="card-meta">${project.duration_days}d</span>
                     ${project.required_skills.split(',').map(skill =>
                         `<span class="skills-tag-light">${skill.trim()}</span>`
                     ).join('')}
@@ -83,9 +83,8 @@ function editProject(id) {
     editingProjectId = id;
     const form = document.getElementById('projectForm');
     form.querySelector('[name="name"]').value = project.name;
-    form.querySelector('[name="num_elevators"]').value = project.num_elevators;
     form.querySelector('[name="contract_start_date"]').value = project.contract_start_date;
-    form.querySelector('[name="duration_weeks"]').value = project.duration_weeks;
+    form.querySelector('[name="duration_days"]').value = project.duration_days;
     form.querySelector('[name="contract_end_date"]').value = project.contract_end_date || '';
     form.querySelector('[name="award_status"]').value = project.award_status;
     lastEndDateSource = null;
@@ -128,18 +127,17 @@ function updateContractEndPreview(source) {
     const start = new Date(startStr + 'T00:00:00');
 
     if (source === 'duration') {
-        const weeks = parseInt(form.querySelector('[name="duration_weeks"]').value);
-        if (!weeks || weeks < 1) return;
+        const days = parseInt(form.querySelector('[name="duration_days"]').value);
+        if (!days || days < 1) return;
         const end = new Date(start);
-        end.setDate(end.getDate() + weeks * 7);
+        end.setDate(end.getDate() + days);
         form.querySelector('[name="contract_end_date"]').value = end.toISOString().split('T')[0];
     } else if (source === 'end_date') {
         const endStr = form.querySelector('[name="contract_end_date"]').value;
         if (!endStr) return;
         const end = new Date(endStr + 'T00:00:00');
-        const days = (end - start) / (1000 * 60 * 60 * 24);
-        const weeks = Math.max(1, Math.ceil(days / 7));
-        form.querySelector('[name="duration_weeks"]').value = weeks;
+        const days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+        form.querySelector('[name="duration_days"]').value = days;
     }
 }
 
@@ -151,9 +149,8 @@ async function submitProject(event) {
     const project = {
         name: formData.get('name'),
         required_skills: Array.from(select.selectedOptions).map(o => o.value).join(','),
-        num_elevators: parseInt(formData.get('num_elevators')),
         contract_start_date: formData.get('contract_start_date'),
-        duration_weeks: parseInt(formData.get('duration_weeks')),
+        duration_days: parseInt(formData.get('duration_days')),
         award_status: formData.get('award_status'),
     };
     // If end date was explicitly changed, include it
