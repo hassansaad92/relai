@@ -21,7 +21,7 @@ const themes = {
 // Status options (single source of truth)
 const AWARD_STATUSES = [
     { value: 'awarded', label: 'Awarded' },
-    { value: 'pending_award', label: 'Pending Award' },
+    { value: 'prospect', label: 'Prospect' },
 ];
 const SCHEDULE_STATUSES = [
     { value: 'scheduled', label: 'Scheduled' },

@@ -255,7 +255,7 @@ body.chat-collapsed .main-content {
     color: #ffffff;
 }
 
-.card-status.pending_award {
+.card-status.prospect {
     background: #e67e22;
     color: #ffffff;
 }
@@ -764,9 +764,13 @@ body.chat-collapsed .main-content {
     cursor: not-allowed;
 }
 
+.sidebar-settings {
+    margin-top: auto;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
 /* Scenario indicator */
 .scenario-indicator {
-    margin-top: auto;
     padding: 14px 14px 14px 24px;
     border-top: 1px solid rgba(255,255,255,0.1);
     cursor: pointer;

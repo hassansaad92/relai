@@ -113,7 +113,7 @@ for i in range(1, 101):
     req_end = req_start + timedelta(weeks=duration_weeks)
 
     # First 60 awarded, next 40 pending
-    award_status = "awarded" if i <= 60 else "pending_award"
+    award_status = "awarded" if i <= 60 else "prospect"
 
     projects.append({
         "id": i,

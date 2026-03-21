@@ -45,7 +45,7 @@ function renderProjectsList(projects) {
                     <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                 </div>
             </div>
-            <div class="card-detail"><strong>Committed:</strong> <span class="editable-date" onclick="editProject('${project.id}')">${committedDates}</span> · <strong>Scheduled:</strong> ${actualDates}${project.procurement_date ? ` · <strong>Procurement:</strong> ${fmtDate(project.procurement_date)}` : ''}</div>
+            <div class="card-detail"><strong>Committed:</strong> <span class="editable-date" onclick="editProject('${project.id}')">${committedDates}</span> · <strong>Scheduled:</strong> ${actualDates}${project.procurement_date ? ` · <strong>Material Procurement:</strong> ${fmtDate(project.procurement_date)}` : ''}</div>
             <button class="card-edit-btn" onclick="editProject('${project.id}')" title="Edit">✎</button>
         </div>`;
     }).join('');
