@@ -112,8 +112,8 @@ for row in projects_csv:
     procurement_date = row.get("procurement_date") or None
     payload = {
         "name": row["name"],
-        "contract_start_date": row["contract_start_date"],
-        "contract_end_date": row["contract_end_date"],
+        "committed_start_date": row.get("committed_start_date") or None,
+        "committed_end_date": row.get("committed_end_date") or None,
         "duration_days": float(row["duration_weeks"]) * 7,
         "procurement_date": procurement_date,
         "required_skills": row["required_skills"],

@@ -3,8 +3,8 @@ SELECT
     p.id,
     p.name,
     p.required_skills,
-    p.contract_start_date,
-    p.contract_end_date,
+    p.committed_start_date,
+    p.committed_end_date,
     p.duration_days,
     p.procurement_date
 FROM projects p
@@ -15,4 +15,4 @@ WHERE p.award_status = 'awarded'
       WHERE a.project_id = p.id
         AND a.scenario_id = %(scenario_id)s
   )
-ORDER BY p.contract_start_date;
+ORDER BY p.committed_start_date NULLS LAST;

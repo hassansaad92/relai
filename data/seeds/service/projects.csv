@@ -1,4 +1,4 @@
-id,name,contract_start_date,contract_end_date,duration_weeks,num_elevators,required_skills,award_status,procurement_date
+id,name,committed_start_date,committed_end_date,duration_weeks,num_elevators,required_skills,award_status,procurement_date
 1,Sycamore Center — Safety Check,2026-03-23,2026-03-24,0.14,0,"Gearless,Geared",awarded,
 2,Elm Bank — Modernization,2026-03-24,2026-03-27,0.43,0,Gen2,awarded,
 3,Elm Office — Emergency Fix,2026-04-09,2026-04-15,0.57,0,Compass,awarded,

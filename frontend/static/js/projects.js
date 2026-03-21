@@ -24,7 +24,9 @@ function renderProjectsList(projects) {
     const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
     container.innerHTML = sorted.map(project => {
         const schedStatus = project.schedule_status || 'not_scheduled';
-        const contractDates = `${fmtDate(project.contract_start_date)} – ${fmtDate(project.contract_end_date)}`;
+        const committedDates = project.committed_start_date
+            ? `${fmtDate(project.committed_start_date)} – ${fmtDate(project.committed_end_date)}`
+            : 'Not set';
         const actualDates = project.actual_start_date
             ? `${fmtDate(project.actual_start_date)} – ${fmtDate(project.actual_end_date)}`
             : '--';
@@ -43,7 +45,7 @@ function renderProjectsList(projects) {
                     <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                 </div>
             </div>
-            <div class="card-detail"><strong>Contract:</strong> <span class="editable-date" onclick="editProject('${project.id}')">${contractDates}</span> · <strong>Scheduled:</strong> ${actualDates}${project.procurement_date ? ` · <strong>Procurement:</strong> ${fmtDate(project.procurement_date)}` : ''}</div>
+            <div class="card-detail"><strong>Committed:</strong> <span class="editable-date" onclick="editProject('${project.id}')">${committedDates}</span> · <strong>Scheduled:</strong> ${actualDates}${project.procurement_date ? ` · <strong>Procurement:</strong> ${fmtDate(project.procurement_date)}` : ''}</div>
             <button class="card-edit-btn" onclick="editProject('${project.id}')" title="Edit">✎</button>
         </div>`;
     }).join('');
@@ -83,9 +85,9 @@ function editProject(id) {
     editingProjectId = id;
     const form = document.getElementById('projectForm');
     form.querySelector('[name="name"]').value = project.name;
-    form.querySelector('[name="contract_start_date"]').value = project.contract_start_date;
     form.querySelector('[name="duration_days"]').value = project.duration_days;
-    form.querySelector('[name="contract_end_date"]').value = project.contract_end_date || '';
+    form.querySelector('[name="committed_start_date"]').value = project.committed_start_date || '';
+    form.querySelector('[name="committed_end_date"]').value = project.committed_end_date || '';
     form.querySelector('[name="procurement_date"]').value = project.procurement_date || '';
     form.querySelector('[name="award_status"]').value = project.award_status;
     lastEndDateSource = null;
@@ -120,10 +122,10 @@ document.getElementById('projectModal').addEventListener('click', function(e) {
     if (e.target === this) closeProjectModal();
 });
 
-function updateContractEndPreview(source) {
+function updateCommittedEndPreview(source) {
     lastEndDateSource = source;
     const form = document.getElementById('projectForm');
-    const startStr = form.querySelector('[name="contract_start_date"]').value;
+    const startStr = form.querySelector('[name="committed_start_date"]').value;
     if (!startStr) return;
     const start = new Date(startStr + 'T00:00:00');
 
@@ -132,9 +134,9 @@ function updateContractEndPreview(source) {
         if (!days || days < 0.5) return;
         const end = new Date(start);
         end.setDate(end.getDate() + Math.ceil(days));
-        form.querySelector('[name="contract_end_date"]').value = end.toISOString().split('T')[0];
+        form.querySelector('[name="committed_end_date"]').value = end.toISOString().split('T')[0];
     } else if (source === 'end_date') {
-        const endStr = form.querySelector('[name="contract_end_date"]').value;
+        const endStr = form.querySelector('[name="committed_end_date"]').value;
         if (!endStr) return;
         const end = new Date(endStr + 'T00:00:00');
         const days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
@@ -150,16 +152,18 @@ async function submitProject(event) {
     const project = {
         name: formData.get('name'),
         required_skills: Array.from(select.selectedOptions).map(o => o.value).join(','),
-        contract_start_date: formData.get('contract_start_date'),
         duration_days: parseFloat(formData.get('duration_days')),
         award_status: formData.get('award_status'),
     };
+    // Include committed dates if set
+    const startDate = formData.get('committed_start_date');
+    if (startDate) project.committed_start_date = startDate;
     // Include procurement_date if set
     const procDate = formData.get('procurement_date');
     if (procDate) project.procurement_date = procDate;
     // If end date was explicitly changed, include it
-    if (lastEndDateSource === 'end_date' && formData.get('contract_end_date')) {
-        project.contract_end_date = formData.get('contract_end_date');
+    if (lastEndDateSource === 'end_date' && formData.get('committed_end_date')) {
+        project.committed_end_date = formData.get('committed_end_date');
     }
 
     try {

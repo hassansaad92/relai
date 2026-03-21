@@ -105,7 +105,7 @@ def update_personnel(personnel_id: str, data: dict):
 
 def fetch_projects():
     with _cursor() as (_, cur):
-        cur.execute("SELECT * FROM projects ORDER BY contract_start_date")
+        cur.execute("SELECT * FROM projects ORDER BY committed_start_date NULLS LAST")
         return [dict(r) for r in cur.fetchall()]
 
 
@@ -142,8 +142,8 @@ def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO projects (name, contract_start_date, contract_end_date, duration_days, procurement_date, required_skills, award_status)
-            VALUES (%(name)s, %(contract_start_date)s, %(contract_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s)
+            INSERT INTO projects (name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status)
+            VALUES (%(name)s, %(committed_start_date)s, %(committed_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s)
             RETURNING *
             """,
             data,

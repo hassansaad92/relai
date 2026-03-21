@@ -240,7 +240,7 @@ def _build_ai_context(scenario_id: str) -> str:
             procurement = f", procurement: {p['procurement_date']}" if p.get('procurement_date') else ""
             lines.append(
                 f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], "
-                f"contract {p['contract_start_date']} to {p['contract_end_date']}, "
+                f"contract {p['committed_start_date']} to {p['committed_end_date']}, "
                 f"{p['duration_days']} days{procurement}"
             )
     else:
@@ -271,7 +271,7 @@ class PersonnelUpdate(BaseModel):
 class ProjectCreate(BaseModel):
     name: str
     required_skills: str
-    contract_start_date: str
+    committed_start_date: Optional[str] = None
     duration_days: float
     award_status: str
     procurement_date: Optional[str] = None
@@ -280,8 +280,8 @@ class ProjectCreate(BaseModel):
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     required_skills: Optional[str] = None
-    contract_start_date: Optional[str] = None
-    contract_end_date: Optional[str] = None
+    committed_start_date: Optional[str] = None
+    committed_end_date: Optional[str] = None
     duration_days: Optional[float] = None
     award_status: Optional[str] = None
     procurement_date: Optional[str] = None
@@ -419,9 +419,13 @@ async def get_projects(scenario_id: Optional[str] = None):
 @router.post("/api/projects")
 async def create_project(project: ProjectCreate):
     data = project.model_dump()
-    start = datetime.strptime(data["contract_start_date"], "%Y-%m-%d")
-    end = start + timedelta(days=math.ceil(data["duration_days"]))
-    data["contract_end_date"] = end.strftime("%Y-%m-%d")
+    if data.get("committed_start_date"):
+        start = datetime.strptime(data["committed_start_date"], "%Y-%m-%d")
+        end = start + timedelta(days=math.ceil(data["duration_days"]))
+        data["committed_end_date"] = end.strftime("%Y-%m-%d")
+    else:
+        data["committed_start_date"] = None
+        data["committed_end_date"] = None
     if not data.get("procurement_date"):
         data["procurement_date"] = None
     return insert_project(data)
@@ -442,26 +446,28 @@ async def patch_project(project_id: str, data: ProjectUpdate):
         updates["procurement_date"] = data.procurement_date if data.procurement_date else None
     if not updates:
         raise HTTPException(400, "No fields to update")
-    # Recalculate dates based on what was provided
-    if "contract_end_date" in updates and "duration_days" not in updates and "contract_start_date" not in updates:
+    # Recalculate committed dates based on what was provided
+    if "committed_end_date" in updates and "duration_days" not in updates and "committed_start_date" not in updates:
         # End date provided alone — calculate duration from it
         current = fetch_project_by_id(project_id)
         if not current:
             raise HTTPException(404, "Project not found")
-        start = datetime.strptime(str(current["contract_start_date"]), "%Y-%m-%d")
-        end = datetime.strptime(updates["contract_end_date"], "%Y-%m-%d")
-        updates["duration_days"] = max(1, (end - start).days)
-    elif "contract_start_date" in updates or "duration_days" in updates:
-        start_str = updates.get("contract_start_date")
+        if current["committed_start_date"]:
+            start = datetime.strptime(str(current["committed_start_date"]), "%Y-%m-%d")
+            end = datetime.strptime(updates["committed_end_date"], "%Y-%m-%d")
+            updates["duration_days"] = max(1, (end - start).days)
+    elif "committed_start_date" in updates or "duration_days" in updates:
+        start_str = updates.get("committed_start_date")
         days = updates.get("duration_days")
         if not start_str or not days:
             current = fetch_project_by_id(project_id)
             if not current:
                 raise HTTPException(404, "Project not found")
-            start_str = start_str or str(current["contract_start_date"])
+            start_str = start_str or (str(current["committed_start_date"]) if current["committed_start_date"] else None)
             days = days or float(current["duration_days"])
-        start = datetime.strptime(start_str, "%Y-%m-%d")
-        updates["contract_end_date"] = (start + timedelta(days=math.ceil(days))).strftime("%Y-%m-%d")
+        if start_str and days:
+            start = datetime.strptime(start_str, "%Y-%m-%d")
+            updates["committed_end_date"] = (start + timedelta(days=math.ceil(days))).strftime("%Y-%m-%d")
     result = update_project(project_id, updates)
     if not result:
         raise HTTPException(404, "Project not found")
@@ -670,9 +676,9 @@ When generating a schedule:
 - Use the PERSONNEL & AVAILABILITY section above to find available windows. Do not create overlapping date ranges for the same person.
 - Match personnel skills to project required_skills. If a person's skills overlap with the project's required skills, they are a candidate.
 - CRITICAL DATE RULE: end_date = start_date + duration_days. This is the ONLY way to compute end_date.
-  - contract_start_date is the EARLIEST a project can start. If a mechanic is not available until later, the project starts later.
-  - contract_end_date is informational only — NEVER use it as an assignment end_date.
-  - If a mechanic is unavailable until after contract_start_date, set start_date = mechanic's available date, and end_date = start_date + duration_days.
+  - committed_start_date is the EARLIEST a project can start. If a mechanic is not available until later, the project starts later.
+  - committed_end_date is informational only — NEVER use it as an assignment end_date.
+  - If a mechanic is unavailable until after committed_start_date, set start_date = mechanic's available date, and end_date = start_date + duration_days.
 - Number NEW assignments sequentially per person, continuing from their highest existing sequence number.
 - Default assignment_type to "full" and allocated_days to 1.0.
 - HALF-DAY ASSIGNMENTS: Set allocated_days based on the project's duration_days — if duration_days <= 0.5 use allocated_days = 0.5, otherwise use 1.0. Two half-day assignments (0.5 each) can share the same person on the same day without conflict. Total allocated_days per person per day must not exceed 1.0.

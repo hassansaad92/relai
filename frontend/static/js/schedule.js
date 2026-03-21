@@ -59,9 +59,10 @@ function renderGantt(assignments, personnel, projects) {
         const projectName = a.project_name || 'Unknown';
         const isCurrent = a.sequence === 1 || a.sequence === '1';
         const isDoubleBooked = doubleBookedIds.has(idx);
-        const startsAfterContract = a.contract_start_date && a.start_date > a.contract_start_date;
-        const barColor = isDoubleBooked ? '#e8890a' : (startsAfterContract ? '#e8a0a0' : (isCurrent ? '#041e42' : '#6b9fd4'));
-        const textColor = isDoubleBooked ? '#ffffff' : (startsAfterContract ? '#5c1a1a' : '#ffffff');
+        const exceedsCommitted = (a.committed_start_date && a.start_date > a.committed_start_date) ||
+            (a.committed_end_date && a.end_date > a.committed_end_date);
+        const barColor = isDoubleBooked ? '#e8890a' : (exceedsCommitted ? '#c0392b' : (isCurrent ? '#041e42' : '#6b9fd4'));
+        const textColor = '#ffffff';
         const alloc = parseFloat(a.allocated_days) || 1.0;
         const barWidth = alloc < 1.0 ? 0.3 : 0.6;
 
@@ -152,12 +153,12 @@ function renderAssignmentsList() {
         const currentProject = person.current_project_name || '-';
         const completion = person.current_assignment_end ? fmtDate(person.current_assignment_end) : '-';
         const nextProject = person.next_project_name || '-';
-        const reqStart = person.next_project_contract_start ? fmtDate(person.next_project_contract_start) : '-';
+        const reqStart = person.next_project_committed_start ? fmtDate(person.next_project_committed_start) : '-';
 
         let gapCell = '-';
-        if (person.current_assignment_end && person.next_project_contract_start) {
+        if (person.current_assignment_end && person.next_project_committed_start) {
             const endMs = new Date(person.current_assignment_end + 'T00:00:00');
-            const startMs = new Date(person.next_project_contract_start + 'T00:00:00');
+            const startMs = new Date(person.next_project_committed_start + 'T00:00:00');
             const days = Math.round((endMs - startMs) / 86400000);
             if (days > 0) {
                 gapCell = `<span style="color:#C20000;font-weight:600">+${days}d late</span>`;
@@ -198,7 +199,11 @@ function renderAssignmentsList() {
 function renderScheduleProjects() {
     const container = document.getElementById('scheduleProjectsList');
     const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '';
-    const sorted = [...allProjects].sort((a, b) => new Date(a.contract_start_date) - new Date(b.contract_start_date));
+    const sorted = [...allProjects].sort((a, b) => {
+        const aDate = a.committed_start_date || '9999-12-31';
+        const bDate = b.committed_start_date || '9999-12-31';
+        return aDate.localeCompare(bDate);
+    });
     container.innerHTML = sorted.map(p => {
         const schedStatus = p.schedule_status || 'not_scheduled';
         const count = p.assignment_count != null ? p.assignment_count : allAssignments.filter(a => a.project_id === p.id).length;
@@ -206,7 +211,9 @@ function renderScheduleProjects() {
         const skillTags = p.required_skills ? p.required_skills.split(',').map(s =>
             `<span class="skills-tag-light">${s.trim()}</span>`
         ).join('') : '';
-        const contractDates = `${fmtDate(p.contract_start_date)} – ${fmtDate(p.contract_end_date)}`;
+        const committedDates = p.committed_start_date
+            ? `${fmtDate(p.committed_start_date)} – ${fmtDate(p.committed_end_date)}`
+            : 'Not set';
         const actualDates = p.actual_start_date
             ? `${fmtDate(p.actual_start_date)} – ${fmtDate(p.actual_end_date)}`
             : '--';
@@ -224,7 +231,7 @@ function renderScheduleProjects() {
                         <div class="card-status ${schedStatus}">${schedStatus.replace('_', ' ')}</div>
                     </div>
                 </div>
-                <div class="card-detail"><strong>Contract:</strong> ${contractDates} · <strong>Scheduled:</strong> ${actualDates}</div>
+                <div class="card-detail"><strong>Committed:</strong> ${committedDates} · <strong>Scheduled:</strong> ${actualDates}</div>
             </div>`;
         if (isSelected) {
             html += `<div class="schedule-assign-inline" id="scheduleAssignPanel"></div>`;
@@ -247,8 +254,14 @@ function renderScheduleAssignPanel(projectId) {
     const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
 
-    const projectStartStr = project.contract_start_date;
-    const projectEndStr = project.contract_end_date;
+    // Use committed dates if available, else default to today + duration
+    const today = new Date().toISOString().split('T')[0];
+    const projectStartStr = project.committed_start_date || today;
+    const projectEndStr = project.committed_end_date || (() => {
+        const d = new Date(projectStartStr + 'T00:00:00');
+        d.setDate(d.getDate() + Math.ceil(parseFloat(project.duration_days) || 1));
+        return d.toISOString().split('T')[0];
+    })();
     const projectStart = new Date(projectStartStr + 'T00:00:00');
     const projectEnd = new Date(projectEndStr + 'T00:00:00');
 
@@ -477,8 +490,8 @@ function checkScheduleConflicts(projectId) {
         }
 
         // Check for gaps between this person's current assignment end and contract start
-        if (project.contract_start_date) {
-            const contractStart = new Date(project.contract_start_date + 'T00:00:00');
+        if (project.committed_start_date) {
+            const contractStart = new Date(project.committed_start_date + 'T00:00:00');
             const otherAssignments = allAssignments.filter(a =>
                 a.personnel_id === pa.personnel_id && a.id !== pa.id && new Date(a.end_date) <= contractStart
             ).sort((a, b) => new Date(b.end_date) - new Date(a.end_date));
@@ -489,7 +502,7 @@ function checkScheduleConflicts(projectId) {
                 if (gapDays > 14) {
                     const prevProject = allProjects.find(p => p.id === otherAssignments[0].project_id);
                     const prevName = prevProject ? prevProject.name : 'previous project';
-                    gaps.push(`${personName} has a ${gapDays}-day gap between ${prevName} (ends ${fmtShort(otherAssignments[0].end_date)}) and this project (contract start ${fmtShort(project.contract_start_date)})`);
+                    gaps.push(`${personName} has a ${gapDays}-day gap between ${prevName} (ends ${fmtShort(otherAssignments[0].end_date)}) and this project (contract start ${fmtShort(project.committed_start_date)})`);
                 }
             }
         }
