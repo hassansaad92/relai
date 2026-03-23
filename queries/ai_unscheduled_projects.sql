@@ -7,7 +7,9 @@ SELECT
     p.committed_end_date,
     p.duration_days,
     p.procurement_date,
-    p.allow_overtime
+    p.allow_overtime,
+    p.customer_id,
+    p.account_type
 FROM projects p
 WHERE p.award_status = 'awarded'
   AND NOT EXISTS (
@@ -16,4 +18,6 @@ WHERE p.award_status = 'awarded'
       WHERE a.project_id = p.id
         AND a.scenario_id = %(scenario_id)s
   )
-ORDER BY p.committed_start_date NULLS LAST;
+ORDER BY
+    CASE WHEN p.account_type = 'priority' THEN 0 ELSE 1 END,
+    p.committed_start_date NULLS LAST;

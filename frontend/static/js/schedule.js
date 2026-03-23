@@ -68,6 +68,34 @@ function renderGantt(assignments, personnel, projects) {
         const alloc = parseFloat(a.allocated_days) || 1.0;
         const barWidth = alloc < 1.0 ? 0.3 : 0.6;
 
+        // Build hover text with delta from committed dates
+        const fmtD = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const daysDiff = (a, b) => Math.round((new Date(a) - new Date(b)) / 86400000);
+
+        let hoverLines = `Scheduled: ${fmtD(a.start_date)} \u2192 ${fmtD(a.end_date)}`;
+        if (a.committed_start_date || a.committed_end_date) {
+            if (a.committed_start_date) {
+                const startDelta = daysDiff(a.start_date, a.committed_start_date);
+                if (startDelta > 0) {
+                    hoverLines += `<br>Start: +${startDelta}d late`;
+                } else if (startDelta < 0) {
+                    hoverLines += `<br>Start: ${startDelta}d early`;
+                } else {
+                    hoverLines += `<br>Start: on time`;
+                }
+            }
+            if (a.committed_end_date) {
+                const endDelta = daysDiff(a.end_date, a.committed_end_date);
+                if (endDelta > 0) {
+                    hoverLines += `<br>End: +${endDelta}d late`;
+                } else if (endDelta < 0) {
+                    hoverLines += `<br>End: ${endDelta}d early`;
+                } else {
+                    hoverLines += `<br>End: on time`;
+                }
+            }
+        }
+
         return {
             type: 'bar',
             orientation: 'h',
@@ -80,8 +108,7 @@ function renderGantt(assignments, personnel, projects) {
             textposition: 'inside',
             insidetextanchor: 'middle',
             textfont: { color: textColor, size: 11, family: 'Montserrat, sans-serif' },
-            hovertemplate: '<b>%{text}</b><br>%{y}<br>%{base|%b %d, %Y} \u2192 ' +
-                new Date(a.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+            hovertemplate: '<b>%{text}</b><br>%{y}<br>' + hoverLines +
                 '<extra></extra>',
             marker: {
                 color: barColor,

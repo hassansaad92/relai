@@ -73,6 +73,8 @@ CREATE TABLE projects (
     required_skills TEXT NOT NULL,
     award_status TEXT NOT NULL DEFAULT 'awarded',
     allow_overtime BOOLEAN NOT NULL DEFAULT FALSE,
+    customer_id TEXT,
+    account_type TEXT NOT NULL DEFAULT 'standard',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -90,6 +92,8 @@ CREATE TABLE projects_history (
     required_skills TEXT,
     award_status TEXT,
     allow_overtime BOOLEAN,
+    customer_id TEXT,
+    account_type TEXT,
     valid_from TIMESTAMPTZ NOT NULL,
     valid_to TIMESTAMPTZ,
     is_current BOOLEAN DEFAULT TRUE
@@ -112,11 +116,11 @@ BEGIN
     IF (TG_OP = 'UPDATE') THEN
         UPDATE projects_history SET valid_to = NEW.updated_at, is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
-        INSERT INTO projects_history (project_id, name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.committed_start_date, NEW.committed_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.allow_overtime, NEW.updated_at, TRUE);
+        INSERT INTO projects_history (project_id, name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.committed_start_date, NEW.committed_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.allow_overtime, NEW.customer_id, NEW.account_type, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO projects_history (project_id, name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.committed_start_date, NEW.committed_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.allow_overtime, NEW.created_at, TRUE);
+        INSERT INTO projects_history (project_id, name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.committed_start_date, NEW.committed_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.allow_overtime, NEW.customer_id, NEW.account_type, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
         UPDATE projects_history SET valid_to = NOW(), is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;

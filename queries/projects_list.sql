@@ -8,6 +8,8 @@ SELECT
     p.required_skills,
     p.award_status,
     p.allow_overtime,
+    p.customer_id,
+    p.account_type,
     p.created_at,
     p.updated_at,
     MIN(a.start_date) AS actual_start_date,

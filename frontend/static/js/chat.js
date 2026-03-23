@@ -71,6 +71,73 @@ async function sendChatMessage() {
     }
 }
 
+// ── Voice Input ──────────────────────────────────────────────────────────────
+let _recognition = null;
+let _isRecording = false;
+
+function initVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const micBtn = document.getElementById('chatMicBtn');
+    micBtn.style.display = 'flex';
+
+    _recognition = new SpeechRecognition();
+    _recognition.continuous = true;
+    _recognition.interimResults = true;
+    _recognition.lang = 'en-US';
+
+    _recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+            const result = event.results[i];
+            if (result.isFinal) {
+                finalTranscript += result[0].transcript;
+            } else {
+                interimTranscript += result[0].transcript;
+            }
+        }
+        document.getElementById('chatInput').value = finalTranscript + interimTranscript;
+    };
+
+    _recognition.onend = () => {
+        // Auto-restart if still in recording mode (browser stops after silence)
+        if (_isRecording) {
+            try { _recognition.start(); } catch (e) { stopVoiceInput(); }
+        }
+    };
+
+    _recognition.onerror = () => {
+        stopVoiceInput();
+    };
+}
+
+function toggleVoiceInput() {
+    if (_isRecording) {
+        stopVoiceInput();
+    } else {
+        startVoiceInput();
+    }
+}
+
+function startVoiceInput() {
+    if (!_recognition) return;
+    _isRecording = true;
+    document.getElementById('chatMicBtn').classList.add('recording');
+    document.getElementById('chatInput').value = '';
+    try { _recognition.start(); } catch (e) { /* already started */ }
+}
+
+function stopVoiceInput() {
+    _isRecording = false;
+    document.getElementById('chatMicBtn').classList.remove('recording');
+    if (_recognition) {
+        try { _recognition.stop(); } catch (e) { /* not started */ }
+    }
+    document.getElementById('chatInput').focus();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('chatInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -78,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sendChatMessage();
         }
     });
+    initVoiceInput();
 });
 
 // Chat panel toggle

@@ -25,7 +25,7 @@ body {
 .sidebar {
     width: 56px;
     background: #041e42;
-    height: 100vh;
+    height: calc(100vh - 32px);
     padding: 20px 0 0 0;
     position: fixed;
     left: 0;
@@ -120,7 +120,7 @@ body.chat-collapsed .main-content {
     margin-left: 56px;
     margin-right: 480px;
     flex: 1;
-    padding: 20px 28px;
+    padding: 20px 28px 40px 28px;
     transition: margin-right 0.25s ease;
 }
 
@@ -795,6 +795,39 @@ body.chat-collapsed .main-content {
     cursor: not-allowed;
 }
 
+/* Voice input mic button */
+.chat-mic-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--surface-border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+    color: #666;
+}
+
+.chat-mic-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.chat-mic-btn.recording {
+    background: #e53e3e;
+    border-color: #e53e3e;
+    color: #ffffff;
+    animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(229, 62, 62, 0); }
+}
+
 .sidebar-settings {
     margin-top: auto;
     border-top: 1px solid rgba(255,255,255,0.1);
@@ -839,7 +872,7 @@ body.chat-collapsed .main-content {
 /* Scenario panel */
 .scenario-panel {
     position: fixed;
-    bottom: 53px;
+    bottom: 85px;
     left: 56px;
     width: 220px;
     background: #ffffff;
@@ -1349,7 +1382,7 @@ body.chat-collapsed .main-content {
 }
 
 .gantt-section #ganttContent {
-    max-height: 45vh;
+    max-height: 60vh;
     overflow-y: auto;
 }
 
@@ -1369,7 +1402,7 @@ body.chat-collapsed .main-content {
 /* RelAI Agent right panel */
 .chat-panel {
     width: 480px;
-    height: 100vh;
+    height: calc(100vh - 32px);
     position: fixed;
     top: 0;
     right: 0;
@@ -1842,6 +1875,20 @@ body.chat-collapsed .chat-reopen-btn {
     color: #333;
 }
 
+/* Priority account badge */
+.priority-badge {
+    display: inline-block;
+    background: #2b6cb0;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
 .eval-banner {
     position: fixed;
     bottom: 0;
@@ -1855,4 +1902,5 @@ body.chat-collapsed .chat-reopen-btn {
     font-weight: 500;
     z-index: 9999;
     border-top: 1px solid #e0c56a;
+    height: 32px;
 }

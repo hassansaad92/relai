@@ -55,6 +55,7 @@ from database import (
     archive_scenario_assignments,
     fetch_archived_scenarios,
     fetch_archived_assignments,
+    delete_movable_assignments,
 )
 
 router = APIRouter()
@@ -180,6 +181,10 @@ def _execute_schedule_tool(tool_input: dict, is_tweaking: bool = False) -> dict:
         if master:
             copy_assignments_to_scenario(master["id"], scenario_id)
 
+        # Remove future/movable assignments — AI will replace them
+        today_str = date.today().isoformat()
+        delete_movable_assignments(scenario_id, today_str)
+
         # Add Claude's new assignments on top
         result = bulk_insert_assignments(scenario_id, assignments)
 
@@ -232,9 +237,13 @@ def _build_ai_context(scenario_id: str) -> str:
                 "sequence": r["sequence"],
                 "allocated_days": float(r["allocated_days"]) if r.get("allocated_days") is not None else 1.0,
                 "assignment_type": r["assignment_type"],
+                "committed_start": str(r["committed_start_date"]) if r.get("committed_start_date") else None,
+                "committed_end": str(r["committed_end_date"]) if r.get("committed_end_date") else None,
+                "duration_days": float(r["duration_days"]) if r.get("duration_days") is not None else None,
             })
 
     # Build personnel text with available windows
+    today_str = date.today().isoformat()
     lines = ["PERSONNEL & AVAILABILITY:"]
     for pid, info in people.items():
         lines.append(f"\n{info['name']} (id:{pid}), skills: [{info['skills']}]")
@@ -242,10 +251,14 @@ def _build_ai_context(scenario_id: str) -> str:
         if assignments:
             lines.append("  Current assignments:")
             for a in assignments:
+                lock_label = "[LOCKED]" if a['start_date'] <= today_str else "[MOVABLE]"
                 alloc_label = f", {a['allocated_days']} days/day" if a['allocated_days'] != 1.0 else ""
+                committed_label = ""
+                if a.get('committed_start') or a.get('committed_end'):
+                    committed_label = f", committed: {a.get('committed_start', '?')} to {a.get('committed_end', '?')}"
                 lines.append(
-                    f"    seq {a['sequence']}: {a['project_name']} "
-                    f"({a['start_date']} to {a['end_date']}, {a['assignment_type']}{alloc_label})"
+                    f"    {lock_label} seq {a['sequence']}: {a['project_name']} "
+                    f"({a['start_date']} to {a['end_date']}, {a['assignment_type']}{alloc_label}{committed_label})"
                 )
             # Compute available windows (gaps between assignments)
             windows = []
@@ -268,10 +281,12 @@ def _build_ai_context(scenario_id: str) -> str:
         for p in unscheduled:
             procurement = f", procurement: {p['procurement_date']}" if p.get('procurement_date') else ""
             ot_flag = ", allow_overtime=true" if p.get('allow_overtime') else ""
+            acct = f", account_type={p['account_type']}" if p.get('account_type') and p['account_type'] != 'standard' else ""
+            cust = f", customer_id={p['customer_id']}" if p.get('customer_id') else ""
             lines.append(
                 f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], "
                 f"contract {p['committed_start_date']} to {p['committed_end_date']}, "
-                f"{p['duration_days']} days{procurement}{ot_flag}"
+                f"{p['duration_days']} days{procurement}{ot_flag}{acct}{cust}"
             )
     else:
         lines.append("(none)")
@@ -306,6 +321,8 @@ class ProjectCreate(BaseModel):
     award_status: str
     procurement_date: Optional[str] = None
     allow_overtime: bool = False
+    customer_id: Optional[str] = None
+    account_type: str = "standard"
 
 
 class ProjectUpdate(BaseModel):
@@ -317,6 +334,8 @@ class ProjectUpdate(BaseModel):
     award_status: Optional[str] = None
     procurement_date: Optional[str] = None
     allow_overtime: Optional[bool] = None
+    customer_id: Optional[str] = None
+    account_type: Optional[str] = None
 
 
 class SkillCreate(BaseModel):
@@ -464,6 +483,8 @@ async def create_project(project: ProjectCreate):
         data["committed_end_date"] = None
     if not data.get("procurement_date"):
         data["procurement_date"] = None
+    if not data.get("customer_id"):
+        data["customer_id"] = None
     return insert_project(data)
 
 
@@ -730,6 +751,19 @@ When generating a schedule:
 - Give the draft a descriptive name reflecting the strategy used.
 - Before calling the tool, briefly explain your scheduling strategy to the user.
 - After the tool executes, summarize what was created (how many assignments, which personnel/projects).
+
+INCREMENTAL SCHEDULING:
+Assignments are labeled [LOCKED] or [MOVABLE]:
+- [LOCKED]: start_date <= today. These assignments are in progress or already started. NEVER move, modify, or re-output them.
+- [MOVABLE]: start_date > today. These are future assignments that CAN be reshuffled to make room for new projects.
+When scheduling new projects, you may rearrange [MOVABLE] assignments to fit the new work. The system will automatically remove all movable assignments from the draft and replace them with your output.
+Only output assignments for [MOVABLE] slots and new projects — locked assignments are preserved automatically.
+
+PRIORITY ACCOUNT SCHEDULING:
+Projects with account_type='priority' are high-value accounts. When scheduling:
+- Priority projects get the earliest available slots and the best skill-matched crew.
+- If there is a conflict between a priority and a standard project for the same time slot, the priority project wins.
+- Schedule all priority projects first, then fill remaining slots with standard projects.
 """
 
     # Add tweak-mode instructions when a draft exists
@@ -738,8 +772,8 @@ When generating a schedule:
 TWEAK MODE — ACTIVE DRAFT:
 You are viewing an existing draft schedule, not the master. The user wants to make changes to this draft.
 - Apply the user's requested changes to the current assignment set.
-- When you call generate_schedule, output the FULL set of assignments for ALL previously-unscheduled projects (both changed and unchanged ones).
-- The system will automatically delete the old draft and create a new one with your assignments.
+- When you call generate_schedule, output the FULL set of MOVABLE assignments (both changed and unchanged ones). Do NOT include [LOCKED] assignments.
+- The system will automatically delete the old draft, copy master assignments, preserve locked assignments, and layer your movable assignments on top.
 - Master assignments (already scheduled projects) are copied automatically — do NOT include them in your output.
 """
 
