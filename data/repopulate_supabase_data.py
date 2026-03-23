@@ -25,12 +25,13 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-_env = os.environ.get("ENV", "dev").upper()
-SUPABASE_URL = os.environ.get(f"{_env}_SUPABASE_URL")
-SUPABASE_KEY = os.environ.get(f"{_env}_SUPABASE_SECRET_KEY")
+_env = os.environ.get("ENV", "dev").lower()
+_pfx = "DEV_SUPABASE" if _env == "dev" else "SUPABASE"
+SUPABASE_URL = os.environ.get(f"{_pfx}_URL")
+SUPABASE_KEY = os.environ.get(f"{_pfx}_SECRET_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError(f"Missing {_env}_SUPABASE_URL or {_env}_SUPABASE_SECRET_KEY")
+    raise RuntimeError(f"Missing {_pfx}_URL or {_pfx}_SECRET_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
