@@ -38,6 +38,7 @@ function renderProjectsList(projects) {
             <div class="card-header">
                 <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
                     <div class="card-title">${project.name}</div>
+                    ${project.account_type === 'priority' ? '<span class="priority-badge">Priority</span>' : ''}
                     <span class="card-meta">${project.duration_days}d</span>
                     ${project.required_skills.split(',').map(skill =>
                         `<span class="skills-tag-light">${skill.trim()}</span>`
@@ -76,6 +77,8 @@ function closeProjectModal() {
     document.getElementById('projectModal').classList.remove('active');
     document.getElementById('projectForm').reset();
     document.getElementById('projectAllowOvertime').checked = false;
+    document.getElementById('projectCustomerId').value = '';
+    document.getElementById('projectAccountType').value = 'standard';
     editingProjectId = null;
     lastEndDateSource = null;
     document.querySelector('#projectModal .modal-header h3').textContent = 'Add Project';
@@ -95,6 +98,8 @@ function editProject(id) {
     form.querySelector('[name="procurement_date"]').value = project.procurement_date || '';
     form.querySelector('[name="award_status"]').value = project.award_status;
     document.getElementById('projectAllowOvertime').checked = !!project.allow_overtime;
+    document.getElementById('projectCustomerId').value = project.customer_id || '';
+    document.getElementById('projectAccountType').value = project.account_type || 'standard';
     lastEndDateSource = null;
     // Select matching skills in dropdown
     const skills = project.required_skills.split(',').map(s => s.trim());
@@ -191,6 +196,8 @@ async function submitProject(event) {
         duration_days: parseFloat(formData.get('duration_days')),
         award_status: formData.get('award_status'),
         allow_overtime: document.getElementById('projectAllowOvertime').checked,
+        customer_id: formData.get('customer_id') || null,
+        account_type: formData.get('account_type') || 'standard',
     };
     // Include committed dates if set
     const startDate = formData.get('committed_start_date');

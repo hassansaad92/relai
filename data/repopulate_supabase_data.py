@@ -119,11 +119,13 @@ for row in projects_csv:
         "name": row["name"],
         "committed_start_date": row.get("committed_start_date") or None,
         "committed_end_date": row.get("committed_end_date") or None,
-        "duration_days": float(row["duration_weeks"]) * 7,
+        "duration_days": float(row["duration_weeks"]) * 5,
         "procurement_date": procurement_date,
         "required_skills": row["required_skills"],
         "award_status": row["award_status"],
         "allow_overtime": row.get("allow_overtime", "false").lower() == "true",
+        "customer_id": row.get("customer_id") or None,
+        "account_type": row.get("account_type", "standard"),
     }
     response = supabase.table("projects").insert(payload).execute()
     if not response.data:

@@ -12,7 +12,12 @@ SELECT
     a.sequence,
     a.allocated_days,
     a.assignment_type,
-    pr.allow_overtime
+    pr.allow_overtime,
+    pr.customer_id,
+    pr.account_type,
+    pr.committed_start_date,
+    pr.committed_end_date,
+    pr.duration_days
 FROM personnel p
 LEFT JOIN assignments a
     ON a.personnel_id = p.id

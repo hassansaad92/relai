@@ -148,8 +148,8 @@ def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO projects (name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime)
-            VALUES (%(name)s, %(committed_start_date)s, %(committed_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s, %(allow_overtime)s)
+            INSERT INTO projects (name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type)
+            VALUES (%(name)s, %(committed_start_date)s, %(committed_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s, %(allow_overtime)s, %(customer_id)s, %(account_type)s)
             RETURNING *
             """,
             data,
@@ -455,6 +455,16 @@ def bulk_insert_assignments(scenario_id: str, assignments_list: list[dict]):
 def delete_assignments_by_scenario(scenario_id: str):
     with _cursor() as (_, cur):
         cur.execute("DELETE FROM assignments WHERE scenario_id = %s", (scenario_id,))
+        return {"deleted": cur.rowcount}
+
+
+def delete_movable_assignments(scenario_id: str, today_str: str):
+    """Delete assignments where start_date > today for a given scenario (future/movable only)."""
+    with _cursor() as (_, cur):
+        cur.execute(
+            "DELETE FROM assignments WHERE scenario_id = %s AND start_date > %s",
+            (scenario_id, today_str),
+        )
         return {"deleted": cur.rowcount}
 
 
