@@ -1,0 +1,26 @@
+EVALUATION LICENSE
+
+Copyright (c) 2026 Hassan Saad. All rights reserved.
+
+This software is provided for evaluation and testing purposes only.
+
+You may:
+  - Run the software locally for testing and evaluation
+  - Input your own data for the purpose of evaluating functionality
+
+You may NOT:
+  - Use this software for production operations, including but not limited
+    to actual crew scheduling, resource allocation, or operational decisions
+  - Redistribute, sublicense, or share this software with third parties
+  - Modify and redistribute the software
+  - Use this software for any commercial purpose
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+The author assumes no responsibility for any decisions made based on output
+from this software.
