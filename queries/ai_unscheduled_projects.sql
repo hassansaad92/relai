@@ -6,7 +6,8 @@ SELECT
     p.committed_start_date,
     p.committed_end_date,
     p.duration_days,
-    p.procurement_date
+    p.procurement_date,
+    p.allow_overtime
 FROM projects p
 WHERE p.award_status = 'awarded'
   AND NOT EXISTS (

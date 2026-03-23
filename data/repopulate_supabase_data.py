@@ -123,6 +123,7 @@ for row in projects_csv:
         "procurement_date": procurement_date,
         "required_skills": row["required_skills"],
         "award_status": row["award_status"],
+        "allow_overtime": row.get("allow_overtime", "false").lower() == "true",
     }
     response = supabase.table("projects").insert(payload).execute()
     if not response.data:

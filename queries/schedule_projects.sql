@@ -7,6 +7,7 @@ SELECT
     p.procurement_date,
     p.required_skills,
     p.award_status,
+    p.allow_overtime,
     COUNT(a.id) AS assignment_count,
     MIN(a.start_date) AS actual_start_date,
     MAX(a.end_date) AS actual_end_date,

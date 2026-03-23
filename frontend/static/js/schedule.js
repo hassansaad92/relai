@@ -306,8 +306,13 @@ function renderScheduleAssignPanel(projectId) {
     const projectStartStr = project.committed_start_date || today;
     const projectEndStr = project.committed_end_date || (() => {
         const d = new Date(projectStartStr + 'T00:00:00');
-        d.setDate(d.getDate() + Math.ceil(parseFloat(project.duration_days) || 1) - 1);
-        return d.toISOString().split('T')[0];
+        const dur = Math.ceil(parseFloat(project.duration_days) || 1);
+        if (project.allow_overtime) {
+            d.setDate(d.getDate() + dur - 1);
+            return d.toISOString().split('T')[0];
+        } else {
+            return addBusinessDaysJS(d, dur - 1).toISOString().split('T')[0];
+        }
     })();
     const projectStart = new Date(projectStartStr + 'T00:00:00');
     const projectEnd = new Date(projectEndStr + 'T00:00:00');
@@ -363,9 +368,14 @@ function renderScheduleAssignPanel(projectId) {
         const person = allPersonnel.find(p => p.id === pid);
         const personAvail = person?.next_available_date || '';
         const effStart = personAvail > projectStartStr ? personAvail : projectStartStr;
-        const effEnd = new Date(effStart + 'T00:00:00');
-        effEnd.setDate(effEnd.getDate() + project.duration_days - 1);
-        const effEndStr = effEnd.toISOString().split('T')[0];
+        let effEndStr;
+        if (project.allow_overtime) {
+            const effEnd = new Date(effStart + 'T00:00:00');
+            effEnd.setDate(effEnd.getDate() + project.duration_days - 1);
+            effEndStr = effEnd.toISOString().split('T')[0];
+        } else {
+            effEndStr = addBusinessDaysJS(new Date(effStart + 'T00:00:00'), project.duration_days - 1).toISOString().split('T')[0];
+        }
         const effStartFmt = fmtShort(effStart);
         const effEndFmt = effEnd.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
         return `
@@ -623,17 +633,29 @@ function updateAssignDefaults(pid, projectStart, projectEnd, personAvail, durati
     const endInput = document.getElementById('customEnd_' + pid);
     const fmtD = d => new Date(d + 'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
 
+    // Check if project allows overtime (calendar days)
+    const project = allProjects.find(p => p.id === selectedScheduleProjectId);
+    const allowOT = project && project.allow_overtime;
+
     let effStart, effEndStr;
     if (type === 'full') {
         effStart = projectStart;
-        const effEnd = new Date(projectStart + 'T00:00:00');
-        effEnd.setDate(effEnd.getDate() + durationDays - 1);
-        effEndStr = effEnd.toISOString().split('T')[0];
+        if (allowOT) {
+            const effEnd = new Date(projectStart + 'T00:00:00');
+            effEnd.setDate(effEnd.getDate() + durationDays - 1);
+            effEndStr = effEnd.toISOString().split('T')[0];
+        } else {
+            effEndStr = addBusinessDaysJS(new Date(projectStart + 'T00:00:00'), durationDays - 1).toISOString().split('T')[0];
+        }
     } else if (type === 'cascading') {
         effStart = personAvail > projectStart ? personAvail : projectStart;
-        const effEnd = new Date(effStart + 'T00:00:00');
-        effEnd.setDate(effEnd.getDate() + durationDays - 1);
-        effEndStr = effEnd.toISOString().split('T')[0];
+        if (allowOT) {
+            const effEnd = new Date(effStart + 'T00:00:00');
+            effEnd.setDate(effEnd.getDate() + durationDays - 1);
+            effEndStr = effEnd.toISOString().split('T')[0];
+        } else {
+            effEndStr = addBusinessDaysJS(new Date(effStart + 'T00:00:00'), durationDays - 1).toISOString().split('T')[0];
+        }
     } else {
         effStart = projectStart;
         effEndStr = projectEnd;
