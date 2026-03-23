@@ -18,8 +18,8 @@ def _load_sql(name: str) -> str:
 
 
 def _env_prefix():
-    env = os.environ.get("ENV", "dev").upper()
-    return f"{env}_SUPABASE"
+    env = os.environ.get("ENV", "dev").lower()
+    return "DEV_SUPABASE" if env == "dev" else "SUPABASE"
 
 
 def _dsn():
