@@ -65,7 +65,7 @@ function getViewFromURL() {
 // Initialize navigation
 function initNavigation() {
     // Add click handlers to nav items
-    document.querySelectorAll('.nav-item').forEach(item => {
+    document.querySelectorAll('.nav-item[data-view]').forEach(item => {
         item.addEventListener('click', () => {
             const viewName = item.getAttribute('data-view');
             showView(viewName);

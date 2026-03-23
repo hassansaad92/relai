@@ -1,39 +1,3 @@
-function applyTheme(themeName) {
-    const vars = themes[themeName];
-    if (!vars) return;
-    const root = document.documentElement;
-    for (const [key, value] of Object.entries(vars)) {
-        root.style.setProperty(key, value);
-    }
-    localStorage.setItem('relai-theme', themeName);
-    // Update radio button state
-    const radio = document.querySelector(`input[name="theme"][value="${themeName}"]`);
-    if (radio) radio.checked = true;
-    // Highlight selected option border
-    document.querySelectorAll('#settingsModal label[id^="themeOption-"]').forEach(el => {
-        el.style.borderColor = '';
-    });
-    const selected = document.getElementById('themeOption-' + themeName);
-    if (selected) selected.style.borderColor = vars['--accent'];
-}
-
-function openSettingsModal() {
-    document.getElementById('settingsModal').classList.add('active');
-}
-
-function closeSettingsModal() {
-    document.getElementById('settingsModal').classList.remove('active');
-}
-
-// Close settings modal on overlay click
-document.addEventListener('click', function(e) {
-    const modal = document.getElementById('settingsModal');
-    if (e.target === modal) closeSettingsModal();
-});
-
-// Apply saved theme on load
-applyTheme(localStorage.getItem('relai-theme') || 'star');
-
 // Set current date
 document.getElementById('currentDate').textContent = currentDate.toLocaleDateString('en-US', {
     weekday: 'long',

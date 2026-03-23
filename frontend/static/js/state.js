@@ -1,25 +1,3 @@
-// Theme definitions
-const themes = {
-    'star': {
-        '--accent': '#06aeee',
-        '--accent-text': '#333333',
-        '--accent-hover-light': 'rgba(6, 174, 238, 0.1)',
-        '--accent-active-light': 'rgba(6, 174, 238, 0.2)',
-        '--page-bg': '#F4F5F7',
-        '--surface-border': '#E0E2E6',
-        '--mid-blue': '#2b69ac',
-    },
-    'otis': {
-        '--accent': '#f65275',
-        '--accent-text': '#f65275',
-        '--accent-hover-light': 'rgba(246, 82, 117, 0.1)',
-        '--accent-active-light': 'rgba(246, 82, 117, 0.2)',
-        '--page-bg': '#ffffff',
-        '--surface-border': '#f0f0f0',
-        '--mid-blue': '#2b69ac',
-    }
-};
-
 // Status options (single source of truth)
 const AWARD_STATUSES = [
     { value: 'awarded', label: 'Awarded' },

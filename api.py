@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import math
 import os
 from datetime import datetime, timedelta, timezone
@@ -221,13 +224,13 @@ def _build_ai_context(scenario_id: str) -> str:
             # Compute available windows (gaps between assignments)
             windows = []
             for i in range(len(assignments) - 1):
-                gap_start = assignments[i]["end_date"]
+                gap_start_dt = datetime.strptime(assignments[i]["end_date"], "%Y-%m-%d") + timedelta(days=1)
                 gap_end = assignments[i + 1]["start_date"]
-                if gap_start < gap_end:
-                    windows.append(f"    {gap_start} to {gap_end} (gap)")
+                if gap_start_dt.strftime("%Y-%m-%d") < gap_end:
+                    windows.append(f"    {gap_start_dt.strftime('%Y-%m-%d')} to {gap_end} (gap)")
             # Open window after last assignment
-            last_end = assignments[-1]["end_date"]
-            windows.append(f"    {last_end} onward (open)")
+            last_end_dt = datetime.strptime(assignments[-1]["end_date"], "%Y-%m-%d") + timedelta(days=1)
+            windows.append(f"    {last_end_dt.strftime('%Y-%m-%d')} onward (open)")
             lines.append("  Available windows:")
             lines.extend(windows)
         else:
@@ -421,7 +424,7 @@ async def create_project(project: ProjectCreate):
     data = project.model_dump()
     if data.get("committed_start_date"):
         start = datetime.strptime(data["committed_start_date"], "%Y-%m-%d")
-        end = start + timedelta(days=math.ceil(data["duration_days"]))
+        end = start + timedelta(days=math.ceil(data["duration_days"]) - 1)
         data["committed_end_date"] = end.strftime("%Y-%m-%d")
     else:
         data["committed_start_date"] = None
@@ -455,7 +458,7 @@ async def patch_project(project_id: str, data: ProjectUpdate):
         if current["committed_start_date"]:
             start = datetime.strptime(str(current["committed_start_date"]), "%Y-%m-%d")
             end = datetime.strptime(updates["committed_end_date"], "%Y-%m-%d")
-            updates["duration_days"] = max(1, (end - start).days)
+            updates["duration_days"] = max(1, (end - start).days + 1)
     elif "committed_start_date" in updates or "duration_days" in updates:
         start_str = updates.get("committed_start_date")
         days = updates.get("duration_days")
@@ -467,7 +470,7 @@ async def patch_project(project_id: str, data: ProjectUpdate):
             days = days or float(current["duration_days"])
         if start_str and days:
             start = datetime.strptime(start_str, "%Y-%m-%d")
-            updates["committed_end_date"] = (start + timedelta(days=math.ceil(days))).strftime("%Y-%m-%d")
+            updates["committed_end_date"] = (start + timedelta(days=math.ceil(days) - 1)).strftime("%Y-%m-%d")
     result = update_project(project_id, updates)
     if not result:
         raise HTTPException(404, "Project not found")
@@ -675,7 +678,7 @@ When generating a schedule:
 - IMPORTANT: Only schedule projects listed under UNSCHEDULED PROJECTS above. Projects that already have assignments are preserved automatically — do NOT re-schedule them.
 - Use the PERSONNEL & AVAILABILITY section above to find available windows. Do not create overlapping date ranges for the same person.
 - Match personnel skills to project required_skills. If a person's skills overlap with the project's required skills, they are a candidate.
-- CRITICAL DATE RULE: end_date = start_date + duration_days. This is the ONLY way to compute end_date.
+- CRITICAL DATE RULE: Dates are INCLUSIVE. end_date = start_date + (duration_days - 1). A 1-day project starting Mar 23 has end_date = Mar 23. A 3-day project starting Mar 24 has end_date = Mar 26.
   - committed_start_date is the EARLIEST a project can start. If a mechanic is not available until later, the project starts later.
   - committed_end_date is informational only — NEVER use it as an assignment end_date.
   - If a mechanic is unavailable until after committed_start_date, set start_date = mechanic's available date, and end_date = start_date + duration_days.

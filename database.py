@@ -17,15 +17,21 @@ def _load_sql(name: str) -> str:
     return (QUERIES_DIR / f"{name}.sql").read_text()
 
 
+def _env_prefix():
+    env = os.environ.get("ENV", "dev").upper()
+    return f"{env}_SUPABASE"
+
+
 def _dsn():
-    host = os.environ.get("SUPABASE_RELAI_DB_HOST")
-    password = os.environ.get("SUPABASE_RELAI_DB_PASSWORD")
+    pfx = _env_prefix()
+    host = os.environ.get(f"{pfx}_DB_HOST")
+    password = os.environ.get(f"{pfx}_DB_PASSWORD")
     if not host:
-        raise RuntimeError("Missing environment variable: SUPABASE_RELAI_DB_HOST")
+        raise RuntimeError(f"Missing environment variable: {pfx}_DB_HOST")
     if not password:
-        raise RuntimeError("Missing environment variable: SUPABASE_RELAI_DB_PASSWORD")
-    user = os.environ.get("SUPABASE_RELAI_DB_USER", "postgres.grkdykxrckzusbgkgsuk")
-    port = os.environ.get("SUPABASE_RELAI_DB_PORT", "6543")
+        raise RuntimeError(f"Missing environment variable: {pfx}_DB_PASSWORD")
+    user = os.environ.get(f"{pfx}_DB_USER", "postgres")
+    port = os.environ.get(f"{pfx}_DB_PORT", "6543")
     return f"postgresql://{user}:{password}@{host}:{port}/postgres"
 
 

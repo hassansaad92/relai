@@ -3,3 +3,4 @@ uvicorn[standard]==0.32.0
 supabase==2.28.0
 python-dotenv==1.0.1
 anthropic
+psycopg2-binary
