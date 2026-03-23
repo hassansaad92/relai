@@ -8,7 +8,7 @@ SELECT
         WHEN ca.id IS NOT NULL THEN 'assigned'
         ELSE 'available'
     END AS availability_status,
-    COALESCE(la.max_end_date, CURRENT_DATE) AS next_available_date,
+    COALESCE(la.max_end_date + 1, CURRENT_DATE) AS next_available_date,
     ca_proj.name AS current_project_name,
     ca.end_date AS current_assignment_end,
     na_proj.name AS next_project_name,

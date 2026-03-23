@@ -4,22 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RelAI</title>
-    <script>
-        // Apply saved theme BEFORE paint to prevent flash
-        (function() {
-            var t = localStorage.getItem('relai-theme');
-            if (t === 'otis') {
-                var s = document.documentElement.style;
-                s.setProperty('--accent', '#f65275');
-                s.setProperty('--accent-text', '#f65275');
-                s.setProperty('--accent-hover-light', 'rgba(246, 82, 117, 0.1)');
-                s.setProperty('--accent-active-light', 'rgba(246, 82, 117, 0.2)');
-                s.setProperty('--page-bg', '#ffffff');
-                s.setProperty('--surface-border', '#f0f0f0');
-                s.setProperty('--mid-blue', '#2b69ac');
-            }
-        })();
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -30,6 +14,7 @@
     <div class="sidebar" id="sidebar">
         <div class="sidebar-title">
             <span class="sidebar-title-text">RelAI</span>
+            <span class="sidebar-subtitle">Operational Intelligence</span>
         </div>
         <div class="nav-item" data-view="home">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -51,21 +36,21 @@
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span class="nav-label">History</span>
         </div>
-        <div class="nav-item sidebar-settings" onclick="openSettingsModal()">
+        <div class="nav-item sidebar-settings">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             <span class="nav-label">Settings</span>
         </div>
         <div class="scenario-indicator" id="scenarioIndicator" onclick="toggleScenarioPanel()">
             <span class="scenario-dot master" id="scenarioDot"></span>
             <span id="scenarioIndicatorName">Loading...</span>
-            <span class="scenario-chevron">▴</span>
+            <span class="scenario-chevron">&#9652;</span>
         </div>
     </div>
 
     <div class="scenario-panel" id="scenarioPanel">
         <div class="scenario-panel-header">
             Scenarios
-            <button class="scenario-panel-close" onclick="toggleScenarioPanel()">×</button>
+            <button class="scenario-panel-close" onclick="toggleScenarioPanel()">&times;</button>
         </div>
         <div id="scenarioList"></div>
         <div class="scenario-panel-footer">
@@ -79,7 +64,7 @@
             <h1 id="pageTitle">Overview</h1>
             <div style="display: flex; align-items: center; gap: 16px;">
                 <button class="refresh-button" id="refreshButton" onclick="refreshData()" title="Refresh data">
-                    <span class="refresh-icon">↻</span>
+                    <span class="refresh-icon">&#8635;</span>
                 </button>
                 <div class="current-date" id="currentDate"></div>
             </div>
@@ -87,7 +72,9 @@
 
         <!-- Home View -->
         <div id="home" class="view">
-            <h2 class="home-title">RelAI Project Health Assessment <span class="home-title-date" id="homeDate"></span></h2>
+            <div class="home-pulse-label">SYSTEM PULSE</div>
+            <h2 class="home-title">Project Health Assessment <span class="home-title-date" id="homeDate"></span></h2>
+            <div class="home-stats-row" id="homeStatCards"></div>
             <div class="home-assessment" id="homeAssessment">
                 <div class="home-assessment-loading" id="homeAssessmentLoading">
                     <div class="spinner"></div>
@@ -95,16 +82,8 @@
                 </div>
                 <div id="homeAssessmentContent"></div>
             </div>
-            <div class="home-stats-row">
-                <div class="home-stat-tile" id="homeProjectTile">
-                    <div class="home-stat-tile-title">Project Staffing</div>
-                    <div class="home-stat-pairs" id="homeProjectStats"></div>
-                </div>
-                <div class="home-stat-tile" id="homePersonnelTile">
-                    <div class="home-stat-tile-title">Mechanic Roster</div>
-                    <div class="home-stat-pairs" id="homePersonnelStats"></div>
-                </div>
-            </div>
+            <div id="homeRecentProjects" style="margin-top: 28px;"></div>
+            <div id="homeMechanicRoster" style="margin-top: 28px;"></div>
         </div>
 
         <!-- Schedule View (merges Overview + Assignments) -->
@@ -192,24 +171,21 @@
 
     </div>
 
-    <!-- RelAI Agent Panel (right side, default open) -->
+    <!-- RelAI Assistant Panel (right side, default open) -->
     <div class="chat-panel" id="chatPanel">
         <div class="chat-header">
             <span class="chat-status-dot"></span>
-            RelAI Agent
+            RelAI Assistant
             <button class="chat-panel-toggle" onclick="toggleChatPanel()" title="Close panel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
         <div class="chat-messages" id="chatMessages">
-            <div class="chat-msg assistant">
-                <div class="chat-bubble">Hi! I'm your RelAI Agent. I can answer questions about your projects, personnel, and scheduling — or generate an optimized schedule for you. What would you like to do?</div>
-            </div>
         </div>
         <div class="chat-input-area">
             <input type="text" id="chatInput" class="chat-input" placeholder="Ask about scheduling...">
             <button id="chatSendBtn" class="chat-send-btn" onclick="sendChatMessage()">Send</button>
         </div>
     </div>
-    <button class="chat-reopen-btn" onclick="toggleChatPanel()">RelAI Agent</button>
+    <button class="chat-reopen-btn" onclick="toggleChatPanel()">RelAI Assistant</button>
 
     <!-- Personnel Modal -->
     <div id="personnelModal" class="modal-overlay">
@@ -301,29 +277,6 @@
                 </div>
                 <button type="submit" class="submit-button">Add Skill</button>
             </form>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal-overlay">
-        <div class="modal-card" style="max-width: 400px;">
-            <div class="modal-header">
-                <h3>Settings</h3>
-                <button class="close-button" onclick="closeSettingsModal()">&times;</button>
-            </div>
-            <div style="margin-bottom: 8px; font-weight: 600; color: #041e42; font-size: 14px;">Theme</div>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid var(--surface-border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;" id="themeOption-star">
-                    <input type="radio" name="theme" value="star" onchange="applyTheme('star')" style="accent-color: #041e42;">
-                    <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #06aeee; border: 2px solid #041e42; flex-shrink: 0;"></span>
-                    <span style="font-weight: 500; font-size: 14px;">Star</span>
-                </label>
-                <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 2px solid var(--surface-border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s;" id="themeOption-otis">
-                    <input type="radio" name="theme" value="otis" onchange="applyTheme('otis')" style="accent-color: #041e42;">
-                    <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #f65275; border: 2px solid #041e42; flex-shrink: 0;"></span>
-                    <span style="font-weight: 500; font-size: 14px;">Otis</span>
-                </label>
-            </div>
         </div>
     </div>
 

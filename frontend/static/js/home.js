@@ -10,8 +10,9 @@ async function loadHomeData(forceRefresh) {
 
     // Serve from cache if available and same scenario
     if (!forceRefresh && homeCache && homeCacheScenarioId === currentScenarioId) {
-        renderProjectStats(homeCache.project_stats);
-        renderPersonnelStats(homeCache.personnel_stats);
+        renderHomeStatCards(homeCache.project_stats, homeCache.personnel_stats);
+        renderRecentProjects(homeCache.project_stats);
+        renderMechanicRoster(homeCache.personnel_stats);
         document.getElementById('homeAssessmentLoading').style.display = 'none';
         document.getElementById('homeAssessmentContent').innerHTML = homeCache.assessmentHtml;
         return;
@@ -21,9 +22,10 @@ async function loadHomeData(forceRefresh) {
     const res = await fetch(`/api/home/stats${params}`);
     const stats = await res.json();
 
-    // Render stat tiles immediately
-    renderProjectStats(stats.project_stats);
-    renderPersonnelStats(stats.personnel_stats);
+    // Render stat cards immediately
+    renderHomeStatCards(stats.project_stats, stats.personnel_stats);
+    renderRecentProjects(stats.project_stats);
+    renderMechanicRoster(stats.personnel_stats);
 
     // Show loading state for AI assessment
     document.getElementById('homeAssessmentLoading').style.display = 'flex';
@@ -64,55 +66,90 @@ function clearHomeCache() {
     homeCacheScenarioId = null;
 }
 
-function renderProjectStats(stats) {
-    const container = document.getElementById('homeProjectStats');
-    if (!stats || !stats.total_projects) {
-        container.innerHTML = '<div class="home-stat-empty">No awarded projects</div>';
-        return;
-    }
+function renderHomeStatCards(projectStats, personnelStats) {
+    const container = document.getElementById('homeStatCards');
+
+    const staffedPct = projectStats?.staffed_pct ?? 0;
+    const totalProjects = projectStats?.total_projects ?? 0;
+    const staffedCount = projectStats?.staffed_count ?? 0;
+
+    const totalRoster = personnelStats?.total_roster ?? 0;
+
+    const hasFuture = personnelStats?.has_future_assignment ?? 0;
+    const resourcePct = totalRoster > 0 ? Math.round((hasFuture / totalRoster) * 100) : 0;
+
     container.innerHTML = `
-        <div class="home-stat-pair">
-            <span class="home-stat-label">Total Awarded</span>
-            <span class="home-stat-value">${stats.total_projects}</span>
+        <div class="home-stat-card">
+            <div class="home-stat-card-header">
+                <div class="home-stat-card-icon staffing">&#128736;</div>
+                <span class="home-stat-card-title">Staffing Level</span>
+            </div>
+            <div class="home-stat-card-value">${staffedPct}%</div>
+            <div class="home-stat-card-label">${staffedCount} of ${totalProjects} projects staffed</div>
+            <div class="home-stat-card-bar"><div class="home-stat-card-bar-fill staffing" style="width:${staffedPct}%"></div></div>
         </div>
-        <div class="home-stat-pair">
-            <span class="home-stat-label">Staffed</span>
-            <span class="home-stat-value">${stats.staffed_count}</span>
-        </div>
-        <div class="home-stat-pair">
-            <span class="home-stat-label">Unstaffed</span>
-            <span class="home-stat-value">${stats.unstaffed_count}</span>
-        </div>
-        <div class="home-stat-pair highlight">
-            <span class="home-stat-label">Staffed %</span>
-            <span class="home-stat-value">${stats.staffed_pct}%</span>
+        <div class="home-stat-card">
+            <div class="home-stat-card-header">
+                <div class="home-stat-card-icon resource">&#128101;</div>
+                <span class="home-stat-card-title">Resource Allocation</span>
+            </div>
+            <div class="home-stat-card-value">${resourcePct}%</div>
+            <div class="home-stat-card-label">${hasFuture} of ${totalRoster} have future work</div>
+            <div class="home-stat-card-bar"><div class="home-stat-card-bar-fill resource" style="width:${resourcePct}%"></div></div>
         </div>
     `;
 }
 
-function renderPersonnelStats(stats) {
-    const container = document.getElementById('homePersonnelStats');
-    if (!stats || !stats.total_roster) {
-        container.innerHTML = '<div class="home-stat-empty">No personnel</div>';
+function renderRecentProjects(projectStats) {
+    const container = document.getElementById('homeRecentProjects');
+    if (!projectStats || !projectStats.recent_projects || projectStats.recent_projects.length === 0) {
+        container.innerHTML = '';
         return;
     }
+    const cards = projectStats.recent_projects.map(p => {
+        const statusClass = p.award_status || 'awarded';
+        const statusLabel = (p.award_status || 'awarded').replace('_', ' ');
+        const schedClass = p.schedule_status || 'not_scheduled';
+        const schedLabel = (p.schedule_status || 'not scheduled').replace('_', ' ');
+        return `<div class="home-recent-card">
+            <div class="home-recent-card-header">
+                <span class="home-recent-card-name">${p.name}</span>
+                <div class="status-badges">
+                    <span class="card-status ${statusClass}">${statusLabel}</span>
+                    <span class="card-status ${schedClass}">${schedLabel}</span>
+                </div>
+            </div>
+            <div class="home-recent-card-detail">${p.duration_days || '?'}d · ${p.assignment_count || 0} assigned</div>
+        </div>`;
+    }).join('');
     container.innerHTML = `
-        <div class="home-stat-pair">
-            <span class="home-stat-label">Total Roster</span>
-            <span class="home-stat-value">${stats.total_roster}</span>
-        </div>
-        <div class="home-stat-pair">
-            <span class="home-stat-label">Currently Active</span>
-            <span class="home-stat-value">${stats.currently_assigned}</span>
-        </div>
-        <div class="home-stat-pair">
-            <span class="home-stat-label">Has Future Work</span>
-            <span class="home-stat-value">${stats.has_future_assignment}</span>
-        </div>
-        <div class="home-stat-pair highlight">
-            <span class="home-stat-label">Unassigned</span>
-            <span class="home-stat-value">${stats.unassigned}</span>
-        </div>
+        <div class="home-section-title">Recent Projects</div>
+        <div class="home-recent-projects">${cards}</div>
+    `;
+}
+
+function renderMechanicRoster(personnelStats) {
+    const container = document.getElementById('homeMechanicRoster');
+    if (!personnelStats || !personnelStats.roster || personnelStats.roster.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    const rows = personnelStats.roster.map(p => {
+        const assignment = p.current_project || '-';
+        const availClass = p.is_assigned ? 'assigned' : 'available';
+        const availLabel = p.is_assigned ? 'Assigned' : 'Available';
+        return `<tr>
+            <td style="font-weight:600;">${p.name}</td>
+            <td>${assignment}</td>
+            <td><span class="card-status ${availClass}">${availLabel}</span></td>
+        </tr>`;
+    }).join('');
+    container.innerHTML = `
+        <div class="home-section-title">Mechanic Roster</div>
+        <table class="home-roster-table">
+            <thead><tr><th>Name</th><th>Current Assignment</th><th>Availability</th></tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
     `;
 }
 

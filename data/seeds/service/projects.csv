@@ -1,101 +1,108 @@
 id,name,committed_start_date,committed_end_date,duration_weeks,num_elevators,required_skills,award_status,procurement_date
-1,Sycamore Center — Safety Check,2026-03-23,2026-03-24,0.14,0,"Gearless,Geared",awarded,
-2,Elm Bank — Modernization,2026-03-24,2026-03-27,0.43,0,Gen2,awarded,
-3,Elm Office — Emergency Fix,2026-04-09,2026-04-15,0.57,0,Compass,awarded,
-4,Pine Courthouse — Service Call,2026-04-02,2026-04-06,0.29,0,Geared,prospect,
-5,Poplar Center — Door Adjustment,2026-04-07,2026-04-09,0.29,0,"Gearless,Gen2",awarded,
-6,Cherry Center — Modernization,2026-04-20,2026-04-22,0.29,0,"Gearless,Geared",awarded,2026-04-17
-7,Walnut Mall — Modernization,2026-04-08,2026-04-09,0.14,0,Compass,awarded,
-8,Poplar Medical — Door Adjustment,2026-04-21,2026-04-23,0.29,0,"Gen2,Geared",awarded,2026-04-17
-9,Poplar Medical — Service Call,2026-04-21,2026-04-23,0.21,0,Gen2,awarded,2026-04-17
-10,Cypress Complex — Callback,2026-04-16,2026-04-20,0.21,0,"Gearless,Geared",awarded,
-11,Dogwood Courthouse — PM Visit,2026-04-01,2026-04-02,0.14,0,"Machine Replacement,Gearless",awarded,
-12,Maple Office — Emergency Fix,2026-03-27,2026-03-31,0.21,0,"Compass,Gen2",awarded,
-13,Spruce Bank — Repair,2026-03-25,2026-04-01,0.71,0,Compass,awarded,
-14,Cypress Tower — Callback,2026-04-21,2026-04-22,0.14,0,"Gearless,Machine Replacement",awarded,
-15,Willow Complex — PM Visit,2026-03-30,2026-04-03,0.57,0,"Gen2,Gearless",awarded,
-16,Cherry Residences — Repair,2026-04-15,2026-04-16,0.14,0,"Gen2,Gearless",awarded,2026-04-10
-17,Sycamore Complex — Inspection,2026-04-16,2026-04-20,0.21,0,Gen2,awarded,
-18,Willow Bank — Modernization,2026-04-15,2026-04-20,0.43,0,Gearless,awarded,
-19,Ash Residences — Service Call,2026-04-08,2026-04-10,0.29,0,"Gearless,Compass",awarded,
-20,Ash Center — Repair,2026-03-23,2026-03-25,0.29,0,"Machine Replacement,Geared",awarded,2026-03-20
-21,Dogwood Garage — Tune-Up,2026-03-25,2026-03-27,0.29,0,"Geared,Gearless",awarded,2026-03-23
-22,Walnut Library — Emergency Fix,2026-04-13,2026-04-15,0.21,0,Geared,awarded,
-23,Cedar Residences — Modernization,2026-03-24,2026-03-27,0.43,0,"Gen2,Machine Replacement",awarded,
-24,Pine Station — Door Adjustment,2026-04-15,2026-04-17,0.21,0,Geared,awarded,2026-04-13
-25,Ash Office — Emergency Fix,2026-03-24,2026-03-25,0.14,0,"Machine Replacement,Gen2",prospect,
-26,Poplar Medical — Tune-Up,2026-04-13,2026-04-16,0.43,0,Compass,prospect,2026-04-10
-27,Dogwood Bank — Repair,2026-04-09,2026-04-13,0.29,0,"Machine Replacement,Compass",awarded,2026-04-08
-28,Magnolia Office — Repair,2026-03-24,2026-03-26,0.29,0,Machine Replacement,awarded,
-29,Ash Courthouse — Service Call,2026-03-25,2026-03-31,0.57,0,Gen2,awarded,
-30,Dogwood Garage — Door Adjustment,2026-04-01,2026-04-08,0.71,0,"Machine Replacement,Gen2",awarded,
-31,Cherry Station — PM Visit,2026-04-02,2026-04-06,0.29,0,Gearless,awarded,
-32,Pine Bank — Modernization,2026-03-23,2026-03-24,0.14,0,Machine Replacement,prospect,
-33,Walnut Hotel — Inspection,2026-04-02,2026-04-08,0.57,0,Gearless,awarded,
-34,Cedar Complex — Callback,2026-04-15,2026-04-20,0.43,0,"Gearless,Gen2",awarded,
-35,Hickory Apartments — Callback,2026-03-26,2026-03-27,0.14,0,"Machine Replacement,Geared",awarded,
-36,Spruce Plaza — Repair,2026-04-13,2026-04-17,0.57,0,Gen2,awarded,
-37,Beech Bank — Repair,2026-03-27,2026-03-31,0.29,0,"Gearless,Geared",awarded,
-38,Maple Library — Inspection,2026-03-25,2026-03-26,0.14,0,"Geared,Gen2",awarded,
-39,Cedar Mall — Door Adjustment,2026-04-03,2026-04-06,0.07,0,Gen2,awarded,2026-04-01
-40,Birch Library — Repair,2026-04-17,2026-04-22,0.43,0,"Geared,Machine Replacement",awarded,
-41,Cedar Courthouse — Repair,2026-04-06,2026-04-07,0.14,0,Geared,awarded,
-42,Ash Residences — Repair,2026-04-01,2026-04-06,0.43,0,Compass,awarded,
-43,Spruce Mall — Door Adjustment,2026-04-08,2026-04-10,0.21,0,Gearless,awarded,
-44,Birch Garage — Callback,2026-04-21,2026-04-24,0.43,0,"Gearless,Gen2",awarded,
-45,Hawthorn Church — Service Call,2026-03-26,2026-03-27,0.07,0,"Compass,Gearless",awarded,
-46,Magnolia Bank — Modernization,2026-04-16,2026-04-21,0.43,0,Gearless,awarded,
-47,Cedar Hotel — Door Adjustment,2026-04-09,2026-04-13,0.29,0,Gearless,awarded,
-48,Willow Library — Emergency Fix,2026-04-21,2026-04-23,0.29,0,Gearless,awarded,2026-04-17
-49,Willow Library — Safety Check,2026-04-17,2026-04-20,0.14,0,"Gearless,Compass",awarded,2026-04-14
-50,Magnolia Clinic — Inspection,2026-04-20,2026-04-27,0.71,0,Compass,awarded,
-51,Ash Hotel — Modernization,2026-04-03,2026-04-14,1.0,0,"Machine Replacement,Gearless",awarded,
-52,Pine Station — Emergency Fix,2026-03-27,2026-04-14,1.71,0,Gen2,awarded,
-53,Elm Building — Emergency Fix,2026-04-08,2026-04-24,1.71,0,Compass,awarded,
-54,Cypress Complex — Tune-Up,2026-03-30,2026-04-17,2.0,0,"Machine Replacement,Compass",awarded,2026-03-27
-55,Birch Clinic — Tune-Up,2026-04-10,2026-05-06,2.57,0,"Machine Replacement,Compass",awarded,
-56,Cherry Residences — Callback,2026-04-01,2026-04-21,2.0,0,"Gearless,Compass",awarded,2026-03-31
-57,Maple Apartments — Service Call,2026-04-06,2026-04-30,2.57,0,"Gen2,Geared",awarded,
-58,Poplar Garage — Repair,2026-04-09,2026-05-14,3.57,0,Machine Replacement,awarded,2026-04-03
-59,Beech Bank — Door Adjustment,2026-04-13,2026-05-12,3.0,0,Gearless,awarded,
-60,Poplar Office — Tune-Up,2026-04-13,2026-05-01,2.0,0,Gearless,awarded,2026-04-10
-61,Pine Library — Inspection,2026-04-17,2026-05-01,1.43,0,"Gen2,Compass",awarded,
-62,Hickory Courthouse — Callback,2026-03-30,2026-05-07,4.0,0,Gearless,awarded,2026-03-27
-63,Walnut Residences — Service Call,2026-04-02,2026-05-07,3.57,0,Compass,awarded,
-64,Ash Complex — Tune-Up,2026-03-23,2026-04-01,1.0,0,Geared,awarded,
-65,Birch Warehouse — Safety Check,2026-04-16,2026-04-28,1.14,0,Compass,awarded,
-66,Dogwood Courthouse — Emergency Fix,2026-03-30,2026-04-09,1.14,0,Gen2,awarded,
-67,Hawthorn Building — Safety Check,2026-03-25,2026-04-10,1.71,0,"Geared,Gen2",awarded,
-68,Elm Library — Tune-Up,2026-04-07,2026-04-16,1.0,0,"Compass,Gearless",awarded,
-69,Magnolia Medical — Safety Check,2026-04-09,2026-04-21,1.14,0,Compass,awarded,
-70,Pine Medical — Tune-Up,2026-04-10,2026-05-22,4.29,0,Machine Replacement,awarded,
-71,Hickory Office — Tune-Up,2026-04-10,2026-04-30,2.0,0,"Machine Replacement,Compass",awarded,
-72,Magnolia Apartments — Service Call,2026-04-07,2026-04-23,1.71,0,Gearless,awarded,
-73,Redwood Station — Repair,2026-04-09,2026-04-29,2.0,0,Machine Replacement,awarded,
-74,Dogwood Mall — Tune-Up,2026-04-03,2026-04-14,1.0,0,Compass,awarded,
-75,Cherry Medical — Modernization,2026-04-09,2026-05-07,2.86,0,"Machine Replacement,Gearless",awarded,
-76,Birch Apartments — Modernization,2026-03-31,2026-04-10,1.14,0,Gen2,awarded,
-77,Cherry Residences — PM Visit,2026-04-02,2026-05-14,4.29,0,"Machine Replacement,Gearless",prospect,
-78,Sycamore Hotel — Inspection,2026-04-03,2026-04-17,1.43,0,Machine Replacement,awarded,2026-04-02
-79,Hickory Office — Repair,2026-03-26,2026-05-07,4.29,0,Machine Replacement,awarded,
-80,Maple Complex — Safety Check,2026-04-13,2026-05-01,2.0,0,Gen2,awarded,2026-04-10
-81,Hawthorn Warehouse — Modernization,2026-03-25,2026-04-15,2.14,0,Gen2,awarded,
-82,Cherry Garage — Safety Check,2026-04-10,2026-05-11,3.0,0,Gearless,awarded,
-83,Birch Residences — Inspection,2026-04-17,2026-04-28,1.0,0,"Gen2,Geared",awarded,2026-04-16
-84,Cherry Plaza — Modernization,2026-03-30,2026-04-08,1.0,0,Compass,awarded,
-85,Dogwood Apartments — Emergency Fix,2026-04-03,2026-04-24,2.14,0,"Compass,Gen2",awarded,
-86,Pine Plaza — Inspection,2026-04-15,2026-04-27,1.14,0,Geared,prospect,
-87,Cherry Courthouse — Callback,2026-04-17,2026-05-08,2.14,0,"Machine Replacement,Gearless",awarded,
-88,Hickory Warehouse — Callback,2026-04-10,2026-05-22,4.29,0,Machine Replacement,awarded,
-89,Dogwood Plaza — Inspection,2026-03-25,2026-04-02,0.86,0,Machine Replacement,awarded,2026-03-20
-90,Redwood Center — Tune-Up,2026-04-14,2026-05-26,4.29,0,"Compass,Gearless",awarded,
-91,Hickory Library — Tune-Up,2026-04-09,2026-05-07,2.86,0,Gearless,awarded,
-92,Hickory Building — Emergency Fix,2026-04-21,2026-05-12,2.14,0,Machine Replacement,awarded,2026-04-17
-93,Hawthorn Clinic — Tune-Up,2026-04-21,2026-04-29,0.86,0,"Compass,Machine Replacement",awarded,
-94,Cedar Tower — Safety Check,2026-03-31,2026-04-09,1.0,0,Machine Replacement,awarded,2026-03-27
-95,Ash Building — Tune-Up,2026-03-30,2026-04-17,2.0,0,Machine Replacement,awarded,
-96,Beech Clinic — Tune-Up,2026-04-20,2026-04-30,1.14,0,Compass,prospect,2026-04-17
-97,Maple Center — Callback,2026-04-10,2026-04-30,2.0,0,"Geared,Compass",awarded,
-98,Dogwood Clinic — Inspection,2026-04-06,2026-05-11,3.57,0,"Gearless,Gen2",awarded,2026-04-01
-99,Poplar Station — PM Visit,2026-04-15,2026-05-25,4.0,0,Gearless,awarded,
-100,Hickory Clinic — Emergency Fix,2026-04-01,2026-04-17,1.71,0,"Compass,Geared",awarded,
+1,Sycamore Center — Safety Check,2026-03-23,2026-03-23,0.14,0,"Gearless,Geared",awarded,
+2,Elm Bank — Modernization,2026-03-24,2026-03-26,0.43,0,Gen2,awarded,
+3,Elm Office — Emergency Fix,2026-04-09,2026-04-14,0.57,0,Compass,awarded,
+4,Pine Courthouse — Service Call,2026-04-02,2026-04-05,0.29,0,Geared,prospect,
+5,Poplar Center — Door Adjustment,2026-04-07,2026-04-08,0.29,0,"Gearless,Gen2",awarded,
+6,Cherry Center — Modernization,2026-04-20,2026-04-21,0.29,0,"Gearless,Geared",awarded,2026-04-17
+7,Walnut Mall — Modernization,2026-04-08,2026-04-08,0.14,0,Compass,awarded,
+8,Poplar Medical — Door Adjustment,2026-04-21,2026-04-22,0.29,0,"Gen2,Geared",awarded,2026-04-17
+9,Poplar Medical — Service Call,2026-04-21,2026-04-22,0.21,0,Gen2,awarded,2026-04-17
+10,Cypress Complex — Callback,2026-04-16,2026-04-19,0.21,0,"Gearless,Geared",awarded,
+11,Dogwood Courthouse — PM Visit,2026-04-01,2026-04-01,0.14,0,"Machine Replacement,Gearless",awarded,
+12,Maple Office — Emergency Fix,2026-03-27,2026-03-30,0.21,0,"Compass,Gen2",awarded,
+13,Spruce Bank — Repair,2026-03-25,2026-03-31,0.71,0,Compass,awarded,
+14,Cypress Tower — Callback,2026-04-21,2026-04-21,0.14,0,"Gearless,Machine Replacement",awarded,
+15,Willow Complex — PM Visit,2026-03-30,2026-04-02,0.57,0,"Gen2,Gearless",awarded,
+16,Cherry Residences — Repair,2026-04-15,2026-04-15,0.14,0,"Gen2,Gearless",awarded,2026-04-10
+17,Sycamore Complex — Inspection,2026-04-16,2026-04-19,0.21,0,Gen2,awarded,
+18,Willow Bank — Modernization,2026-04-15,2026-04-19,0.43,0,Gearless,awarded,
+19,Ash Residences — Service Call,2026-04-08,2026-04-09,0.29,0,"Gearless,Compass",awarded,
+20,Ash Center — Repair,2026-03-23,2026-03-24,0.29,0,"Machine Replacement,Geared",awarded,2026-03-20
+21,Dogwood Garage — Tune-Up,2026-03-25,2026-03-26,0.29,0,"Geared,Gearless",awarded,2026-03-23
+22,Walnut Library — Emergency Fix,2026-04-13,2026-04-14,0.21,0,Geared,awarded,
+23,Cedar Residences — Modernization,2026-03-24,2026-03-26,0.43,0,"Gen2,Machine Replacement",awarded,
+24,Pine Station — Door Adjustment,2026-04-15,2026-04-16,0.21,0,Geared,awarded,2026-04-13
+25,Ash Office — Emergency Fix,2026-03-24,2026-03-24,0.14,0,"Machine Replacement,Gen2",prospect,
+26,Poplar Medical — Tune-Up,2026-04-13,2026-04-15,0.43,0,Compass,prospect,2026-04-10
+27,Dogwood Bank — Repair,2026-04-09,2026-04-12,0.29,0,"Machine Replacement,Compass",awarded,2026-04-08
+28,Magnolia Office — Repair,2026-03-24,2026-03-25,0.29,0,Machine Replacement,awarded,
+29,Ash Courthouse — Service Call,2026-03-25,2026-03-30,0.57,0,Gen2,awarded,
+30,Dogwood Garage — Door Adjustment,2026-04-01,2026-04-07,0.71,0,"Machine Replacement,Gen2",awarded,
+31,Cherry Station — PM Visit,2026-04-02,2026-04-05,0.29,0,Gearless,awarded,
+32,Pine Bank — Modernization,2026-03-23,2026-03-23,0.14,0,Machine Replacement,prospect,
+33,Walnut Hotel — Inspection,2026-04-02,2026-04-07,0.57,0,Gearless,awarded,
+34,Cedar Complex — Callback,2026-04-15,2026-04-19,0.43,0,"Gearless,Gen2",awarded,
+35,Hickory Apartments — Callback,2026-03-26,2026-03-26,0.14,0,"Machine Replacement,Geared",awarded,
+36,Spruce Plaza — Repair,2026-04-13,2026-04-16,0.57,0,Gen2,awarded,
+37,Beech Bank — Repair,2026-03-27,2026-03-30,0.29,0,"Gearless,Geared",awarded,
+38,Maple Library — Inspection,2026-03-25,2026-03-25,0.14,0,"Geared,Gen2",awarded,
+39,Cedar Mall — Door Adjustment,2026-04-03,2026-04-05,0.07,0,Gen2,awarded,2026-04-01
+40,Birch Library — Repair,2026-04-17,2026-04-21,0.43,0,"Geared,Machine Replacement",awarded,
+41,Cedar Courthouse — Repair,2026-04-06,2026-04-06,0.14,0,Geared,awarded,
+42,Ash Residences — Repair,2026-04-01,2026-04-05,0.43,0,Compass,awarded,
+43,Spruce Mall — Door Adjustment,2026-04-08,2026-04-09,0.21,0,Gearless,awarded,
+44,Birch Garage — Callback,2026-04-21,2026-04-23,0.43,0,"Gearless,Gen2",awarded,
+45,Hawthorn Church — Service Call,2026-03-26,2026-03-26,0.07,0,"Compass,Gearless",awarded,
+46,Magnolia Bank — Modernization,2026-04-16,2026-04-20,0.43,0,Gearless,awarded,
+47,Cedar Hotel — Door Adjustment,2026-04-09,2026-04-12,0.29,0,Gearless,awarded,
+48,Willow Library — Emergency Fix,2026-04-21,2026-04-22,0.29,0,Gearless,awarded,2026-04-17
+49,Willow Library — Safety Check,2026-04-17,2026-04-19,0.14,0,"Gearless,Compass",awarded,2026-04-14
+50,Magnolia Clinic — Inspection,2026-04-20,2026-04-26,0.71,0,Compass,awarded,
+51,Ash Hotel — Modernization,2026-04-03,2026-04-13,1.0,0,"Machine Replacement,Gearless",awarded,
+52,Pine Station — Emergency Fix,2026-03-27,2026-04-13,1.71,0,Gen2,awarded,
+53,Elm Building — Emergency Fix,2026-04-08,2026-04-23,1.71,0,Compass,awarded,
+54,Cypress Complex — Tune-Up,2026-03-30,2026-04-16,2.0,0,"Machine Replacement,Compass",awarded,2026-03-27
+55,Birch Clinic — Tune-Up,2026-04-10,2026-05-05,2.57,0,"Machine Replacement,Compass",awarded,
+56,Cherry Residences — Callback,2026-04-01,2026-04-20,2.0,0,"Gearless,Compass",awarded,2026-03-31
+57,Maple Apartments — Service Call,2026-04-06,2026-04-29,2.57,0,"Gen2,Geared",awarded,
+58,Poplar Garage — Repair,2026-04-09,2026-05-13,3.57,0,Machine Replacement,awarded,2026-04-03
+59,Beech Bank — Door Adjustment,2026-04-13,2026-05-11,3.0,0,Gearless,awarded,
+60,Poplar Office — Tune-Up,2026-04-13,2026-04-30,2.0,0,Gearless,awarded,2026-04-10
+61,Pine Library — Inspection,2026-04-17,2026-04-30,1.43,0,"Gen2,Compass",awarded,
+62,Hickory Courthouse — Callback,2026-03-30,2026-05-06,4.0,0,Gearless,awarded,2026-03-27
+63,Walnut Residences — Service Call,2026-04-02,2026-05-06,3.57,0,Compass,awarded,
+64,Ash Complex — Tune-Up,2026-03-23,2026-03-31,1.0,0,Geared,awarded,
+65,Birch Warehouse — Safety Check,2026-04-16,2026-04-27,1.14,0,Compass,awarded,
+66,Dogwood Courthouse — Emergency Fix,2026-03-30,2026-04-08,1.14,0,Gen2,awarded,
+67,Hawthorn Building — Safety Check,2026-03-25,2026-04-09,1.71,0,"Geared,Gen2",awarded,
+68,Elm Library — Tune-Up,2026-04-07,2026-04-15,1.0,0,"Compass,Gearless",awarded,
+69,Magnolia Medical — Safety Check,2026-04-09,2026-04-20,1.14,0,Compass,awarded,
+70,Pine Medical — Tune-Up,2026-04-10,2026-05-21,4.29,0,Machine Replacement,awarded,
+71,Hickory Office — Tune-Up,2026-04-10,2026-04-29,2.0,0,"Machine Replacement,Compass",awarded,
+72,Magnolia Apartments — Service Call,2026-04-07,2026-04-22,1.71,0,Gearless,awarded,
+73,Redwood Station — Repair,2026-04-09,2026-04-28,2.0,0,Machine Replacement,awarded,
+74,Dogwood Mall — Tune-Up,2026-04-03,2026-04-13,1.0,0,Compass,awarded,
+75,Cherry Medical — Modernization,2026-04-09,2026-05-06,2.86,0,"Machine Replacement,Gearless",awarded,
+76,Birch Apartments — Modernization,2026-03-31,2026-04-09,1.14,0,Gen2,awarded,
+77,Cherry Residences — PM Visit,2026-04-02,2026-05-13,4.29,0,"Machine Replacement,Gearless",prospect,
+78,Sycamore Hotel — Inspection,2026-04-03,2026-04-16,1.43,0,Machine Replacement,awarded,2026-04-02
+79,Hickory Office — Repair,2026-03-26,2026-05-06,4.29,0,Machine Replacement,awarded,
+80,Maple Complex — Safety Check,2026-04-13,2026-04-30,2.0,0,Gen2,awarded,2026-04-10
+81,Hawthorn Warehouse — Modernization,2026-03-25,2026-04-14,2.14,0,Gen2,awarded,
+82,Cherry Garage — Safety Check,2026-04-10,2026-05-10,3.0,0,Gearless,awarded,
+83,Birch Residences — Inspection,2026-04-17,2026-04-27,1.0,0,"Gen2,Geared",awarded,2026-04-16
+84,Cherry Plaza — Modernization,2026-03-30,2026-04-07,1.0,0,Compass,awarded,
+85,Dogwood Apartments — Emergency Fix,2026-04-03,2026-04-23,2.14,0,"Compass,Gen2",awarded,
+86,Pine Plaza — Inspection,2026-04-15,2026-04-26,1.14,0,Geared,prospect,
+87,Cherry Courthouse — Callback,2026-04-17,2026-05-07,2.14,0,"Machine Replacement,Gearless",awarded,
+88,Hickory Warehouse — Callback,2026-04-10,2026-05-21,4.29,0,Machine Replacement,awarded,
+89,Dogwood Plaza — Inspection,2026-03-25,2026-04-01,0.86,0,Machine Replacement,awarded,2026-03-20
+90,Redwood Center — Tune-Up,2026-04-14,2026-05-25,4.29,0,"Compass,Gearless",awarded,
+91,Hickory Library — Tune-Up,2026-04-09,2026-05-06,2.86,0,Gearless,awarded,
+92,Hickory Building — Emergency Fix,2026-04-21,2026-05-11,2.14,0,Machine Replacement,awarded,2026-04-17
+93,Hawthorn Clinic — Tune-Up,2026-04-21,2026-04-28,0.86,0,"Compass,Machine Replacement",awarded,
+94,Cedar Tower — Safety Check,2026-03-31,2026-04-08,1.0,0,Machine Replacement,awarded,2026-03-27
+95,Ash Building — Tune-Up,2026-03-30,2026-04-16,2.0,0,Machine Replacement,awarded,
+96,Beech Clinic — Tune-Up,2026-04-20,2026-04-29,1.14,0,Compass,prospect,2026-04-17
+97,Maple Center — Callback,2026-04-10,2026-04-29,2.0,0,"Geared,Compass",awarded,
+98,Dogwood Clinic — Inspection,2026-04-06,2026-05-10,3.57,0,"Gearless,Gen2",awarded,2026-04-01
+99,Poplar Station — PM Visit,2026-04-15,2026-05-24,4.0,0,Gearless,awarded,
+100,Hickory Clinic — Emergency Fix,2026-04-01,2026-04-16,1.71,0,"Compass,Geared",awarded,
+101,Elm Street Tower,2026-03-22,2026-03-22,0.14,0,Gen2,awarded,
+102,Harbor View Condos,2026-03-22,2026-03-23,0.29,0,Geared,awarded,
+103,Oakwood Plaza,2026-03-22,2026-03-22,0.14,0,Compass,awarded,
+104,Riverside Lofts,2026-03-22,2026-03-22,0.14,0,Gen2,awarded,
+105,Summit Apartments,2026-03-22,2026-03-23,0.29,0,Geared,awarded,
+106,Beacon Hill Office,2026-03-22,2026-03-22,0.14,0,Compass,awarded,
+107,Parkside Residences,2026-03-22,2026-03-23,0.29,0,Gen2,awarded,

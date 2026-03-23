@@ -322,6 +322,13 @@ Chronological record of major technical decisions and what shipped in each PR.
 - Procurement date tracking per project
 - Dual mechanic assignments within a single day
 
+### Phase 1.5: Configurable Risk Badges & Settings Tab
+- Add a Settings tab for user-configurable risk thresholds
+- **Mobilization Risk**: user defines a threshold (e.g., 5 days) — projects without materials or assignments within that window of their committed start date are flagged
+- **Delay Risk**: user defines criteria for flagging projects at risk of schedule delay
+- Risk badges displayed on schedule project cards based on these definitions
+- Thresholds persisted per user/scenario
+
 ### Phase 2: Authentication & User Accounts
 - User sign-in (OAuth or email/password)
 - Role-based access control (admin, scheduler, viewer)

@@ -5,14 +5,18 @@ Useful for testing AI scheduling suggestions from scratch.
 Run from repo root:
     python data/clear_assignments.py
 """
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 from supabase import create_client, Client
 
-SUPABASE_URL = os.environ.get("SUPABASE_RELAI_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_RELAI_SECRET_KEY")
+_env = os.environ.get("ENV", "dev").upper()
+SUPABASE_URL = os.environ.get(f"{_env}_SUPABASE_URL")
+SUPABASE_KEY = os.environ.get(f"{_env}_SUPABASE_SECRET_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError("Missing SUPABASE_RELAI_URL or SUPABASE_RELAI_SECRET_KEY")
+    raise RuntimeError(f"Missing {_env}_SUPABASE_URL or {_env}_SUPABASE_SECRET_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
