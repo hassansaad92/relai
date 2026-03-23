@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from api import router
@@ -61,6 +62,17 @@ async def skills_page():
 @app.get("/history")
 async def history_page():
     return FileResponse(FRONTEND_INDEX)
+
+
+@app.get("/settings")
+async def settings_page():
+    return FileResponse(FRONTEND_INDEX)
+
+
+@app.get("/api/license")
+async def get_license():
+    license_path = Path(__file__).parent / "LICENSE"
+    return PlainTextResponse(license_path.read_text())
 
 
 if __name__ == "__main__":

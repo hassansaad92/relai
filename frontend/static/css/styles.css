@@ -1829,3 +1829,30 @@ body.chat-collapsed .chat-reopen-btn {
         grid-template-columns: 1fr;
     }
 }
+
+.license-text {
+    background: #fff;
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    font-family: inherit;
+    color: #333;
+}
+
+.eval-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff3cd;
+    color: #664d03;
+    text-align: center;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 9999;
+    border-top: 1px solid #e0c56a;
+}

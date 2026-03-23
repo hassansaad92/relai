@@ -36,7 +36,7 @@
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span class="nav-label">History</span>
         </div>
-        <div class="nav-item sidebar-settings">
+        <div class="nav-item sidebar-settings" data-view="settings">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             <span class="nav-label">Settings</span>
         </div>
@@ -169,6 +169,13 @@
             </div>
         </div>
 
+        <div id="settings" class="view">
+            <div class="section">
+                <h2>License</h2>
+                <pre class="license-text" id="licenseText">Loading...</pre>
+            </div>
+        </div>
+
     </div>
 
     <!-- RelAI Assistant Panel (right side, default open) -->
@@ -280,6 +287,8 @@
         </div>
     </div>
 
+    <div class="eval-banner">For evaluation and testing only — not for production use. No warranty provided.</div>
+
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="/static/js/state.js"></script>
@@ -290,6 +299,7 @@
     <script src="/static/js/resources.js"></script>
     <script src="/static/js/chat.js"></script>
     <script src="/static/js/history.js"></script>
+    <script src="/static/js/settings.js"></script>
     <script src="/static/js/home.js"></script>
     <script src="/static/js/app.js"></script>
 </body>

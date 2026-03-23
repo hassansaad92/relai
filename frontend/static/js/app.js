@@ -23,6 +23,7 @@ function showView(viewName, updateHistory = true) {
         'resources': 'Resources',
         'projects': 'Projects',
         'history': 'History',
+        'settings': 'Settings',
     };
     document.getElementById('pageTitle').textContent = titles[viewName];
 
@@ -59,6 +60,7 @@ function getViewFromURL() {
     if (path === '/resources' || path === '/personnel' || path === '/skills') return 'resources';
     if (path === '/projects') return 'projects';
     if (path === '/history') return 'history';
+    if (path === '/settings') return 'settings';
     return 'home'; // default
 }
 
