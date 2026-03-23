@@ -75,6 +75,7 @@ function openProjectModal() {
 function closeProjectModal() {
     document.getElementById('projectModal').classList.remove('active');
     document.getElementById('projectForm').reset();
+    document.getElementById('projectAllowOvertime').checked = false;
     editingProjectId = null;
     lastEndDateSource = null;
     document.querySelector('#projectModal .modal-header h3').textContent = 'Add Project';
@@ -93,6 +94,7 @@ function editProject(id) {
     form.querySelector('[name="committed_end_date"]').value = project.committed_end_date || '';
     form.querySelector('[name="procurement_date"]').value = project.procurement_date || '';
     form.querySelector('[name="award_status"]').value = project.award_status;
+    document.getElementById('projectAllowOvertime').checked = !!project.allow_overtime;
     lastEndDateSource = null;
     // Select matching skills in dropdown
     const skills = project.required_skills.split(',').map(s => s.trim());
@@ -125,24 +127,55 @@ document.getElementById('projectModal').addEventListener('click', function(e) {
     if (e.target === this) closeProjectModal();
 });
 
+function addBusinessDaysJS(startDate, days) {
+    const d = new Date(startDate);
+    let remaining = days;
+    while (remaining > 0) {
+        d.setDate(d.getDate() + 1);
+        if (d.getDay() !== 0 && d.getDay() !== 6) remaining--;
+    }
+    return d;
+}
+
+function countBusinessDaysJS(start, end) {
+    let count = 0;
+    const d = new Date(start);
+    while (d <= end) {
+        if (d.getDay() !== 0 && d.getDay() !== 6) count++;
+        d.setDate(d.getDate() + 1);
+    }
+    return count;
+}
+
 function updateCommittedEndPreview(source) {
     lastEndDateSource = source;
     const form = document.getElementById('projectForm');
     const startStr = form.querySelector('[name="committed_start_date"]').value;
     if (!startStr) return;
     const start = new Date(startStr + 'T00:00:00');
+    const allowOT = document.getElementById('projectAllowOvertime').checked;
 
     if (source === 'duration') {
         const days = parseFloat(form.querySelector('[name="duration_days"]').value);
         if (!days || days < 0.5) return;
-        const end = new Date(start);
-        end.setDate(end.getDate() + Math.ceil(days));
+        let end;
+        if (allowOT) {
+            end = new Date(start);
+            end.setDate(end.getDate() + Math.ceil(days) - 1);
+        } else {
+            end = addBusinessDaysJS(start, Math.ceil(days) - 1);
+        }
         form.querySelector('[name="committed_end_date"]').value = end.toISOString().split('T')[0];
     } else if (source === 'end_date') {
         const endStr = form.querySelector('[name="committed_end_date"]').value;
         if (!endStr) return;
         const end = new Date(endStr + 'T00:00:00');
-        const days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+        let days;
+        if (allowOT) {
+            days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+        } else {
+            days = Math.max(1, countBusinessDaysJS(start, end));
+        }
         form.querySelector('[name="duration_days"]').value = days;
     }
 }
@@ -157,6 +190,7 @@ async function submitProject(event) {
         required_skills: Array.from(select.selectedOptions).map(o => o.value).join(','),
         duration_days: parseFloat(formData.get('duration_days')),
         award_status: formData.get('award_status'),
+        allow_overtime: document.getElementById('projectAllowOvertime').checked,
     };
     // Include committed dates if set
     const startDate = formData.get('committed_start_date');

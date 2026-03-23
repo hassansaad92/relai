@@ -264,6 +264,11 @@
                     </select>
                 </div>
 
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" name="allow_overtime" id="projectAllowOvertime" style="width:auto;margin:0;" onchange="updateCommittedEndPreview('duration')">
+                    <label for="projectAllowOvertime" style="margin:0;font-weight:500;">Allow Overtime (Weekends)</label>
+                </div>
+
                 <button type="submit" class="submit-button">Add Project</button>
                 <button type="button" class="modal-delete-btn" id="projectDeleteBtn" style="display:none;" onclick="deleteProjectFromModal()">Delete Project</button>
             </form>

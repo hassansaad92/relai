@@ -11,7 +11,8 @@ SELECT
     a.end_date,
     a.sequence,
     a.allocated_days,
-    a.assignment_type
+    a.assignment_type,
+    pr.allow_overtime
 FROM personnel p
 LEFT JOIN assignments a
     ON a.personnel_id = p.id

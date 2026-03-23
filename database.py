@@ -148,8 +148,8 @@ def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO projects (name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status)
-            VALUES (%(name)s, %(committed_start_date)s, %(committed_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s)
+            INSERT INTO projects (name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime)
+            VALUES (%(name)s, %(committed_start_date)s, %(committed_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s, %(allow_overtime)s)
             RETURNING *
             """,
             data,
@@ -250,6 +250,43 @@ def update_assignment(assignment_id: str, data: dict):
         return dict(row) if row else None
 
 
+def _next_business_day(d):
+    """Return the next business day after d (skip weekends)."""
+    from datetime import timedelta
+    nxt = d + timedelta(days=1)
+    while nxt.weekday() >= 5:
+        nxt += timedelta(days=1)
+    return nxt
+
+
+def _add_business_days_db(start, days):
+    """Add N business days from start (for database layer)."""
+    from datetime import timedelta
+    if days <= 0:
+        return start
+    current = start
+    remaining = days
+    while remaining > 0:
+        current += timedelta(days=1)
+        if current.weekday() < 5:
+            remaining -= 1
+    return current
+
+
+def _count_business_days_db(start, end):
+    """Count business days between start and end (inclusive)."""
+    from datetime import timedelta
+    if end < start:
+        return 0
+    count = 0
+    current = start
+    while current <= end:
+        if current.weekday() < 5:
+            count += 1
+        current += timedelta(days=1)
+    return count
+
+
 def cascade_assignment_end_date(scenario_id: str, assignment_id: str, new_end_date: str):
     from datetime import date, timedelta
     new_end = date.fromisoformat(new_end_date)
@@ -260,6 +297,11 @@ def cascade_assignment_end_date(scenario_id: str, assignment_id: str, new_end_da
         target = cur.fetchone()
         if not target:
             return {"updated": None, "shifted": []}
+
+        # Check if the project allows overtime (calendar days)
+        cur.execute("SELECT allow_overtime FROM projects WHERE id = %s", (target["project_id"],))
+        proj_row = cur.fetchone()
+        use_calendar = proj_row["allow_overtime"] if proj_row else False
 
         personnel_id = target["personnel_id"]
         old_end = target["end_date"]
@@ -289,12 +331,19 @@ def cascade_assignment_end_date(scenario_id: str, assignment_id: str, new_end_da
         prev_end = new_end
         for assign in subsequent:
             assign_start = assign["start_date"]
-            assign_duration = (assign["end_date"] - assign_start).days
+            if use_calendar:
+                assign_duration = (assign["end_date"] - assign_start).days
+            else:
+                assign_duration = _count_business_days_db(assign_start, assign["end_date"])
 
             if delta_days > 0 and prev_end >= assign_start:
                 # Push forward: overlap exists, start day after prev_end
-                new_start = prev_end + timedelta(days=1)
-                new_a_end = new_start + timedelta(days=assign_duration)
+                if use_calendar:
+                    new_start = prev_end + timedelta(days=1)
+                    new_a_end = new_start + timedelta(days=(assign["end_date"] - assign_start).days)
+                else:
+                    new_start = _next_business_day(prev_end)
+                    new_a_end = _add_business_days_db(new_start, assign_duration - 1)
                 cur.execute(
                     "UPDATE assignments SET start_date = %s, end_date = %s WHERE id = %s RETURNING *",
                     (new_start.isoformat(), new_a_end.isoformat(), assign["id"]),
@@ -303,10 +352,19 @@ def cascade_assignment_end_date(scenario_id: str, assignment_id: str, new_end_da
                 prev_end = new_a_end
             elif delta_days < 0:
                 # Pull back: shift by the same delta, but don't start before day after prev_end
-                new_start = assign_start + timedelta(days=delta_days)
-                if new_start <= prev_end:
-                    new_start = prev_end + timedelta(days=1)
-                new_a_end = new_start + timedelta(days=assign_duration)
+                if use_calendar:
+                    new_start = assign_start + timedelta(days=delta_days)
+                    if new_start <= prev_end:
+                        new_start = prev_end + timedelta(days=1)
+                    new_a_end = new_start + timedelta(days=(assign["end_date"] - assign_start).days)
+                else:
+                    new_start = assign_start + timedelta(days=delta_days)
+                    # Skip to a weekday
+                    while new_start.weekday() >= 5:
+                        new_start += timedelta(days=1)
+                    if new_start <= prev_end:
+                        new_start = _next_business_day(prev_end)
+                    new_a_end = _add_business_days_db(new_start, assign_duration - 1)
                 if new_start != assign_start:
                     cur.execute(
                         "UPDATE assignments SET start_date = %s, end_date = %s WHERE id = %s RETURNING *",
@@ -324,6 +382,11 @@ def shift_project_assignments(scenario_id: str, project_id: str, new_start_date:
     from datetime import date, timedelta
     new_start = date.fromisoformat(new_start_date)
     with _cursor() as (_, cur):
+        # Check if project allows overtime
+        cur.execute("SELECT allow_overtime FROM projects WHERE id = %s", (project_id,))
+        proj_row = cur.fetchone()
+        use_calendar = proj_row["allow_overtime"] if proj_row else False
+
         cur.execute(
             "SELECT MIN(start_date) AS min_start FROM assignments WHERE scenario_id = %s AND project_id = %s",
             (scenario_id, project_id),
@@ -335,16 +398,45 @@ def shift_project_assignments(scenario_id: str, project_id: str, new_start_date:
         delta = (new_start - min_start).days
         if delta == 0:
             return {"shifted": 0, "delta_days": 0}
-        cur.execute(
-            """
-            UPDATE assignments
-            SET start_date = start_date + %s * INTERVAL '1 day',
-                end_date = end_date + %s * INTERVAL '1 day'
-            WHERE scenario_id = %s AND project_id = %s
-            """,
-            (delta, delta, scenario_id, project_id),
-        )
-        return {"shifted": cur.rowcount, "delta_days": delta}
+
+        if use_calendar:
+            # Calendar-day shift: simple offset
+            cur.execute(
+                """
+                UPDATE assignments
+                SET start_date = start_date + %s * INTERVAL '1 day',
+                    end_date = end_date + %s * INTERVAL '1 day'
+                WHERE scenario_id = %s AND project_id = %s
+                """,
+                (delta, delta, scenario_id, project_id),
+            )
+            return {"shifted": cur.rowcount, "delta_days": delta}
+        else:
+            # Business-day shift: recalculate each assignment individually
+            cur.execute(
+                """
+                SELECT * FROM assignments
+                WHERE scenario_id = %s AND project_id = %s
+                ORDER BY start_date
+                """,
+                (scenario_id, project_id),
+            )
+            assignments = [dict(r) for r in cur.fetchall()]
+            count = 0
+            for a in assignments:
+                biz_duration = _count_business_days_db(a["start_date"], a["end_date"])
+                offset_biz_days = _count_business_days_db(min_start, a["start_date"]) - 1
+                new_a_start = _add_business_days_db(new_start, offset_biz_days) if offset_biz_days > 0 else new_start
+                # Ensure start is a weekday
+                while new_a_start.weekday() >= 5:
+                    new_a_start += timedelta(days=1)
+                new_a_end = _add_business_days_db(new_a_start, biz_duration - 1)
+                cur.execute(
+                    "UPDATE assignments SET start_date = %s, end_date = %s WHERE id = %s",
+                    (new_a_start.isoformat(), new_a_end.isoformat(), a["id"]),
+                )
+                count += 1
+            return {"shifted": count, "delta_days": delta}
 
 
 def bulk_insert_assignments(scenario_id: str, assignments_list: list[dict]):
