@@ -314,6 +314,15 @@ Chronological record of major technical decisions and what shipped in each PR.
 
 ---
 
+### PR #34 — Fix project name lookup bug, add prompt logging, enable RLS
+**Branch:** `feature/project-lookup-fix-prompt-logging`
+
+- **Project name lookup fix**: After the AI creates a schedule, it could no longer reference projects by name because scheduled projects disappeared from the UNSCHEDULED list and were only buried inside personnel assignment details. Added an "ALL PROJECTS (reference)" section to the AI context that lists every awarded project with its ID and name, giving the AI a reliable lookup table regardless of scheduling status
+- **Prompt logging**: Added a `chat_logs` table to capture every user prompt sent to the AI chatbot, along with the active scenario ID and whether the user was in tweak mode. Logged fire-and-forget so failures never break chat. Purpose: understand how users interact with the AI for future improvements
+- **Enabled Row Level Security (RLS) on all tables**: Supabase warns when RLS is disabled because its REST API (`postgrest`) is publicly accessible — anyone with the project URL and `anon` key can query tables directly, bypassing the backend. Enabling RLS closes this vector. We added permissive allow-all policies (`USING (true) WITH CHECK (true)`) because our app doesn't use the Supabase client SDK — it connects via `psycopg2` using the `postgres` role, which **bypasses RLS entirely** (RLS only applies to non-superuser roles like `anon` and `authenticated`). So our backend access is unaffected, but unauthenticated REST API access is now blocked by default
+
+---
+
 ## Roadmap
 
 ### Phase 1: Service Work Pivot (Current)

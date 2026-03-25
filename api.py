@@ -29,6 +29,8 @@ from database import (
     fetch_active_drafts,
     fetch_ai_scheduling_context,
     fetch_ai_unscheduled_projects,
+    fetch_all_awarded_projects,
+    insert_chat_log,
     fetch_home_upcoming,
     fetch_home_project_stats,
     fetch_home_personnel_stats,
@@ -274,6 +276,15 @@ def _build_ai_context(scenario_id: str) -> str:
             lines.extend(windows)
         else:
             lines.append("  No current assignments — fully available")
+
+    # Build all-projects reference for name→ID lookup
+    all_projects = fetch_all_awarded_projects()
+    lines.append("\n\nALL PROJECTS (reference):")
+    if all_projects:
+        for p in all_projects:
+            lines.append(f"- {p['name']} (id:{p['id']})")
+    else:
+        lines.append("(none)")
 
     # Build unscheduled projects text
     lines.append("\n\nUNSCHEDULED PROJECTS:")
@@ -709,6 +720,19 @@ async def chat(request: ChatRequest):
         sid = master["id"]
     else:
         sid = None
+
+    # Log user prompt (fire-and-forget)
+    try:
+        user_messages = [m for m in request.messages if m.get("role") == "user"]
+        if user_messages:
+            last_user_msg = user_messages[-1].get("content", "")
+            insert_chat_log({
+                "user_prompt": last_user_msg,
+                "scenario_id": sid,
+                "is_tweaking": is_tweaking,
+            })
+    except Exception:
+        logger.debug("Failed to log chat prompt", exc_info=True)
 
     # Build pre-computed context string
     ai_context = _build_ai_context(sid) if sid else "No scenario data available."
