@@ -28,6 +28,7 @@ NULL_UUID = "00000000-0000-0000-0000-000000000000"
 
 # Order matters: delete child rows before parent rows (FK constraints).
 TABLES = [
+    "chat_logs",
     "assignments_archive",
     "assignments",
     "scenarios",

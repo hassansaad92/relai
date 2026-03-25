@@ -14,7 +14,8 @@ CREATE TABLE personnel (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE personnel DISABLE ROW LEVEL SECURITY;
+ALTER TABLE personnel ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON personnel FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE personnel_history (
     hid BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -26,7 +27,8 @@ CREATE TABLE personnel_history (
     is_current BOOLEAN DEFAULT TRUE
 );
 
-ALTER TABLE personnel_history DISABLE ROW LEVEL SECURITY;
+ALTER TABLE personnel_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON personnel_history FOR ALL USING (true) WITH CHECK (true);
 
 CREATE OR REPLACE FUNCTION update_personnel_modtime()
 RETURNS TRIGGER AS $$
@@ -79,7 +81,8 @@ CREATE TABLE projects (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE projects DISABLE ROW LEVEL SECURITY;
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON projects FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE projects_history (
     hid BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -99,7 +102,8 @@ CREATE TABLE projects_history (
     is_current BOOLEAN DEFAULT TRUE
 );
 
-ALTER TABLE projects_history DISABLE ROW LEVEL SECURITY;
+ALTER TABLE projects_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON projects_history FOR ALL USING (true) WITH CHECK (true);
 
 CREATE OR REPLACE FUNCTION update_projects_modtime()
 RETURNS TRIGGER AS $$
@@ -143,7 +147,8 @@ CREATE TABLE skills (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE skills DISABLE ROW LEVEL SECURITY;
+ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON skills FOR ALL USING (true) WITH CHECK (true);
 
 CREATE TABLE skills_history (
     hid BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -154,7 +159,8 @@ CREATE TABLE skills_history (
     is_current BOOLEAN DEFAULT TRUE
 );
 
-ALTER TABLE skills_history DISABLE ROW LEVEL SECURITY;
+ALTER TABLE skills_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON skills_history FOR ALL USING (true) WITH CHECK (true);
 
 CREATE OR REPLACE FUNCTION update_skills_modtime()
 RETURNS TRIGGER AS $$
@@ -204,7 +210,8 @@ CREATE TABLE scenarios (
     demoted_from_master_at TIMESTAMPTZ             -- null if still master or never promoted
 );
 
-ALTER TABLE scenarios DISABLE ROW LEVEL SECURITY;
+ALTER TABLE scenarios ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON scenarios FOR ALL USING (true) WITH CHECK (true);
 
 
 -- ── 5. Assignments ────────────────────────────────────────────────────────────
@@ -223,7 +230,8 @@ CREATE TABLE assignments (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE assignments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON assignments FOR ALL USING (true) WITH CHECK (true);
 
 
 -- ── 6. Assignments Archive ───────────────────────────────────────────────────
@@ -245,4 +253,19 @@ CREATE TABLE assignments_archive (
     archived_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE assignments_archive DISABLE ROW LEVEL SECURITY;
+ALTER TABLE assignments_archive ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON assignments_archive FOR ALL USING (true) WITH CHECK (true);
+
+
+-- ── 7. Chat Logs ────────────────────────────────────────────────────────────
+
+CREATE TABLE chat_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_prompt TEXT NOT NULL,
+    scenario_id UUID,
+    is_tweaking BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE chat_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all access" ON chat_logs FOR ALL USING (true) WITH CHECK (true);

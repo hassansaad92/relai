@@ -605,6 +605,25 @@ def fetch_ai_unscheduled_projects(scenario_id: str):
         return [dict(r) for r in cur.fetchall()]
 
 
+def fetch_all_awarded_projects():
+    with _cursor() as (_, cur):
+        cur.execute("SELECT id, name FROM projects WHERE award_status = 'awarded' ORDER BY name")
+        return [dict(r) for r in cur.fetchall()]
+
+
+def insert_chat_log(data: dict):
+    with _cursor() as (_, cur):
+        cur.execute(
+            """
+            INSERT INTO chat_logs (user_prompt, scenario_id, is_tweaking)
+            VALUES (%(user_prompt)s, %(scenario_id)s, %(is_tweaking)s)
+            RETURNING *
+            """,
+            data,
+        )
+        return dict(cur.fetchone())
+
+
 def update_scenario(scenario_id: str, data: dict):
     with _cursor() as (_, cur):
         set_clause = ", ".join(f"{k} = %({k})s" for k in data.keys())

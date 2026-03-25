@@ -9,6 +9,7 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Drop tables (CASCADE removes triggers and FK constraints)
+DROP TABLE IF EXISTS chat_logs             CASCADE;
 DROP TABLE IF EXISTS assignments_archive CASCADE;
 DROP TABLE IF EXISTS assignments        CASCADE;
 DROP TABLE IF EXISTS scenarios          CASCADE;
