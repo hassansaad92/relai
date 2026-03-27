@@ -97,6 +97,27 @@ def add_business_days(start: date, days: int) -> date:
     return current
 
 
+def _derive_material_fields(data: dict) -> None:
+    """Auto-set material_arrived and procurement_date from material_status.
+
+    - "Material Available" → material_arrived=True, procurement_date=today
+    - Everything else (Required, On Order, NULL) → material_arrived=False,
+      procurement_date=work_order_date+30 days
+    """
+    status = (data.get("material_status") or "").strip().lower()
+    if status == "material available":
+        data["material_arrived"] = True
+        data["procurement_date"] = date.today().isoformat()
+    else:
+        data["material_arrived"] = False
+        if data.get("work_order_date"):
+            try:
+                wo_date = date.fromisoformat(str(data["work_order_date"]).strip())
+                data["procurement_date"] = (wo_date + timedelta(days=30)).isoformat()
+            except (ValueError, TypeError):
+                pass
+
+
 def count_business_days(start: date, end: date) -> int:
     """Count business days between start and end (inclusive of both)."""
     if end < start:
@@ -566,6 +587,7 @@ async def create_project(project: ProjectCreate):
                   "material_arrived", "division", "sales_rep", "description", "man_hours", "crew_hours", "total_amount"):
         if not data.get(field):
             data[field] = None
+    _derive_material_fields(data)
     return insert_project(data)
 
 
@@ -622,6 +644,13 @@ async def patch_project(project_id: str, data: ProjectUpdate):
                 updates["committed_end_date"] = (start_dt + timedelta(days=math.ceil(days) - 1)).isoformat()
             else:
                 updates["committed_end_date"] = add_business_days(start_dt, math.ceil(days) - 1).isoformat()
+    # Re-derive material fields when material_status changes
+    if "material_status" in updates:
+        merged = {**current, **updates}
+        _derive_material_fields(merged)
+        updates["material_arrived"] = merged["material_arrived"]
+        if merged.get("procurement_date"):
+            updates["procurement_date"] = merged["procurement_date"]
     result = update_project(project_id, updates)
     if not result:
         raise HTTPException(404, "Project not found")
@@ -808,6 +837,7 @@ async def bulk_import_projects(data: BulkProjectImportRequest):
             if proc_str:
                 project_data["procurement_date"] = str(proc_str).strip()
 
+            _derive_material_fields(project_data)
             insert_project(project_data)
             imported += 1
         except Exception as e:

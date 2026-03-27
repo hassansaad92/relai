@@ -53,7 +53,7 @@ function renderProjectsList(projects) {
         const schedStatus = project.schedule_status || 'not_scheduled';
         const committedDates = project.committed_start_date
             ? `${fmtDate(project.committed_start_date)} – ${fmtDate(project.committed_end_date)}`
-            : 'Not set';
+            : '--';
         const actualDates = project.actual_start_date
             ? `${fmtDate(project.actual_start_date)} – ${fmtDate(project.actual_end_date)}`
             : '--';
@@ -78,7 +78,11 @@ function renderProjectsList(projects) {
                 </div>
             </div>
             ${project.description ? `<div class="card-description">${project.description}</div>` : ''}
-            <div class="card-detail"><strong>Committed:</strong> <span class="editable-date" onclick="editProject('${project.id}')">${committedDates}</span> · <strong>Scheduled:</strong> ${actualDates}${project.procurement_date ? ` · <strong>Material Procurement:</strong> ${fmtDate(project.procurement_date)}` : ''}</div>
+            <div class="card-detail"><strong>Committed:</strong> ${project.committed_start_date ? `<span class="editable-date" onclick="editProject('${project.id}')">${committedDates}</span>` : committedDates} · <strong>Scheduled:</strong> ${actualDates}${project.material_arrived === true
+                ? ' · <span style="color:#16a34a;font-weight:600;">&#10003; Material Available</span>'
+                : project.material_arrived === false
+                    ? ` · <span style="color:#d97706;font-weight:600;">&#9679; ${project.material_status || 'Material Required'}</span>${project.procurement_date ? ` <span style="color:#6b7280;font-size:0.85em;">(ETA ${fmtDate(project.procurement_date)})</span>` : ''}`
+                    : (project.procurement_date ? ` · <strong>Material Procurement:</strong> ${fmtDate(project.procurement_date)}` : '')}</div>
             <button class="card-edit-btn" onclick="editProject('${project.id}')" title="Edit">✎</button>
         </div>`;
     }).join('');

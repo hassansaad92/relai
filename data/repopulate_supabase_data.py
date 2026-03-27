@@ -153,6 +153,21 @@ for row in projects_csv:
         "crew_hours": crew_hours_val,
         "total_amount": float(row["total_amount"]) if row.get("total_amount") else None,
     }
+    # Derive material_arrived and procurement_date from material_status
+    mat_status = (payload.get("material_status") or "").strip().lower()
+    if mat_status == "material available":
+        payload["material_arrived"] = True
+        from datetime import date as _date
+        payload["procurement_date"] = _date.today().isoformat()
+    else:
+        payload["material_arrived"] = False
+        if payload.get("work_order_date"):
+            from datetime import date, timedelta
+            try:
+                wo_dt = date.fromisoformat(str(payload["work_order_date"]).strip())
+                payload["procurement_date"] = (wo_dt + timedelta(days=30)).isoformat()
+            except (ValueError, TypeError):
+                pass
     response = supabase.table("projects").insert(payload).execute()
     if not response.data:
         print(f"  ERROR inserting project: {row['name']}")
