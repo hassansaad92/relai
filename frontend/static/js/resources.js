@@ -35,6 +35,7 @@ function renderPersonnelList(personnel) {
             <div class="card-header">
                 <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
                     <div class="card-title">${displayName}</div>
+                    <span class="work-mode-badge ${person.work_mode === 'individual' ? 'individual' : ''}">${person.work_mode || 'crew'}</span>
                     ${person.skills.split(',').map(skill =>
                         `<span class="skills-tag-light">${skill.trim()}</span>`
                     ).join('')}
@@ -102,6 +103,7 @@ function openPersonnelModal() {
 function closePersonnelModal() {
     document.getElementById('personnelModal').classList.remove('active');
     document.getElementById('personnelForm').reset();
+    document.getElementById('personnelWorkMode').value = 'crew';
     editingPersonnelId = null;
     document.querySelector('#personnelModal .modal-header h3').textContent = 'Add Personnel';
     document.querySelector('#personnelForm .submit-button').textContent = 'Add Personnel';
@@ -119,6 +121,7 @@ function editPersonnel(id) {
     form.querySelectorAll('[name="skills"]').forEach(cb => {
         cb.checked = skills.includes(cb.value);
     });
+    document.getElementById('personnelWorkMode').value = person.work_mode || 'crew';
     document.querySelector('#personnelModal .modal-header h3').textContent = 'Edit Personnel';
     document.querySelector('#personnelForm .submit-button').textContent = 'Save Changes';
     document.getElementById('personnelDeleteBtn').style.display = 'block';
@@ -152,6 +155,7 @@ async function submitPersonnel(event) {
     const personnel = {
         name: formData.get('name'),
         skills: formData.getAll('skills').join(','),
+        work_mode: formData.get('work_mode') || 'crew',
     };
 
     try {

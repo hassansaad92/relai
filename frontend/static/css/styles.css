@@ -378,6 +378,14 @@ body.chat-collapsed .main-content {
     align-items: center;
 }
 
+.card-description {
+    font-size: 13px;
+    color: #555;
+    font-weight: 400;
+    margin: 2px 0 4px 0;
+    line-height: 1.4;
+}
+
 .card-detail {
     margin: 4px 0;
     font-size: 13px;
@@ -1903,4 +1911,248 @@ body.chat-collapsed .chat-reopen-btn {
     z-index: 9999;
     border-top: 1px solid #e0c56a;
     height: 32px;
+}
+
+/* ── Upload Projects Modal ─────────────────────────────────────────────────── */
+
+.upload-btn {
+    background: #041e42;
+    margin-left: 4px;
+}
+
+.upload-btn:hover {
+    background: #0a3060;
+}
+
+.upload-modal-card {
+    max-width: 750px;
+}
+
+.upload-step-desc {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 16px;
+}
+
+.upload-dropzone {
+    border: 2px dashed var(--surface-border);
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.dragover {
+    border-color: var(--accent);
+    background: var(--accent-hover-light);
+}
+
+.upload-dropzone p {
+    margin: 8px 0 0;
+    font-size: 15px;
+    color: #555;
+    font-weight: 500;
+}
+
+.upload-dropzone .upload-dropzone-sub {
+    font-size: 13px;
+    color: #aaa;
+    font-weight: 400;
+}
+
+.upload-mapping-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.upload-mapping-table th {
+    text-align: left;
+    padding: 8px 10px;
+    color: #999;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--surface-border);
+}
+
+.upload-mapping-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #ECEDF0;
+}
+
+.mapping-col-name {
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.mapping-sample {
+    color: #888;
+    font-size: 12px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mapping-hours-note {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.mapping-select {
+    padding: 6px 10px;
+    border: 1px solid var(--surface-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'Montserrat', sans-serif;
+    background: #fff;
+    cursor: pointer;
+    width: 100%;
+}
+
+.mapping-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.upload-preview-wrapper {
+    max-height: 350px;
+    overflow: auto;
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.upload-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.upload-preview-table th {
+    text-align: left;
+    padding: 8px 10px;
+    color: #999;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--surface-border);
+    background: #f8f9fb;
+    position: sticky;
+    top: 0;
+}
+
+.upload-preview-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #ECEDF0;
+    color: #333;
+    white-space: nowrap;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upload-preview-table tr:hover td {
+    background: #f8f9fb;
+}
+
+.upload-errors {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #991b1b;
+    margin-bottom: 16px;
+}
+
+.upload-errors ul {
+    margin: 8px 0 0 16px;
+    padding: 0;
+}
+
+.upload-errors li {
+    margin-bottom: 4px;
+}
+
+.upload-step-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.upload-step-actions .submit-button {
+    width: auto;
+    margin-top: 0;
+    padding: 12px 28px;
+}
+
+/* ── Hours / Work Order Form Layout ──────────────────────────────────────── */
+
+.form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.form-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.computed-field {
+    background: #f0f1f3 !important;
+    color: #666 !important;
+    cursor: not-allowed;
+}
+
+.wo-details {
+    margin: 8px 0 12px 0;
+    border: 1px solid var(--surface-border);
+    border-radius: 6px;
+    padding: 0;
+}
+
+.wo-details summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #041e42;
+    user-select: none;
+}
+
+.wo-details[open] summary {
+    border-bottom: 1px solid var(--surface-border);
+    margin-bottom: 8px;
+}
+
+.wo-details > .form-row,
+.wo-details > .form-group {
+    padding: 0 14px;
+}
+
+.wo-details > .form-group:last-of-type {
+    padding-bottom: 12px;
+}
+
+.work-mode-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: #e8ecf1;
+    color: #041e42;
+}
+
+.work-mode-badge.individual {
+    background: #fff3cd;
+    color: #856404;
 }

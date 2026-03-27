@@ -5,6 +5,7 @@ SELECT
     p.id          AS personnel_id,
     p.name        AS personnel_name,
     p.skills,
+    p.work_mode,
     a.project_id,
     pr.name       AS project_name,
     a.start_date,

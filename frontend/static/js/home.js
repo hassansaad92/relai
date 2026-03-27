@@ -78,6 +78,9 @@ function renderHomeStatCards(projectStats, personnelStats) {
     const hasFuture = personnelStats?.has_future_assignment ?? 0;
     const resourcePct = totalRoster > 0 ? Math.round((hasFuture / totalRoster) * 100) : 0;
 
+    const materialPending = projectStats?.material_pending_count ?? 0;
+    const zeroHours = projectStats?.zero_hours_count ?? 0;
+
     container.innerHTML = `
         <div class="home-stat-card">
             <div class="home-stat-card-header">
@@ -97,6 +100,22 @@ function renderHomeStatCards(projectStats, personnelStats) {
             <div class="home-stat-card-label">${hasFuture} of ${totalRoster} have future work</div>
             <div class="home-stat-card-bar"><div class="home-stat-card-bar-fill resource" style="width:${resourcePct}%"></div></div>
         </div>
+        ${materialPending > 0 ? `<div class="home-stat-card">
+            <div class="home-stat-card-header">
+                <div class="home-stat-card-icon" style="background:rgba(230,126,34,0.12);color:#e67e22;">&#128230;</div>
+                <span class="home-stat-card-title">Material Pending</span>
+            </div>
+            <div class="home-stat-card-value">${materialPending}</div>
+            <div class="home-stat-card-label">projects awaiting material</div>
+        </div>` : ''}
+        ${zeroHours > 0 ? `<div class="home-stat-card">
+            <div class="home-stat-card-header">
+                <div class="home-stat-card-icon" style="background:rgba(231,76,60,0.12);color:#e74c3c;">&#9888;</div>
+                <span class="home-stat-card-title">Missing Hours</span>
+            </div>
+            <div class="home-stat-card-value">${zeroHours}</div>
+            <div class="home-stat-card-label">projects with zero hours</div>
+        </div>` : ''}
     `;
 }
 

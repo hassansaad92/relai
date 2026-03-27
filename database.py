@@ -82,8 +82,8 @@ def insert_personnel(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO personnel (name, skills)
-            VALUES (%(name)s, %(skills)s)
+            INSERT INTO personnel (name, skills, work_mode)
+            VALUES (%(name)s, %(skills)s, %(work_mode)s)
             RETURNING *
             """,
             data,
@@ -148,8 +148,8 @@ def insert_project(data: dict):
     with _cursor() as (_, cur):
         cur.execute(
             """
-            INSERT INTO projects (name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type)
-            VALUES (%(name)s, %(committed_start_date)s, %(committed_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s, %(allow_overtime)s, %(customer_id)s, %(account_type)s)
+            INSERT INTO projects (name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type, work_order_number, work_order_date, equipment, material_status, division, sales_rep, description, man_hours, crew_hours, total_amount)
+            VALUES (%(name)s, %(committed_start_date)s, %(committed_end_date)s, %(duration_days)s, %(procurement_date)s, %(required_skills)s, %(award_status)s, %(allow_overtime)s, %(customer_id)s, %(account_type)s, %(work_order_number)s, %(work_order_date)s, %(equipment)s, %(material_status)s, %(division)s, %(sales_rep)s, %(description)s, %(man_hours)s, %(crew_hours)s, %(total_amount)s)
             RETURNING *
             """,
             data,

@@ -293,7 +293,7 @@ function renderScheduleProjects() {
                     </div>
                 </div>
                 <div class="card-detail" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <span>${p.duration_days}d</span>
+                    <span>${(parseFloat(p.man_hours) || 0) + (parseFloat(p.crew_hours) || 0) > 0 ? ((parseFloat(p.man_hours) || 0) + (parseFloat(p.crew_hours) || 0)) + 'h' : p.duration_days + 'd'}</span>
                     <span style="color:#ccc;">|</span>
                     <span>${count} assigned</span>
                     ${skillTags}

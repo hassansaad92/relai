@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <!-- Sidebar -->
@@ -140,7 +141,7 @@
         <!-- Projects View -->
         <div id="projects" class="view">
             <div class="section">
-                <h2>All Projects <button class="header-add-button" onclick="openProjectModal()">+ Add Project</button></h2>
+                <h2>All Projects <button class="header-add-button" onclick="openProjectModal()">+ Add Project</button> <button class="header-add-button upload-btn" onclick="openUploadModal()">Upload Spreadsheet</button></h2>
                 <div id="projectsFilterBar" class="filter-bar">
                     <input type="text" class="filter-search" id="projectsSearch" placeholder="Search projects..." oninput="applyProjectFilters()">
                     <div class="filter-wrap">
@@ -215,6 +216,14 @@
                     <div class="skill-tiles"></div>
                 </div>
 
+                <div class="form-group">
+                    <label>Work Mode</label>
+                    <select name="work_mode" id="personnelWorkMode">
+                        <option value="crew">Crew</option>
+                        <option value="individual">Individual</option>
+                    </select>
+                </div>
+
                 <button type="submit" class="submit-button">Add Personnel</button>
                 <button type="button" class="modal-delete-btn" id="personnelDeleteBtn" style="display:none;" onclick="deletePersonnelFromModal()">Delete Personnel</button>
             </form>
@@ -241,9 +250,25 @@
                     <small style="color: #666; font-size: 12px;">Hold Ctrl/Cmd to select multiple skills</small>
                 </div>
 
-                <div class="form-group">
-                    <label>Duration (days) *</label>
-                    <input type="number" name="duration_days" min="0.5" step="0.5" required oninput="updateCommittedEndPreview('duration')">
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>Man Hours</label>
+                            <input type="number" name="man_hours" id="projectManHours" min="0" step="0.5" oninput="updateHoursComputed()">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>Crew Hours</label>
+                            <input type="number" name="crew_hours" id="projectCrewHours" min="0" step="0.5" oninput="updateHoursComputed()">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>Duration (days)</label>
+                            <input type="number" name="duration_days" id="projectDurationDays" min="0.5" step="0.5" class="computed-field" readonly>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -256,8 +281,73 @@
                     <input type="date" name="committed_end_date" oninput="updateCommittedEndPreview('end_date')">
                 </div>
 
-                <div class="form-group">
-                    <label>Material Procurement Date</label>
+                <details class="wo-details">
+                    <summary>Work Order Details</summary>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>WO #</label>
+                                <input type="text" name="work_order_number" id="projectWONumber" placeholder="e.g. WO-39911-F1F1">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>WO Date</label>
+                                <input type="date" name="work_order_date" id="projectWODate">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Equipment</label>
+                                <input type="text" name="equipment" id="projectEquipment" placeholder="e.g. 135429">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Material Status</label>
+                                <input type="text" name="material_status" id="projectMaterialStatus" placeholder="e.g. Material Required">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Division</label>
+                                <select name="division" id="projectDivision">
+                                    <option value="">-- Select --</option>
+                                    <option value="Repair">Repair</option>
+                                    <option value="Install">Install</option>
+                                    <option value="Modernization">Modernization</option>
+                                    <option value="Service">Service</option>
+                                    <option value="Construction">Construction</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Sales Rep</label>
+                                <input type="text" name="sales_rep" id="projectSalesRep">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" id="projectDescription" rows="2" style="resize:vertical;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Total Amount ($)</label>
+                        <input type="number" name="total_amount" id="projectTotalAmount" min="0" step="0.01">
+                    </div>
+                </details>
+
+                <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="projectMaterialArrived" style="width:auto;margin:0;" onchange="toggleProcurementDate()">
+                    <label for="projectMaterialArrived" style="margin:0;font-weight:500;">Material Arrived</label>
+                </div>
+                <div class="form-group" id="procurementDateGroup">
+                    <label>Expected Material Arrival Date</label>
                     <input type="date" name="procurement_date">
                 </div>
 
@@ -281,7 +371,7 @@
                 </div>
 
                 <div class="form-group" style="display:flex;align-items:center;gap:8px;">
-                    <input type="checkbox" name="allow_overtime" id="projectAllowOvertime" style="width:auto;margin:0;" onchange="updateCommittedEndPreview('duration')">
+                    <input type="checkbox" name="allow_overtime" id="projectAllowOvertime" style="width:auto;margin:0;" onchange="updateHoursComputed(); updateCommittedEndPreview('duration')">
                     <label for="projectAllowOvertime" style="margin:0;font-weight:500;">Allow Overtime (Weekends)</label>
                 </div>
 
@@ -305,6 +395,54 @@
                 </div>
                 <button type="submit" class="submit-button">Add Skill</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Upload Projects Modal -->
+    <div id="uploadProjectsModal" class="modal-overlay">
+        <div class="modal-card upload-modal-card">
+            <div class="modal-header">
+                <h3 id="uploadModalTitle">Upload Projects</h3>
+                <button class="close-button" onclick="closeUploadModal()">&times;</button>
+            </div>
+
+            <!-- Step 1: File Select -->
+            <div id="uploadStep1" class="upload-step">
+                <div class="upload-dropzone" id="uploadDropzone">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p>Drag & drop a CSV or Excel file here</p>
+                    <p class="upload-dropzone-sub">or click to browse</p>
+                    <input type="file" id="uploadFileInput" accept=".csv,.xlsx,.xls" style="display:none">
+                </div>
+            </div>
+
+            <!-- Step 2: Column Mapping -->
+            <div id="uploadStep2" class="upload-step" style="display:none">
+                <p class="upload-step-desc">Map your spreadsheet columns to project fields. AI has suggested mappings below.</p>
+                <div id="uploadMappingTable"></div>
+                <div class="upload-step-actions">
+                    <button class="submit-button" onclick="confirmMapping()">Preview Import</button>
+                    <button class="modal-delete-btn" style="display:inline-block;width:auto;margin-top:0;" onclick="resetUpload()">Back</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Preview -->
+            <div id="uploadStep3" class="upload-step" style="display:none">
+                <p class="upload-step-desc" id="uploadPreviewCount"></p>
+                <div class="upload-preview-wrapper">
+                    <table class="upload-preview-table" id="uploadPreviewTable"></table>
+                </div>
+                <div id="uploadErrors" style="display:none" class="upload-errors"></div>
+                <div class="upload-step-actions">
+                    <button class="submit-button" id="uploadImportBtn" onclick="bulkImportProjects()">Import Projects</button>
+                    <button class="modal-delete-btn" style="display:inline-block;width:auto;margin-top:0;" onclick="backToMapping()">Back</button>
+                </div>
+            </div>
+
+            <!-- Loading state -->
+            <div id="uploadLoading" class="upload-step" style="display:none">
+                <div class="view-loading" style="justify-content:center;padding:40px 0;"><div class="spinner"></div><span id="uploadLoadingText">Analyzing columns...</span></div>
+            </div>
         </div>
     </div>
 
