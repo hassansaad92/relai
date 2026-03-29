@@ -2,6 +2,7 @@ SELECT
     p.id,
     p.name,
     p.skills,
+    p.work_mode,
     p.created_at,
     p.updated_at,
     CASE

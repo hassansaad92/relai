@@ -1,18 +1,16 @@
-# Scheduling Assistant
+# RelAI — AI-Powered Crew Scheduling
 
-An AI-powered crew scheduling system for coordinating elevator installation teams across multiple projects.
+A custom AI operations platform for construction and elevator companies. Built as a base platform that gets tailored per-company through direct consulting engagements.
 
-## Overview
+**Current customer:** Star Elevator
 
-This application helps coordinate the assignment of mechanics and work crews to projects based on their skills and availability. The system maintains a persistent database of mechanics, projects, and assignments, and uses an AI chatbot to answer scheduling questions in plain language.
+## What It Does
 
-## Key Features
-
-- **Gantt chart overview**: Visual timeline of all mechanic assignments across projects
-- **AI scheduling assistant**: Ask questions like "Who is available next week?" or "What is John's next project?" and get answers from live data
-- **Personnel management**: Track skills; availability is automatically derived from assignments
-- **Project management**: Track required skills, committed/actual dates, fractional durations, and procurement dates
-- **Assignment tracking**: Personnel-to-project assignments with sequence, date ranges, assignment types, and daily allocation (half/full day)
+- **AI Scheduling Assistant**: Create, modify, and reason about schedules through natural language ("Schedule the Johnson project next week with Crew B")
+- **Gantt Chart Overview**: Visual timeline of all crew assignments across projects
+- **Personnel & Project Management**: Track skills, availability (derived from assignments), committed/actual dates, fractional durations, procurement status
+- **Scenario Versioning**: Master/draft workflow for what-if schedule planning
+- **Spreadsheet Upload**: Bulk project import from Excel
 
 ## Tech Stack
 
@@ -21,177 +19,80 @@ This application helps coordinate the assignment of mechanics and work crews to 
 - **AI**: Anthropic Claude API
 - **Frontend**: Vanilla JS + Plotly (Gantt chart)
 
----
-
 ## Getting Started
 
 ### Prerequisites
 
 - Python 3.8+
-- A [Supabase](https://supabase.com) project with the schema below
-- An [Anthropic API key](https://console.anthropic.com) for the AI chatbot
+- A [Supabase](https://supabase.com) project
+- An [Anthropic API key](https://console.anthropic.com)
 
-### 1. Clone the repo
+### Setup
 
 ```bash
 git clone <repository-url>
 cd relai
-```
-
-### 2. Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 3. Set up environment variables
-
-The app requires the following environment variables. Add them to your shell config or a `.env` file:
-
-**Supabase database credentials** (found in your Supabase project under Settings → Database):
+### Environment Variables
 
 ```bash
+# Required for the app
 export SUPABASE_RELAI_DB_HOST="db.your-project-id.supabase.co"
 export SUPABASE_RELAI_DB_PASSWORD="your-postgres-password"
-```
-
-**Anthropic API key** (for the AI chatbot):
-
-```bash
 export ANTHROPIC_API_KEY="sk-ant-api03-..."
-```
 
-To make these permanent, add the exports to `~/.zshrc` (macOS default) or `~/.bashrc`:
-
-```bash
-echo 'export SUPABASE_RELAI_DB_HOST="db.your-project-id.supabase.co"' >> ~/.zshrc
-echo 'export SUPABASE_RELAI_DB_PASSWORD="your-postgres-password"' >> ~/.zshrc
-echo 'export ANTHROPIC_API_KEY="sk-ant-api03-..."' >> ~/.zshrc
-source ~/.zshrc
-```
-
-Verify they are set:
-
-```bash
-echo $SUPABASE_RELAI_DB_HOST
-echo $SUPABASE_RELAI_DB_PASSWORD
-echo $ANTHROPIC_API_KEY
-```
-
-> **Getting an Anthropic API key:**
-> 1. Go to https://console.anthropic.com
-> 2. Sign up or log in
-> 3. Navigate to **Settings** → **API Keys** → **Create Key**
-> 4. Copy the key (starts with `sk-ant-api03-...`)
-
-> **Security:** Never commit API keys to version control.
-
-### Data reset script
-
-`data/repopulate_supabase_data.py` reseeds the database from CSV files using the Supabase Python client. It requires two additional env vars — the project URL (same host as `SUPABASE_RELAI_DB_HOST` but replacing `db.` with `https://`) and a service role key:
-
-```bash
+# Required only for the data reset script (data/repopulate_supabase_data.py)
 export SUPABASE_RELAI_URL="https://your-project-id.supabase.co"
 export SUPABASE_RELAI_SECRET_KEY="your-supabase-service-role-key"
 ```
 
-These are only needed when running the reset script, not for the main app.
-
-### 4. Run the app
+### Run
 
 ```bash
 uvicorn main:app --reload
 ```
 
-Open http://localhost:8000 in your browser.
+Open http://localhost:8000.
 
 ---
 
-## Database Schema (Supabase)
+## Database Schema
 
 Run `data/schema.sql` in the Supabase SQL Editor to create all tables, triggers, and history tables.
 
-**personnel** — pure dimension table; availability is derived from assignments via queries
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID | Primary key, default `gen_random_uuid()` |
-| `name` | Text | |
-| `skills` | Text | Comma-separated skill tags |
-| `created_at` | Timestamptz | Auto-set |
-| `updated_at` | Timestamptz | Auto-updated via trigger |
+| Table | Purpose |
+|---|---|
+| **personnel** | Crew members with skills. Availability derived from assignments via JOIN. |
+| **projects** | Jobs with committed/actual dates, duration, procurement status, award status. |
+| **assignments** | Personnel-to-project assignments with type (full/cascading/partial), dates, daily allocation. |
+| **scenarios** | Master/draft versioning for schedule what-if planning. |
+| **skills** | Normalized skill taxonomy. |
 
-**projects**
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID | Primary key, default `gen_random_uuid()` |
-| `name` | Text | |
-| `committed_start_date` | Date | Optional committed start date |
-| `committed_end_date` | Date | Optional committed completion date |
-| `duration_days` | Numeric(5,1) | Supports fractional days (0.5, 1.0, 1.5, etc.) |
-| `procurement_date` | Date | Optional procurement/material date |
-| `required_skills` | Text | Comma-separated skill tags |
-| `award_status` | Text | `awarded` or `prospect` |
-| `created_at` | Timestamptz | Auto-set |
-| `updated_at` | Timestamptz | Auto-updated via trigger |
-
-**assignments**
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID | Primary key, default `gen_random_uuid()` |
-| `personnel_id` | UUID | Foreign key → personnel |
-| `project_id` | UUID | Foreign key → projects |
-| `scenario_id` | UUID | Foreign key → scenarios |
-| `sequence` | Integer | Order of assignment for this person |
-| `start_date` | Date | |
-| `end_date` | Date | |
-| `assignment_type` | Text | `full`, `cascading`, or `partial` |
-| `allocated_days` | Numeric(5,1) | Daily allocation (0.5 = half day, 1.0 = full day) |
-| `created_at` | Timestamptz | Auto-set |
-
-**scenarios**
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID | Primary key |
-| `name` | Text | |
-| `status` | Text | `master` or `draft` |
-| `created_from` | UUID | FK → scenarios (branched from) |
-| `archived_at` | Timestamptz | null = active |
-
-**skills**
-| Column | Type | Notes |
-|---|---|---|
-| `id` | UUID | Primary key, default `gen_random_uuid()` |
-| `skill` | Text | Unique skill name |
-
-All core tables (personnel, projects, skills) have SCD2 history tables and triggers for audit tracking.
-
----
+All core tables have SCD2 history tables and triggers for audit tracking.
 
 ## API Endpoints
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/personnel?scenario_id=` | List personnel with derived availability (enriched via JOIN) |
+| `GET` | `/api/personnel?scenario_id=` | List personnel with derived availability |
 | `POST` | `/api/personnel` | Add personnel |
-| `PATCH` | `/api/personnel/:id` | Update personnel (name, skills) |
-| `DELETE` | `/api/personnel/:id` | Delete personnel + their assignments |
-| `GET` | `/api/projects?scenario_id=` | List projects with computed schedule_status and actual dates |
-| `POST` | `/api/projects` | Add a project (`committed_end_date` computed server-side when start date provided) |
-| `DELETE` | `/api/projects/:id` | Delete project + its assignments |
-| `GET` | `/api/assignments?scenario_id=` | Enriched assignments with personnel/project names |
-| `GET` | `/api/assignments/overview?scenario_id=` | Gantt chart data with joined names |
-| `GET` | `/api/assignments/schedule-projects?scenario_id=` | Schedule tab project list with assignment counts |
+| `PATCH` | `/api/personnel/:id` | Update personnel |
+| `DELETE` | `/api/personnel/:id` | Delete personnel + assignments |
+| `GET` | `/api/projects?scenario_id=` | List projects with computed status and actual dates |
+| `POST` | `/api/projects` | Add a project |
+| `DELETE` | `/api/projects/:id` | Delete project + assignments |
+| `GET` | `/api/assignments?scenario_id=` | Enriched assignments |
+| `GET` | `/api/assignments/overview?scenario_id=` | Gantt chart data |
+| `GET` | `/api/assignments/schedule-projects?scenario_id=` | Schedule tab project list |
 | `GET` | `/api/assignments/available-personnel` | Find unassigned personnel for a date range |
-| `POST` | `/api/assignments` | Create assignment (with `assignment_type`) |
+| `POST` | `/api/assignments` | Create assignment |
 | `PATCH` | `/api/assignments/:id` | Update assignment |
 | `DELETE` | `/api/assignments/:id` | Delete assignment |
-| `GET` | `/api/scenarios` | List active scenarios |
-| `POST` | `/api/scenarios` | Create draft from master |
-| `POST` | `/api/scenarios/:id/promote` | Promote draft to master |
-| `DELETE` | `/api/scenarios/:id` | Archive scenario |
-| `GET` | `/api/skills` | List all skills |
-| `POST` | `/api/skills` | Add a skill |
-| `POST` | `/api/chat` | Send a message to the AI assistant |
+| `GET/POST` | `/api/scenarios`, `/api/scenarios/:id/promote`, etc. | Scenario CRUD and promotion |
+| `GET/POST` | `/api/skills` | Skill CRUD |
+| `POST` | `/api/chat` | AI assistant |
 
 ---
 
@@ -323,42 +224,9 @@ Chronological record of major technical decisions and what shipped in each PR.
 
 ---
 
-## Roadmap
+## Business Model
 
-### Phase 1: Service Work Pivot (Current)
-- Fractional-day durations (0.5, 1.0, 1.5, etc.)
-- Half-day assignments with capacity-based conflict detection
-- Procurement date tracking per project
-- Dual mechanic assignments within a single day
-
-### Phase 1.5: Configurable Risk Badges & Settings Tab
-- Add a Settings tab for user-configurable risk thresholds
-- **Mobilization Risk**: user defines a threshold (e.g., 5 days) — projects without materials or assignments within that window of their committed start date are flagged
-- **Delay Risk**: user defines criteria for flagging projects at risk of schedule delay
-- Risk badges displayed on schedule project cards based on these definitions
-- Thresholds persisted per user/scenario
-
-### Phase 2: Authentication & User Accounts
-- User sign-in (OAuth or email/password)
-- Role-based access control (admin, scheduler, viewer)
-- Session management and API auth
-
-### Phase 3: Multi-Tenancy
-- Per-company databases or isolated table sets
-- Company onboarding and provisioning
-- Data isolation between tenants
-
-### Phase 4: GPS-Based Proximity Optimization
-- Geocoding project addresses
-- Proximity-aware scheduling suggestions
-- Travel time estimation between job sites
-
-### Phase 5: Contract Management
-- Contract document storage via AWS S3
-- Link contracts to projects
-- Document versioning and access control
-
----
+RelAI is built as a **custom consulting platform**, not a SaaS product. The base platform is tailored per-company through direct engagements (~2 months each). See `docs/expansion-features.md` for the full business strategy.
 
 ## License
 

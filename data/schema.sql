@@ -10,6 +10,7 @@ CREATE TABLE personnel (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     skills TEXT NOT NULL,
+    work_mode TEXT NOT NULL DEFAULT 'crew',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -22,6 +23,7 @@ CREATE TABLE personnel_history (
     personnel_id UUID NOT NULL,
     name TEXT,
     skills TEXT,
+    work_mode TEXT,
     valid_from TIMESTAMPTZ NOT NULL,
     valid_to TIMESTAMPTZ,
     is_current BOOLEAN DEFAULT TRUE
@@ -45,11 +47,11 @@ BEGIN
     IF (TG_OP = 'UPDATE') THEN
         UPDATE personnel_history SET valid_to = NEW.updated_at, is_current = FALSE
         WHERE personnel_id = OLD.id AND is_current = TRUE;
-        INSERT INTO personnel_history (personnel_id, name, skills, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.skills, NEW.updated_at, TRUE);
+        INSERT INTO personnel_history (personnel_id, name, skills, work_mode, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.skills, NEW.work_mode, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO personnel_history (personnel_id, name, skills, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.skills, NEW.created_at, TRUE);
+        INSERT INTO personnel_history (personnel_id, name, skills, work_mode, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.skills, NEW.work_mode, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
         UPDATE personnel_history SET valid_to = NOW(), is_current = FALSE
         WHERE personnel_id = OLD.id AND is_current = TRUE;
@@ -77,6 +79,17 @@ CREATE TABLE projects (
     allow_overtime BOOLEAN NOT NULL DEFAULT FALSE,
     customer_id TEXT,
     account_type TEXT NOT NULL DEFAULT 'standard',
+    work_order_number TEXT,
+    work_order_date DATE,
+    equipment TEXT,
+    material_status TEXT,
+    material_arrived BOOLEAN,
+    division TEXT,
+    sales_rep TEXT,
+    description TEXT,
+    man_hours NUMERIC(7,1),
+    crew_hours NUMERIC(7,1),
+    total_amount NUMERIC(12,2),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -97,6 +110,17 @@ CREATE TABLE projects_history (
     allow_overtime BOOLEAN,
     customer_id TEXT,
     account_type TEXT,
+    work_order_number TEXT,
+    work_order_date DATE,
+    equipment TEXT,
+    material_status TEXT,
+    material_arrived BOOLEAN,
+    division TEXT,
+    sales_rep TEXT,
+    description TEXT,
+    man_hours NUMERIC(7,1),
+    crew_hours NUMERIC(7,1),
+    total_amount NUMERIC(12,2),
     valid_from TIMESTAMPTZ NOT NULL,
     valid_to TIMESTAMPTZ,
     is_current BOOLEAN DEFAULT TRUE
@@ -120,11 +144,11 @@ BEGIN
     IF (TG_OP = 'UPDATE') THEN
         UPDATE projects_history SET valid_to = NEW.updated_at, is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;
-        INSERT INTO projects_history (project_id, name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.committed_start_date, NEW.committed_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.allow_overtime, NEW.customer_id, NEW.account_type, NEW.updated_at, TRUE);
+        INSERT INTO projects_history (project_id, name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type, work_order_number, work_order_date, equipment, material_status, material_arrived, division, sales_rep, description, man_hours, crew_hours, total_amount, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.committed_start_date, NEW.committed_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.allow_overtime, NEW.customer_id, NEW.account_type, NEW.work_order_number, NEW.work_order_date, NEW.equipment, NEW.material_status, NEW.material_arrived, NEW.division, NEW.sales_rep, NEW.description, NEW.man_hours, NEW.crew_hours, NEW.total_amount, NEW.updated_at, TRUE);
     ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO projects_history (project_id, name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type, valid_from, is_current)
-        VALUES (NEW.id, NEW.name, NEW.committed_start_date, NEW.committed_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.allow_overtime, NEW.customer_id, NEW.account_type, NEW.created_at, TRUE);
+        INSERT INTO projects_history (project_id, name, committed_start_date, committed_end_date, duration_days, procurement_date, required_skills, award_status, allow_overtime, customer_id, account_type, work_order_number, work_order_date, equipment, material_status, material_arrived, division, sales_rep, description, man_hours, crew_hours, total_amount, valid_from, is_current)
+        VALUES (NEW.id, NEW.name, NEW.committed_start_date, NEW.committed_end_date, NEW.duration_days, NEW.procurement_date, NEW.required_skills, NEW.award_status, NEW.allow_overtime, NEW.customer_id, NEW.account_type, NEW.work_order_number, NEW.work_order_date, NEW.equipment, NEW.material_status, NEW.material_arrived, NEW.division, NEW.sales_rep, NEW.description, NEW.man_hours, NEW.crew_hours, NEW.total_amount, NEW.created_at, TRUE);
     ELSIF (TG_OP = 'DELETE') THEN
         UPDATE projects_history SET valid_to = NOW(), is_current = FALSE
         WHERE project_id = OLD.id AND is_current = TRUE;

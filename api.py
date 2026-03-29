@@ -69,6 +69,21 @@ MAX_ACTIVE_DRAFTS = 1
 
 logger = logging.getLogger(__name__)
 
+def compute_duration_days(man_hours: float | None, crew_hours: float | None, allow_overtime: bool = False) -> float:
+    """Compute duration_days from man_hours + crew_hours using half-day rounding.
+
+    Standard (8h day): ceil(total/4) * 0.5  →  e.g. 3h=0.5d, 5h=1d, 9h=1.5d
+    Overtime (12h day): ceil(total/6) * 0.5  →  e.g. 7h=1d, 13h=1.5d
+    """
+    mh = man_hours or 0
+    ch = crew_hours or 0
+    total = mh + ch
+    if total <= 0:
+        return 0
+    divisor = 6 if allow_overtime else 4
+    return math.ceil(total / divisor) * 0.5
+
+
 def add_business_days(start: date, days: int) -> date:
     """Add N business days (Mon-Fri) to a start date. days=0 returns start itself."""
     if days <= 0:
@@ -80,6 +95,27 @@ def add_business_days(start: date, days: int) -> date:
         if current.weekday() < 5:  # Mon-Fri
             remaining -= 1
     return current
+
+
+def _derive_material_fields(data: dict) -> None:
+    """Auto-set material_arrived and procurement_date from material_status.
+
+    - "Material Available" → material_arrived=True, procurement_date=today
+    - Everything else (Required, On Order, NULL) → material_arrived=False,
+      procurement_date=work_order_date+30 days
+    """
+    status = (data.get("material_status") or "").strip().lower()
+    if status == "material available":
+        data["material_arrived"] = True
+        data["procurement_date"] = date.today().isoformat()
+    else:
+        data["material_arrived"] = False
+        if data.get("work_order_date"):
+            try:
+                wo_date = date.fromisoformat(str(data["work_order_date"]).strip())
+                data["procurement_date"] = (wo_date + timedelta(days=30)).isoformat()
+            except (ValueError, TypeError):
+                pass
 
 
 def count_business_days(start: date, end: date) -> int:
@@ -228,6 +264,7 @@ def _build_ai_context(scenario_id: str) -> str:
             people[pid] = {
                 "name": r["personnel_name"],
                 "skills": r["skills"],
+                "work_mode": r.get("work_mode", "crew"),
                 "assignments": [],
             }
         if r["project_id"] is not None:
@@ -248,7 +285,7 @@ def _build_ai_context(scenario_id: str) -> str:
     today_str = date.today().isoformat()
     lines = ["PERSONNEL & AVAILABILITY:"]
     for pid, info in people.items():
-        lines.append(f"\n{info['name']} (id:{pid}), skills: [{info['skills']}]")
+        lines.append(f"\n{info['name']} (id:{pid}), skills: [{info['skills']}], work_mode: {info['work_mode']}")
         assignments = sorted(info["assignments"], key=lambda a: a["start_date"])
         if assignments:
             lines.append("  Current assignments:")
@@ -294,13 +331,32 @@ def _build_ai_context(scenario_id: str) -> str:
             ot_flag = ", allow_overtime=true" if p.get('allow_overtime') else ""
             acct = f", account_type={p['account_type']}" if p.get('account_type') and p['account_type'] != 'standard' else ""
             cust = f", customer_id={p['customer_id']}" if p.get('customer_id') else ""
+            hours_info = ""
+            if p.get('man_hours') or p.get('crew_hours'):
+                mh = float(p['man_hours']) if p.get('man_hours') else 0
+                ch = float(p['crew_hours']) if p.get('crew_hours') else 0
+                hours_info = f", man_hours={mh}, crew_hours={ch}"
+            material_info = ""
+            if p.get('material_arrived') is not None:
+                material_info = f", material_arrived={'yes' if p['material_arrived'] else 'no'}"
+                if not p['material_arrived'] and p.get('procurement_date'):
+                    material_info += f" (expected: {p['procurement_date']})"
+            wo_info = f", WO#={p['work_order_number']}" if p.get('work_order_number') else ""
+            div_info = f", division={p['division']}" if p.get('division') else ""
+            equip_info = f", equipment={p['equipment']}" if p.get('equipment') else ""
             lines.append(
                 f"- {p['name']} (id:{p['id']}): requires [{p['required_skills']}], "
                 f"contract {p['committed_start_date']} to {p['committed_end_date']}, "
-                f"{p['duration_days']} days{procurement}{ot_flag}{acct}{cust}"
+                f"{p['duration_days']} days{hours_info}{procurement}{ot_flag}{material_info}{acct}{cust}{wo_info}{div_info}{equip_info}"
             )
     else:
         lines.append("(none)")
+
+    lines.append("\n\nSCHEDULING CONSTRAINTS:")
+    lines.append("- Standard day = 8 hours. Duration uses half-day rounding: ceil(hours/4) * 0.5 days.")
+    lines.append("- If allow_overtime=true: day = 12 hours, formula is ceil(hours/6) * 0.5 days. Mechanics can work weekends but max 60 hours/week.")
+    lines.append("- Projects with material_arrived=false should not be scheduled until their procurement_date.")
+    lines.append("- Projects with zero hours (man_hours=0, crew_hours=0, duration_days=0) are excluded — they need hours entered first.")
 
     return "\n".join(lines)
 
@@ -317,23 +373,36 @@ def _get_scenario_id(scenario_id: Optional[str]) -> Optional[str]:
 class PersonnelCreate(BaseModel):
     name: str
     skills: str
+    work_mode: str = "crew"
 
 
 class PersonnelUpdate(BaseModel):
     name: Optional[str] = None
     skills: Optional[str] = None
+    work_mode: Optional[str] = None
 
 
 class ProjectCreate(BaseModel):
     name: str
     required_skills: str
     committed_start_date: Optional[str] = None
-    duration_days: float
+    duration_days: Optional[float] = None
     award_status: str
     procurement_date: Optional[str] = None
     allow_overtime: bool = False
     customer_id: Optional[str] = None
     account_type: str = "standard"
+    work_order_number: Optional[str] = None
+    work_order_date: Optional[str] = None
+    equipment: Optional[str] = None
+    material_status: Optional[str] = None
+    material_arrived: Optional[bool] = None
+    division: Optional[str] = None
+    sales_rep: Optional[str] = None
+    description: Optional[str] = None
+    man_hours: Optional[float] = None
+    crew_hours: Optional[float] = None
+    total_amount: Optional[float] = None
 
 
 class ProjectUpdate(BaseModel):
@@ -347,6 +416,17 @@ class ProjectUpdate(BaseModel):
     allow_overtime: Optional[bool] = None
     customer_id: Optional[str] = None
     account_type: Optional[str] = None
+    work_order_number: Optional[str] = None
+    work_order_date: Optional[str] = None
+    equipment: Optional[str] = None
+    material_status: Optional[str] = None
+    material_arrived: Optional[bool] = None
+    division: Optional[str] = None
+    sales_rep: Optional[str] = None
+    description: Optional[str] = None
+    man_hours: Optional[float] = None
+    crew_hours: Optional[float] = None
+    total_amount: Optional[float] = None
 
 
 class SkillCreate(BaseModel):
@@ -481,14 +561,20 @@ async def get_projects(scenario_id: Optional[str] = None):
 @router.post("/api/projects")
 async def create_project(project: ProjectCreate):
     data = project.model_dump()
+    # Compute duration_days from hours if not explicitly provided
+    if data.get("duration_days") is None:
+        data["duration_days"] = compute_duration_days(data.get("man_hours"), data.get("crew_hours"), data.get("allow_overtime", False))
     if data.get("committed_start_date"):
         start_dt = datetime.strptime(data["committed_start_date"], "%Y-%m-%d").date()
         days = math.ceil(data["duration_days"])
-        if data.get("allow_overtime"):
+        if days <= 0:
+            data["committed_end_date"] = start_dt.isoformat()
+        elif data.get("allow_overtime"):
             end_dt = start_dt + timedelta(days=days - 1)
+            data["committed_end_date"] = end_dt.isoformat()
         else:
             end_dt = add_business_days(start_dt, days - 1)
-        data["committed_end_date"] = end_dt.isoformat()
+            data["committed_end_date"] = end_dt.isoformat()
     else:
         data["committed_start_date"] = None
         data["committed_end_date"] = None
@@ -496,6 +582,12 @@ async def create_project(project: ProjectCreate):
         data["procurement_date"] = None
     if not data.get("customer_id"):
         data["customer_id"] = None
+    # Set None defaults for new nullable fields
+    for field in ("work_order_number", "work_order_date", "equipment", "material_status",
+                  "material_arrived", "division", "sales_rep", "description", "man_hours", "crew_hours", "total_amount"):
+        if not data.get(field):
+            data[field] = None
+    _derive_material_fields(data)
     return insert_project(data)
 
 
@@ -512,6 +604,9 @@ async def patch_project(project_id: str, data: ProjectUpdate):
     # Allow explicitly setting procurement_date to empty string (clear it)
     if data.procurement_date is not None:
         updates["procurement_date"] = data.procurement_date if data.procurement_date else None
+    # Allow explicitly setting material_arrived to false
+    if data.material_arrived is not None:
+        updates["material_arrived"] = data.material_arrived
     if not updates:
         raise HTTPException(400, "No fields to update")
     # Fetch current project once for recalculations
@@ -522,6 +617,12 @@ async def patch_project(project_id: str, data: ProjectUpdate):
     ot = updates.get("allow_overtime")
     if ot is None:
         ot = current.get("allow_overtime", False)
+    # Recompute duration_days when hours change
+    if "man_hours" in updates or "crew_hours" in updates:
+        mh = updates.get("man_hours") if "man_hours" in updates else (float(current["man_hours"]) if current.get("man_hours") else None)
+        ch = updates.get("crew_hours") if "crew_hours" in updates else (float(current["crew_hours"]) if current.get("crew_hours") else None)
+        if mh is not None or ch is not None:
+            updates["duration_days"] = compute_duration_days(mh, ch, ot)
     # Recalculate committed dates based on what was provided
     if "committed_end_date" in updates and "duration_days" not in updates and "committed_start_date" not in updates:
         # End date provided alone — calculate duration from it
@@ -543,10 +644,206 @@ async def patch_project(project_id: str, data: ProjectUpdate):
                 updates["committed_end_date"] = (start_dt + timedelta(days=math.ceil(days) - 1)).isoformat()
             else:
                 updates["committed_end_date"] = add_business_days(start_dt, math.ceil(days) - 1).isoformat()
+    # Re-derive material fields when material_status changes
+    if "material_status" in updates:
+        merged = {**current, **updates}
+        _derive_material_fields(merged)
+        updates["material_arrived"] = merged["material_arrived"]
+        if merged.get("procurement_date"):
+            updates["procurement_date"] = merged["procurement_date"]
     result = update_project(project_id, updates)
     if not result:
         raise HTTPException(404, "Project not found")
     return result
+
+
+# ── Bulk Upload ────────────────────────────────────────────────────────────────
+
+class ColumnMappingRequest(BaseModel):
+    headers: list[str]
+    sample_rows: list[dict]
+
+
+class BulkProjectImportRequest(BaseModel):
+    projects: list[dict]
+
+
+COLUMN_MAPPING_TOOL = {
+    "name": "map_columns",
+    "description": "Map spreadsheet column names to project fields",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "mappings": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "column": {"type": "string", "description": "The original spreadsheet column name"},
+                        "field": {
+                            "type": ["string", "null"],
+                            "enum": [
+                                "name", "required_skills", "duration_days",
+                                "committed_start_date", "committed_end_date",
+                                "procurement_date", "award_status", "allow_overtime",
+                                "customer_id", "account_type",
+                                "work_order_number", "work_order_date", "equipment",
+                                "material_status", "material_arrived", "division", "sales_rep",
+                                "description", "man_hours", "crew_hours", "total_amount",
+                                None
+                            ],
+                            "description": "The project field to map to, or null to skip"
+                        }
+                    },
+                    "required": ["column", "field"]
+                }
+            }
+        },
+        "required": ["mappings"]
+    }
+}
+
+
+@router.post("/api/projects/map-columns")
+async def map_columns(data: ColumnMappingRequest):
+    prompt = f"""Map these spreadsheet columns to project fields. CAREFULLY examine both the column names AND the sample data values to make correct mappings.
+
+Project fields and their meaning:
+- name: Building/project name (required)
+- required_skills: Comma-separated skills needed (e.g. "Modernization,Construction")
+- duration_days: Number of working days (numeric). Only use if the column is explicitly "days".
+- man_hours: Individual mechanic hours (numeric). Map columns like "Man Hours", "Labor Hours", "Est Hours" here.
+- crew_hours: Team/crew hours (numeric). Map columns like "Crew Hours", "Team Hours" here.
+- committed_start_date: Start date — must be an actual DATE value (e.g. "2025-03-01", "3/1/2025")
+- committed_end_date: End/completion date — must be an actual DATE value
+- procurement_date: Material procurement DATE — must be an actual DATE value (e.g. "2025-04-15"). Do NOT map status/text columns here (e.g. "Ordered", "Pending", "Complete" are NOT dates).
+- award_status: One of "awarded" or "prospect" — a text status field
+- allow_overtime: Whether weekends are allowed (boolean)
+- customer_id: Customer identifier
+- account_type: "standard" or "priority"
+- work_order_number: Work order / WO number (e.g. "WO-39911-F1F1")
+- work_order_date: Date the work order was created — must be an actual DATE value
+- equipment: Equipment identifier or type (e.g. "135429", "Elevator", "WCL Lift")
+- material_status: Material/procurement status text (e.g. "Material Required", "Ordered", "Complete")
+- material_arrived: Whether material has arrived (boolean)
+- division: Business division (e.g. "Repair", "Install", "Modernization")
+- sales_rep: Sales rep or owner name
+- description: Work description / notes text
+- total_amount: Dollar value / total amount (numeric)
+
+IMPORTANT RULES:
+- Look at the SAMPLE DATA to determine the actual data type. A column named "Procurement" with values like "Ordered" or "Complete" is a status — map to material_status, NOT procurement_date.
+- Only map to date fields (committed_start_date, committed_end_date, procurement_date, work_order_date) if the sample values are actual dates.
+- If a column contains hours, map to man_hours or crew_hours (not duration_days). The system auto-computes days from hours.
+- Set field to null for columns that don't match any project field.
+
+Spreadsheet columns: {json.dumps(data.headers)}
+Sample data (first 2 rows): {json.dumps(data.sample_rows[:2])}
+
+Map each column to the most appropriate field based on both the column name and the actual data values."""
+
+    response = anthropic_client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+        tools=[COLUMN_MAPPING_TOOL],
+        tool_choice={"type": "tool", "name": "map_columns"},
+    )
+
+    for block in response.content:
+        if block.type == "tool_use":
+            return {"mappings": block.input.get("mappings", [])}
+
+    return {"mappings": [{"column": h, "field": None} for h in data.headers]}
+
+
+@router.post("/api/projects/bulk")
+async def bulk_import_projects(data: BulkProjectImportRequest):
+    imported = 0
+    errors = []
+    for i, proj in enumerate(data.projects):
+        try:
+            # Validate required fields
+            if not proj.get("name"):
+                errors.append({"row": i + 1, "message": "Missing project name"})
+                continue
+
+            # Parse hours
+            man_hours_val = float(proj["man_hours"]) if proj.get("man_hours") else None
+            crew_hours_val = float(proj["crew_hours"]) if proj.get("crew_hours") else None
+            allow_ot = bool(proj.get("allow_overtime", False))
+            # Compute duration_days: from hours if available, else from explicit duration_days, else default to 0
+            if man_hours_val is not None or crew_hours_val is not None:
+                duration_days_val = compute_duration_days(man_hours_val, crew_hours_val, allow_ot)
+            elif proj.get("duration_days"):
+                duration_days_val = float(proj["duration_days"])
+            else:
+                # No hours and no duration — import with zero (flagged on dashboard)
+                man_hours_val = 0
+                crew_hours_val = 0
+                duration_days_val = 0
+
+            # Build project data with defaults
+            project_data = {
+                "name": str(proj["name"]).strip(),
+                "required_skills": str(proj.get("required_skills", "")).strip() or "General",
+                "duration_days": duration_days_val,
+                "award_status": str(proj.get("award_status", "awarded")).strip().lower(),
+                "allow_overtime": bool(proj.get("allow_overtime", False)),
+                "customer_id": proj.get("customer_id") or None,
+                "account_type": str(proj.get("account_type", "standard")).strip().lower(),
+                "committed_start_date": None,
+                "committed_end_date": None,
+                "procurement_date": None,
+                "work_order_number": proj.get("work_order_number") or None,
+                "work_order_date": proj.get("work_order_date") or None,
+                "equipment": proj.get("equipment") or None,
+                "material_status": proj.get("material_status") or None,
+                "material_arrived": bool(proj["material_arrived"]) if proj.get("material_arrived") is not None and str(proj.get("material_arrived", "")).strip() != "" else None,
+                "division": proj.get("division") or None,
+                "sales_rep": proj.get("sales_rep") or None,
+                "description": proj.get("description") or None,
+                "man_hours": man_hours_val,
+                "crew_hours": crew_hours_val,
+                "total_amount": float(proj["total_amount"]) if proj.get("total_amount") else None,
+            }
+
+            # Validate award_status
+            if project_data["award_status"] not in ("awarded", "prospect"):
+                project_data["award_status"] = "awarded"
+
+            # Validate account_type
+            if project_data["account_type"] not in ("standard", "priority"):
+                project_data["account_type"] = "standard"
+
+            # Calculate committed dates
+            start_str = proj.get("committed_start_date")
+            end_str = proj.get("committed_end_date")
+            if start_str:
+                start_dt = datetime.strptime(str(start_str).strip(), "%Y-%m-%d").date()
+                project_data["committed_start_date"] = start_dt.isoformat()
+                days = math.ceil(project_data["duration_days"])
+                if project_data["allow_overtime"]:
+                    end_dt = start_dt + timedelta(days=days - 1)
+                else:
+                    end_dt = add_business_days(start_dt, days - 1)
+                project_data["committed_end_date"] = end_dt.isoformat()
+            elif end_str:
+                # If only end date provided, store it but no start
+                project_data["committed_end_date"] = str(end_str).strip()
+
+            # Procurement date
+            proc_str = proj.get("procurement_date")
+            if proc_str:
+                project_data["procurement_date"] = str(proc_str).strip()
+
+            _derive_material_fields(project_data)
+            insert_project(project_data)
+            imported += 1
+        except Exception as e:
+            errors.append({"row": i + 1, "message": str(e)})
+
+    return {"imported": imported, "errors": errors}
 
 
 # ── Skills ─────────────────────────────────────────────────────────────────────
@@ -745,6 +1042,8 @@ You have real-time access to the following data from the database:
 Answer questions about projects, scheduling, resource allocation, and team assignments based on this data.
 When asked about a personnel member's next project, look up their assignments directly.
 Today's date is {now_iso()}.
+
+HOURS MODEL: Projects may have man_hours (individual mechanic work) and crew_hours (team work). duration_days is computed as ceil((man_hours + crew_hours) / 8). Crew work happens first, then individual adjustments follow. Personnel have a work_mode (crew or individual) indicating whether they work in teams or solo.
 
 Keep responses concise. Use short bullet points, not tables. When summarizing a schedule, use simple lines like: 'John Smith → Project Alpha (Jan 6 – Mar 30)'. Only use markdown tables if the user explicitly requests one.
 

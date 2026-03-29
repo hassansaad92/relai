@@ -97,6 +97,7 @@ for row in personnel_csv:
     payload = {
         "name": row["name"],
         "skills": row["skills"],
+        "work_mode": row.get("work_mode", "crew"),
     }
     response = supabase.table("personnel").insert(payload).execute()
     if not response.data:
@@ -115,18 +116,58 @@ old_project_id_to_uuid = {}
 
 for row in projects_csv:
     procurement_date = row.get("procurement_date") or None
+    # Compute duration_days from hours if available, else fall back to duration_weeks * 5
+    man_hours_val = float(row["man_hours"]) if row.get("man_hours") else None
+    crew_hours_val = float(row["crew_hours"]) if row.get("crew_hours") else None
+    if man_hours_val is not None or crew_hours_val is not None:
+        import math
+        mh = man_hours_val or 0
+        ch = crew_hours_val or 0
+        total = mh + ch
+        if total <= 0:
+            duration_days_val = 0
+        else:
+            duration_days_val = math.ceil(total / 4) * 0.5
+    else:
+        duration_days_val = float(row["duration_weeks"]) * 5
     payload = {
         "name": row["name"],
         "committed_start_date": row.get("committed_start_date") or None,
         "committed_end_date": row.get("committed_end_date") or None,
-        "duration_days": float(row["duration_weeks"]) * 5,
+        "duration_days": duration_days_val,
         "procurement_date": procurement_date,
         "required_skills": row["required_skills"],
         "award_status": row["award_status"],
         "allow_overtime": row.get("allow_overtime", "false").lower() == "true",
         "customer_id": row.get("customer_id") or None,
         "account_type": row.get("account_type", "standard"),
+        "work_order_number": row.get("work_order_number") or None,
+        "work_order_date": row.get("work_order_date") or None,
+        "equipment": row.get("equipment") or None,
+        "material_status": row.get("material_status") or None,
+        "material_arrived": row.get("material_arrived", "").lower() == "true" if row.get("material_arrived") else None,
+        "division": row.get("division") or None,
+        "sales_rep": row.get("sales_rep") or None,
+        "description": row.get("description") or None,
+        "man_hours": man_hours_val,
+        "crew_hours": crew_hours_val,
+        "total_amount": float(row["total_amount"]) if row.get("total_amount") else None,
     }
+    # Derive material_arrived and procurement_date from material_status
+    mat_status = (payload.get("material_status") or "").strip().lower()
+    if mat_status == "material available":
+        payload["material_arrived"] = True
+        from datetime import date as _date
+        payload["procurement_date"] = _date.today().isoformat()
+    else:
+        payload["material_arrived"] = False
+        if payload.get("work_order_date"):
+            from datetime import date, timedelta
+            try:
+                wo_dt = date.fromisoformat(str(payload["work_order_date"]).strip())
+                payload["procurement_date"] = (wo_dt + timedelta(days=30)).isoformat()
+            except (ValueError, TypeError):
+                pass
     response = supabase.table("projects").insert(payload).execute()
     if not response.data:
         print(f"  ERROR inserting project: {row['name']}")
