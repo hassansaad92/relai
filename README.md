@@ -228,6 +228,10 @@ Chronological record of major technical decisions and what shipped in each PR.
 
 RelAI is built as a **custom consulting platform**, not a SaaS product. The base platform is tailored per-company through direct engagements (~2 months each). See `docs/expansion-features.md` for the full business strategy.
 
+## Next steps when we pick it back up:
+1. Redis Cache so that we're not hammering the API every time we load the home page
+2. See [here](https://docs.google.com/document/d/1yJYb5cEXug2FCjQ5DgUYTOMJ38Yn_zlCffOl1oz11Rw/edit?tab=t.qczldungtl5x) (Conversation with Aaron about functionality and utilization)
+
 ## License
 
 _(License information to be added)_
